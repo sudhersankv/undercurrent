@@ -4,13 +4,19 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The persona swarm as a sphere of points. Canvas 2D, depth-shaded, slow rotation.
+ * The persona swarm as a sphere of points on a light canvas. Canvas 2D, depth-shaded, slow rotation.
+ * Forest/spruce points with lime accents on the front face; flat fills, no glow.
  * Reduced motion: renders one still frame. Pauses when off-screen or the tab is hidden.
  */
 
-const COUNT = 2600;
-const LICHEN: [number, number, number] = [216, 245, 162];
-const WHITE: [number, number, number] = [244, 250, 245];
+const COUNT = 2400;
+// canvas code may use hex (DESIGN.md): forest, spruce, lime
+const FOREST = "#163300";
+const SPRUCE = "#054d28";
+const LIME = "#9fe870";
+
+type Tone = 0 | 1 | 2; // forest | spruce | lime
+const FILL: Record<Tone, string> = { 0: FOREST, 1: SPRUCE, 2: LIME };
 
 interface Pt {
   x: number;
@@ -18,7 +24,7 @@ interface Pt {
   z: number;
   phase: number;
   amp: number;
-  lichen: boolean;
+  tone: Tone;
 }
 
 function makePoints(): Pt[] {
@@ -42,13 +48,14 @@ function makePoints(): Pt[] {
     const len = Math.hypot(x, yy, z);
     // a few stragglers drift outside the shell
     const shell = rand() < 0.06 ? 1 + rand() * 0.18 : 1;
+    const roll = rand();
     pts.push({
       x: (x / len) * shell,
       y: (yy / len) * shell,
       z: (z / len) * shell,
       phase: rand() * Math.PI * 2,
       amp: 0.008 + rand() * 0.02,
-      lichen: rand() < 0.28,
+      tone: roll < 0.22 ? 2 : roll < 0.5 ? 1 : 0,
     });
   }
   return pts;
@@ -64,6 +71,11 @@ export function ParticleOrb({ className }: { className?: string }) {
     if (!ctx) return;
 
     const pts = makePoints();
+    const n = pts.length;
+    // projected positions, reused every frame
+    const sx = new Float32Array(n);
+    const sy = new Float32Array(n);
+    const dz = new Float32Array(n);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let w = 0;
     let h = 0;
@@ -89,15 +101,16 @@ export function ParticleOrb({ className }: { className?: string }) {
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, w, h);
-      const R = Math.min(w, h) * 0.42;
+      const R = Math.min(w, h) * 0.44;
       const cx = w / 2;
       const cy = h / 2;
       const a = angleAtPause + t * 0.00006;
       const cosA = Math.cos(a);
       const sinA = Math.sin(a);
       const breathe = t * 0.0011;
+      const unit = Math.max(1, R / 220); // scale dot size with the orb
 
-      for (let i = 0; i < pts.length; i++) {
+      for (let i = 0; i < n; i++) {
         const p = pts[i];
         const s = 1 + Math.sin(breathe + p.phase) * p.amp;
         // rotate around Y, then tilt around X
@@ -106,17 +119,28 @@ export function ParticleOrb({ className }: { className?: string }) {
         const y1 = p.y * s;
         const y2 = y1 * cosT - z1 * sinT;
         const z2 = y1 * sinT + z1 * cosT;
-
         const depth = (z2 + 1.2) / 2.4; // 0 back → 1 front
-        const persp = 0.78 + depth * 0.32;
-        const sx = cx + x1 * R * persp;
-        const sy = cy + y2 * R * persp;
-        const size = (0.6 + depth * 1.5) * (p.lichen ? 1.1 : 1);
-        const alpha = 0.06 + depth * depth * (p.lichen ? 0.92 : 0.72);
-        const c = p.lichen ? LICHEN : WHITE;
-        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha.toFixed(3)})`;
-        ctx.fillRect(sx - size / 2, sy - size / 2, size, size);
+        const persp = 0.8 + depth * 0.3;
+        sx[i] = cx + x1 * R * persp;
+        sy[i] = cy + y2 * R * persp;
+        dz[i] = depth;
       }
+
+      // back face first, then front, so front dots sit on top
+      for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < n; i++) {
+          const depth = dz[i];
+          if ((depth >= 0.5) !== (pass === 1)) continue;
+          const tone = pts[i].tone;
+          // lime only reads on the front face; at the back it becomes a pale forest speck
+          const lime = tone === 2 && depth >= 0.5;
+          const size = (0.9 + depth * 1.9) * unit * (lime ? 1.25 : 1);
+          ctx.globalAlpha = lime ? 0.55 + depth * 0.45 : 0.05 + depth * depth * 0.8;
+          ctx.fillStyle = lime ? LIME : FILL[tone === 2 ? 0 : tone];
+          ctx.fillRect(sx[i] - size / 2, sy[i] - size / 2, size, size);
+        }
+      }
+      ctx.globalAlpha = 1;
     };
 
     const loop = (now: number) => {

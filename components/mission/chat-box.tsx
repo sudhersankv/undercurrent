@@ -101,10 +101,17 @@ export function ChatBox() {
     }
   };
 
+  const target = targetOf(text);
+
   return (
-    <div className="relative border-t border-hairline p-3">
+    <div className="relative border-t border-hairline bg-paper p-3">
       {open ? (
-        <ul id={`${id}-list`} role="listbox" aria-label="Departments" className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-control border border-hairline-strong bg-raised py-1">
+        <ul
+          id={`${id}-list`}
+          role="listbox"
+          aria-label="Departments"
+          className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-card border border-hairline bg-paper p-1 shadow-float"
+        >
           {options.map((d, i) => (
             <li
               key={d}
@@ -116,10 +123,12 @@ export function ChatBox() {
                 pick(d);
               }}
               onMouseEnter={() => setSel(i)}
-              className={cn("flex h-8 cursor-pointer items-center gap-2 px-3 text-[13px]", i === sel ? "bg-raised-hover text-strong" : "text-body")}
+              className={cn("flex h-10 cursor-pointer items-center gap-2.5 rounded-pill px-2 text-[14px]", i === sel ? "bg-linen text-strong" : "text-body")}
             >
-              <DeptGlyph dept={d} size={14} />
-              <span className="font-medium">{DEPT_LABELS[d]}</span>
+              <span className="flex size-7 items-center justify-center rounded-full bg-raised text-forest">
+                <DeptGlyph dept={d} size={14} />
+              </span>
+              <span className="font-semibold">{DEPT_LABELS[d]}</span>
               <span className="ml-auto text-[12px] text-muted">{HINTS[d]}</span>
             </li>
           ))}
@@ -130,11 +139,16 @@ export function ChatBox() {
           e.preventDefault();
           void send();
         }}
-        className="flex items-center gap-2 rounded-control border border-hairline-strong bg-recessed pl-3 pr-1 transition-colors focus-within:border-lichen"
+        className="flex items-center gap-2 rounded-card border border-hairline-strong bg-paper py-1 pl-4 pr-1 transition-colors focus-within:border-forest"
       >
         <label htmlFor={`${id}-input`} className="sr-only">
           Message Helm
         </label>
+        {target ? (
+          <span className="inline-flex h-6 shrink-0 items-center rounded-pill bg-linen px-2 text-[12px] font-semibold text-forest" aria-hidden>
+            @{DEPT_LABELS[target]}
+          </span>
+        ) : null}
         <input
           ref={inputRef}
           id={`${id}-input`}
@@ -148,9 +162,9 @@ export function ChatBox() {
           aria-expanded={open}
           aria-controls={`${id}-list`}
           aria-activedescendant={open ? `${id}-${options[sel]}` : undefined}
-          className="h-10 min-w-0 flex-1 bg-transparent text-[13px] text-strong placeholder:text-muted focus-visible:outline-none"
+          className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-strong placeholder:text-pebble focus-visible:outline-none"
         />
-        <Button type="submit" variant="raised" size="icon" disabled={!text.trim() || busy} aria-label="Send">
+        <Button type="submit" variant="cta" size="icon" disabled={!text.trim() || busy} aria-label="Send">
           <ArrowUp aria-hidden />
         </Button>
       </form>

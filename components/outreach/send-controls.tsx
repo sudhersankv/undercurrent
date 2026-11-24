@@ -61,14 +61,21 @@ export function SendControls({
         <Button variant="cta" onClick={() => onSend({ standIn: false })} disabled={disabled || done} title={`Sends to ${info.to} (our inbox)`}>
           {sendLabel}
         </Button>
-        <span className="font-mono text-[11px] text-muted">to {info.to}</span>
+        <span className="text-[12px] text-muted">
+          to <span className="font-mono text-charcoal">{info.to}</span>
+        </span>
       </>
     );
   }
   return (
     <>
       <span title={DRAFT_ONLY_TIP} className="inline-flex">
-        <Button variant="raised" disabled aria-label={`Draft only. ${DRAFT_ONLY_TIP}`}>
+        <Button
+          variant="raised"
+          disabled
+          aria-label={`Draft only. ${DRAFT_ONLY_TIP}`}
+          className="border border-dashed border-hairline-strong bg-paper text-charcoal disabled:opacity-100"
+        >
           <Lock />
           Draft only
         </Button>
@@ -79,11 +86,11 @@ export function SendControls({
         </Button>
       ) : null}
       {info.standIn ? (
-        <span className="font-mono text-[11px] text-muted">
-          stand-in {info.standIn.name} · {info.standIn.address}
+        <span className="text-[12px] text-muted">
+          stand-in <span className="font-semibold text-charcoal">{info.standIn.name}</span> · <span className="font-mono">{info.standIn.address}</span>
         </span>
       ) : (
-        <span className="text-[11px] text-muted">No stand-in inbox set.</span>
+        <span className="text-[12px] text-muted">No stand-in inbox set.</span>
       )}
     </>
   );

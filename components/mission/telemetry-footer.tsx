@@ -9,15 +9,17 @@ export function TelemetryFooter() {
   const r = store.retrieval;
   const u = store.usage;
   return (
-    <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-hairline bg-recessed px-4 py-2 font-mono text-[11px] text-muted">
+    <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-hairline bg-paper px-4 py-2 text-[12px] text-muted tabular md:px-6">
       <span>
-        retrieval: Moss · p50 <span className="text-body">{r ? `${Math.round(r.p50Ms)} ms` : "--"}</span>
+        Retrieval: Moss · p50 <span className="font-medium text-body">{r ? `${Math.round(r.p50Ms)} ms` : "--"}</span>
       </span>
       <span>
-        <span className="text-body">{u ? fmtTokens(u.inputTokens + u.outputTokens) : "0"}</span> tokens ·{" "}
-        <span className="text-body">${u ? u.estCostUsd.toFixed(2) : "0.00"}</span>
+        <span className="font-medium text-body">{u ? fmtTokens(u.inputTokens + u.outputTokens) : "0"}</span> tokens ·{" "}
+        <span className="font-medium text-body">${u ? u.estCostUsd.toFixed(2) : "0.00"}</span>
       </span>
-      <span className="ml-auto truncate">run {runId}</span>
+      <span className="ml-auto truncate">
+        Run <span className="font-mono text-[11px]">{runId}</span>
+      </span>
     </footer>
   );
 }

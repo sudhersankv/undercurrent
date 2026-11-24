@@ -13,12 +13,12 @@ export default async function RunLayout({ children, params }: { children: React.
   const { runId } = await params;
   return (
     <RunProvider runId={runId}>
-      <div className="flex h-dvh flex-col overflow-hidden">
+      <div className="flex h-dvh flex-col overflow-hidden bg-canvas text-body">
         <MissionHeader />
         <LoopStrip />
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
-          <aside aria-label="Team" className="flex h-[420px] shrink-0 flex-col overflow-hidden border-t border-hairline bg-canvas lg:h-auto lg:w-[340px] lg:border-l lg:border-t-0 xl:w-[380px]">
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto bg-canvas">{children}</div>
+          <aside aria-label="Team" className="flex h-[420px] shrink-0 flex-col overflow-hidden border-t border-hairline bg-paper lg:h-auto lg:w-[360px] lg:border-l lg:border-t-0 xl:w-[400px]">
             <HandoffFeed />
             <ChatBox />
           </aside>

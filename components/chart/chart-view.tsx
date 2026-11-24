@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowUpRight, X } from "lucide-react";
-import type { RunEvent } from "@/lib/contracts";
+import type { RunEvent, Verdict } from "@/lib/contracts";
 import type { GraphEdge, GraphNode, NodeLabel } from "@/lib/graph/types";
 import { useRun } from "@/components/mission/run-context";
 import { Button, DeptGlyph, Eyebrow, Pill } from "@/components/ui";
@@ -65,6 +65,7 @@ export function ChartView({ runId }: { runId: string }) {
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph.nodes]);
   const segments = useMemo(() => graph.nodes.filter((n) => n.label === "Segment"), [graph.nodes]);
+  const verdicts = useMemo(() => Object.fromEntries(segments.map((n) => [n.id, n.props.verdict as Verdict | undefined])), [segments]);
 
   // Segment filter: the segment plus everything within two hops, without crossing into other segments.
   const visible = useMemo(() => {
@@ -141,17 +142,17 @@ export function ChartView({ runId }: { runId: string }) {
             Chart
             <span className={cn("size-1.5 rounded-full", connected ? "bg-lichen" : "bg-muted")} title={connected ? "Live" : "Disconnected"} />
           </Eyebrow>
-          <h1 className="mt-1 text-[22px]">
+          <h1 className="tabular mt-1 text-[28px] font-bold tracking-[-0.02em]">
             {data.nodes.length} nodes <span className="text-muted">·</span> <span className="text-body">{data.links.length} edges</span>
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-[12px] text-muted">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-charcoal">
             Segment
             <select
               value={segment}
               onChange={(e) => setSegment(e.target.value)}
-              className="h-8 max-w-[260px] rounded-control border border-hairline-strong bg-recessed px-2 text-[13px] text-strong"
+              className="h-9 max-w-[260px] rounded-card border border-hairline-strong bg-paper px-3 text-[13px] text-strong focus:border-forest focus:outline-none"
             >
               <option value="all">All segments</option>
               {segments.map((s) => (
@@ -168,7 +169,6 @@ export function ChartView({ runId }: { runId: string }) {
               setTrace((t) => !t);
               setTraceEventId(null);
             }}
-            className={cn(trace && "border-lichen/50 text-lichen")}
           >
             {trace ? "Trace on" : "Trace"}
           </Button>
@@ -176,23 +176,29 @@ export function ChartView({ runId }: { runId: string }) {
       </header>
 
       <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="relative min-h-[420px] overflow-hidden rounded-card border border-hairline bg-recessed">
+        <div className="relative min-h-[420px] overflow-hidden rounded-card border border-hairline bg-paper">
           {data.nodes.length === 0 ? (
             <div className="absolute inset-0 grid place-items-center text-[13px] text-muted">No graph yet. Sonar starts it.</div>
           ) : (
-            <ForceCanvas data={data} highlight={highlight} selectedId={selectedId} onSelect={setSelectedId} />
+            <ForceCanvas data={data} highlight={highlight} selectedId={selectedId} onSelect={setSelectedId} verdicts={verdicts} />
           )}
-          <ul className="pointer-events-none absolute bottom-3 left-3 flex max-w-[70%] flex-wrap gap-x-3 gap-y-1">
+          <ul className="pointer-events-none absolute bottom-3 left-3 flex max-w-[70%] flex-wrap gap-1.5">
             {(Object.keys(counts) as NodeLabel[]).map((l) => (
-              <li key={l} className="flex items-center gap-1.5 text-[11px] text-muted">
-                <span className="size-2 rounded-full" style={{ background: LABEL_COLOR[l] }} />
-                {l} <span className="font-mono">{counts[l]}</span>
+              <li key={l} className="flex h-6 items-center gap-1.5 rounded-pill border border-hairline bg-paper px-2 text-[11px] font-semibold text-charcoal">
+                <span
+                  className={cn(
+                    "size-2 rounded-full border",
+                    l === "Persona" ? "border-dashed border-pebble bg-paper" : l === "Segment" ? "border-[1.5px] border-spruce bg-paper" : "border-hairline",
+                  )}
+                  style={l === "Persona" || l === "Segment" ? undefined : { background: LABEL_COLOR[l] }}
+                />
+                {l === "Persona" ? "Persona (simulated)" : l} <span className="tabular text-muted">{counts[l]}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <aside className="flex min-h-0 flex-col overflow-hidden rounded-card border border-hairline bg-raised">
+        <aside className="flex min-h-0 flex-col overflow-hidden rounded-card border border-hairline bg-paper">
           {trace ? (
             <TraceFeed events={traceEvents} selectedId={traceEventId} onSelect={setTraceEventId} />
           ) : selected ? (
@@ -222,11 +228,11 @@ function TraceFeed({ events, selectedId, onSelect }: { events: RunEvent[]; selec
               onClick={() => onSelect(e.id)}
               aria-pressed={e.id === selectedId}
               className={cn(
-                "flex w-full items-start gap-2 rounded-control px-2.5 py-2 text-left text-[12.5px] hover:bg-raised-hover",
-                e.id === selectedId && "bg-raised-hover text-strong",
+                "flex w-full items-start gap-2 rounded-card px-2.5 py-2 text-left text-[13px] hover:bg-linen/50",
+                e.id === selectedId && "bg-linen text-strong hover:bg-linen",
               )}
             >
-              <DeptGlyph dept={e.dept} size={14} className="mt-0.5 text-muted" />
+              <DeptGlyph dept={e.dept} size={14} className="mt-0.5 text-forest" />
               <span className="min-w-0 flex-1">
                 <span className="line-clamp-2 text-body">{e.message}</span>
                 <span className="font-mono text-[10.5px] text-muted">
@@ -269,11 +275,11 @@ function NodePanel({
       <div className="flex items-start justify-between gap-2 border-b border-hairline px-4 py-3">
         <div className="min-w-0">
           <span className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full" style={{ background: LABEL_COLOR[node.label] }} />
+            <span className="size-2 rounded-full border border-hairline" style={{ background: LABEL_COLOR[node.label] }} />
             <Eyebrow as="span">{node.label}</Eyebrow>
             {node.props.simulated === true && <Pill tone="muted">Simulated</Pill>}
           </span>
-          <h2 className="mt-1 text-[16px] leading-snug">{nodeName(node)}</h2>
+          <h2 className="mt-1 text-[16px] font-semibold leading-snug">{nodeName(node)}</h2>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
           <X />
@@ -287,7 +293,7 @@ function NodePanel({
                 <dt className="truncate text-muted">{k}</dt>
                 <dd className="min-w-0 break-words">
                   {isUrl(v) ? (
-                    <a href={v} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 font-mono text-[11.5px] text-strong hover:text-lichen">
+                    <a href={v} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 font-mono text-[11.5px] text-forest underline decoration-forest/40 underline-offset-4 hover:decoration-forest">
                       <span className="truncate">{v.replace(/^https?:\/\/(www\.)?/, "")}</span>
                       <ArrowUpRight className="size-3 shrink-0" />
                     </a>
@@ -306,12 +312,12 @@ function NodePanel({
           <ul className="space-y-1">
             {rels.map(({ e, other, out }) => (
               <li key={e.id}>
-                <button type="button" onClick={() => onSelect(other!.id)} className="flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left hover:bg-raised-hover">
+                <button type="button" onClick={() => onSelect(other!.id)} className="flex w-full items-center gap-2 rounded-card px-2 py-1.5 text-left hover:bg-linen/50">
                   <span className="w-[92px] shrink-0 truncate font-mono text-[10.5px] text-muted">
                     {out ? "" : "← "}
                     {e.type}
                   </span>
-                  <span className="size-1.5 shrink-0 rounded-full" style={{ background: LABEL_COLOR[other!.label] }} />
+                  <span className="size-2 shrink-0 rounded-full border border-hairline" style={{ background: LABEL_COLOR[other!.label] }} />
                   <span className="truncate text-body">{nodeName(other!)}</span>
                 </button>
               </li>

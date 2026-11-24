@@ -128,14 +128,16 @@ export function ReplyToCard({ url, className }: { url: string; className?: strin
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn("flex items-center gap-2.5 rounded-control border border-hairline bg-recessed px-3 py-2 transition-colors hover:border-hairline-strong", className)}
+      className={cn("flex items-center gap-3 rounded-card border border-hairline bg-paper px-3 py-2.5 transition-colors hover:border-hairline-strong hover:bg-linen/50", className)}
     >
-      <XGlyph size={13} className="text-muted" />
-      <span className="min-w-0 flex-1">
-        <span className="eyebrow block text-[10px]">Replying to</span>
-        <span className="block truncate font-mono text-[12px] text-strong">{author ? `@${author}` : "post"}</span>
+      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-raised text-forest">
+        <XGlyph size={13} />
       </span>
-      <span className="truncate font-mono text-[11px] text-muted">{tweetId(url) ?? path}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12px] text-muted">Replying to</span>
+        <span className="block truncate text-[14px] font-semibold text-strong">{author ? `@${author}` : "post"}</span>
+      </span>
+      <span className="truncate font-mono text-[11px] text-muted tabular">{tweetId(url) ?? path}</span>
     </a>
   );
 }

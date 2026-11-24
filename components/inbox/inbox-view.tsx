@@ -66,97 +66,110 @@ export function InboxView({ runId }: { runId: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-hairline px-4 py-2.5">
-        <h1 className="text-[15px] font-medium tracking-[-0.01em] text-strong">Inbox</h1>
-        <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-muted">
-          <MailGlyph size={12} />
-          <span className="truncate font-mono text-body">{data?.sender.inboxId ?? "fixture inbox"}</span>
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline px-4 py-4 md:px-6">
+        <h1 className="text-[24px] font-bold tracking-[-0.02em] text-strong">Inbox</h1>
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
+          <MailGlyph size={13} />
+          <span className="truncate font-mono text-charcoal">{data?.sender.inboxId ?? "fixture inbox"}</span>
         </span>
         {data?.sender.safeMode ? (
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted" title="Email only goes to our own AgentMail inboxes. Real developers are never contacted.">
+          <Pill tone="lichen" className="font-semibold" title="Email only goes to our own AgentMail inboxes. Real developers are never contacted.">
             <Lock className="size-3" />
             Send lock{data.sender.standIn ? ` · stand-in ${data.sender.standIn}` : ""}
-          </span>
+          </Pill>
         ) : null}
         {error ? (
-          <span className="ml-auto text-[12px] text-danger" role="status">
+          <span className="ml-auto text-[13px] font-medium text-danger" role="status">
             {error}
           </span>
         ) : null}
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[188px_minmax(280px,340px)_minmax(0,1fr)]">
-        {/* Folders */}
-        <nav aria-label="Folders" className="flex gap-1 overflow-x-auto border-b border-hairline p-2 md:flex-col md:overflow-y-auto md:border-r md:border-b-0">
-          {FOLDERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={folder === f.id}
-              onClick={() => setFolder(f.id)}
-              className={cn(
-                "flex h-8 shrink-0 items-center gap-2 rounded-control px-2.5 text-left text-[13px] transition-colors",
-                folder === f.id ? "bg-raised text-strong" : "text-body hover:bg-raised hover:text-strong",
-              )}
-            >
-              <span className="flex-1">{f.label}</span>
-              <span className={cn("font-mono text-[11px] tabular-nums", f.id === "needs_reply" && count(f.id) > 0 ? "text-lichen" : "text-muted")}>{count(f.id)}</span>
-            </button>
-          ))}
-          <p className="eyebrow mt-4 mb-1 hidden px-2.5 text-[10px] md:block">Channel</p>
-          <div className="flex shrink-0 gap-1 md:flex-col" role="group" aria-label="Channel">
-            {(
-              [
-                ["all", "Any", null],
-                ["email", "Email", <MailGlyph key="m" size={12} />],
-                ["x", "X", <XGlyph key="x" size={11} />],
-              ] as const
-            ).map(([id, label, glyph]) => (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={channel === id}
-                onClick={() => setChannel(id)}
-                className={cn(
-                  "flex h-8 shrink-0 items-center gap-2 rounded-control px-2.5 text-[13px] transition-colors",
-                  channel === id ? "bg-raised text-strong" : "text-body hover:bg-raised hover:text-strong",
-                )}
-              >
-                <span className="flex w-3.5 justify-center text-muted">{glyph}</span>
-                <span className="flex-1 text-left">{label}</span>
-                <span className="font-mono text-[11px] text-muted tabular-nums">{chCount(id)}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
-
-        {/* Thread list */}
-        <section aria-label="Threads" className="min-h-0 overflow-y-auto border-b border-hairline md:border-r md:border-b-0">
-          {!data && !error ? (
-            <p className="p-4 text-[13px] text-muted">Loading…</p>
-          ) : list.length === 0 ? (
-            <div className="p-6">
-              <p className="text-[13px] text-strong">{threads.length ? "Nothing in this folder." : "Nothing sent yet."}</p>
-              {!threads.length ? (
-                <Link href={`/runs/${runId}/review`} className="mt-1 inline-block text-[12px] text-muted underline decoration-hairline-strong underline-offset-2 hover:text-lichen">
-                  Open review
-                </Link>
-              ) : null}
-            </div>
-          ) : (
-            <ul>
-              {list.map((t) => (
-                <li key={t.id}>
-                  <ThreadRow t={t} active={cur?.id === t.id} now={now} onClick={() => setSel(t.id)} />
-                </li>
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]">
+        {/* Thread list: filters on top, hairline rows below */}
+        <section aria-label="Threads" className="flex min-h-0 flex-col border-b border-hairline md:border-r md:border-b-0">
+          <div className="flex flex-col gap-2 border-b border-hairline p-3">
+            <nav aria-label="Folders" className="flex gap-1 overflow-x-auto">
+              {FOLDERS.map((f) => {
+                const n = count(f.id);
+                const on = folder === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setFolder(f.id)}
+                    className={cn(
+                      "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-pill px-3 text-[13px] font-semibold transition-colors",
+                      on ? "bg-forest text-paper" : "text-charcoal hover:bg-raised",
+                    )}
+                  >
+                    {f.label}
+                    <span
+                      className={cn(
+                        "tabular text-[11px]",
+                        f.id === "needs_reply" && n > 0 ? (on ? "text-lime" : "inline-flex h-4 min-w-4 items-center justify-center rounded-pill bg-forest px-1 text-lime") : on ? "text-paper/70" : "text-muted",
+                      )}
+                    >
+                      {n}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="inline-flex gap-1 self-start rounded-pill bg-raised p-1" role="group" aria-label="Channel">
+              {(
+                [
+                  ["all", "Any", null],
+                  ["email", "Email", <MailGlyph key="m" size={12} />],
+                  ["x", "X", <XGlyph key="x" size={11} />],
+                ] as const
+              ).map(([id, label, glyph]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={channel === id}
+                  onClick={() => setChannel(id)}
+                  className={cn(
+                    "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-[13px] font-semibold transition-colors",
+                    channel === id ? "bg-paper text-forest ring-1 ring-hairline" : "text-charcoal hover:bg-paper",
+                  )}
+                >
+                  {glyph ? <span className="flex justify-center">{glyph}</span> : null}
+                  {label}
+                  <span className="tabular text-[11px] text-muted">{chCount(id)}</span>
+                </button>
               ))}
-            </ul>
-          )}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {!data && !error ? (
+              <p className="p-4 text-[14px] text-muted">Loading…</p>
+            ) : list.length === 0 ? (
+              <div className="p-6">
+                <p className="text-[15px] font-semibold text-strong">{threads.length ? "Nothing in this folder." : "Nothing sent yet."}</p>
+                {!threads.length ? (
+                  <Link href={`/runs/${runId}/review`} className="link-underline mt-1.5 inline-block text-[14px]">
+                    Open review
+                  </Link>
+                ) : null}
+              </div>
+            ) : (
+              <ul className="divide-y divide-hairline">
+                {list.map((t) => (
+                  <li key={t.id}>
+                    <ThreadRow t={t} active={cur?.id === t.id} now={now} onClick={() => setSel(t.id)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
 
         {/* Thread */}
         <section aria-label="Thread" className="min-h-0 overflow-y-auto">
-          {cur ? <ThreadPane key={cur.id} runId={runId} t={cur} now={now} onLogged={reload} /> : <p className="p-6 text-[13px] text-muted">Select a thread.</p>}
+          {cur ? <ThreadPane key={cur.id} runId={runId} t={cur} now={now} onLogged={reload} /> : <p className="p-6 text-[14px] text-muted">Select a thread.</p>}
         </section>
       </div>
     </div>
@@ -173,9 +186,9 @@ function IntentChip({ reply }: { reply: InboxReply | null | undefined }) {
 
 function AuthorBadge({ author }: { author: InboxThread["author"] }) {
   return author === "you" ? (
-    <span className="inline-flex h-[18px] items-center rounded-[4px] bg-strong px-1.5 text-[10.5px] font-medium text-recessed">You</span>
+    <span className="inline-flex h-5 items-center rounded-pill bg-forest px-2 text-[11px] font-semibold text-paper">You</span>
   ) : (
-    <span className="inline-flex h-[18px] items-center gap-1 rounded-[4px] border border-hairline-strong px-1.5 text-[10.5px] text-body">
+    <span className="inline-flex h-5 items-center gap-1 rounded-pill border border-hairline px-2 text-[11px] font-medium text-muted">
       <DeptGlyph dept="tide" size={11} />
       AI
     </span>
@@ -191,15 +204,21 @@ function ThreadRow({ t, active, now, onClick }: { t: InboxThread; active: boolea
       type="button"
       onClick={onClick}
       aria-current={active}
-      className={cn("flex w-full flex-col gap-1 border-b border-hairline px-3.5 py-2.5 text-left transition-colors", active ? "bg-raised" : "hover:bg-raised/60")}
+      className={cn("flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors", active ? "bg-linen" : "hover:bg-linen/50")}
     >
       <span className="flex items-center gap-2">
+        <span className="flex w-2 justify-center" aria-hidden>
+          {unread ? <span className="size-2 rounded-full bg-forest" /> : null}
+        </span>
         <ChannelGlyph channel={t.draftChannel} size={12} className="text-muted" />
-        <span className={cn("flex-1 truncate text-[13px]", unread ? "font-medium text-strong" : "text-body")}>{t.leadName}</span>
-        <span className="font-mono text-[11px] text-muted tabular-nums">{relTime(t.lastAt, now)}</span>
+        <span className={cn("flex-1 truncate text-[14px]", unread ? "font-semibold text-strong" : "font-medium text-charcoal")}>
+          {t.leadName}
+          {unread ? <span className="sr-only"> (unread)</span> : null}
+        </span>
+        <span className="font-mono text-[11px] text-muted tabular">{relTime(t.lastAt, now)}</span>
       </span>
-      <span className="truncate text-[12px] text-muted">{line}</span>
-      <span className="flex items-center gap-1.5">
+      <span className={cn("truncate pl-4 text-[13px]", unread ? "text-charcoal" : "text-muted")}>{line}</span>
+      <span className="flex items-center gap-1.5 pl-4">
         <IntentChip reply={last} />
         {t.status !== "sent" ? <StatusPill status={t.status} /> : null}
         <span className="ml-auto">
@@ -220,23 +239,24 @@ function deliveryLine(t: InboxThread): string {
 function ThreadPane({ runId, t, now, onLogged }: { runId: string; t: InboxThread; now: number; onLogged: () => void }) {
   const to = t.channel === "x" ? (t.handle ? `@${t.handle}` : "X") : (t.emailAddress ?? "no address on file");
   return (
-    <article className="mx-auto flex max-w-[760px] flex-col gap-4 p-4 md:p-6">
+    <article className="mx-auto flex max-w-[760px] flex-col gap-5 p-4 md:p-8">
       <header className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[18px] font-medium tracking-[-0.02em] text-strong">{t.subject ?? t.body.split("\n")[0].slice(0, 80)}</h2>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
-            <ChannelGlyph channel={t.draftChannel} size={12} />
-            <span>{CHANNEL_LABEL[t.draftChannel]}</span>
-            <span aria-hidden>·</span>
-            <Link href={`/runs/${runId}/leads`} className="text-body hover:text-lichen">
+          <h2 className="truncate text-[22px] font-bold tracking-[-0.02em] text-strong">{t.subject ?? t.body.split("\n")[0].slice(0, 80)}</h2>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+            <Pill tone="neutral" className="gap-1.5 font-semibold text-forest">
+              <ChannelGlyph channel={t.draftChannel} size={11} />
+              {CHANNEL_LABEL[t.draftChannel]}
+            </Pill>
+            <Link href={`/runs/${runId}/leads`} className="font-semibold text-forest underline decoration-hairline-strong underline-offset-4 hover:decoration-forest">
               {t.leadName}
             </Link>
             {t.handle ? (
-              <a href={`https://x.com/${t.handle}`} target="_blank" rel="noopener noreferrer" className="font-mono hover:text-lichen">
+              <a href={`https://x.com/${t.handle}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[12px] hover:text-forest">
                 @{t.handle}
               </a>
             ) : null}
-            {t.leadStage ? <span className="font-mono">{t.leadStage}</span> : null}
+            {t.leadStage ? <span className="font-mono text-[12px]">{t.leadStage}</span> : null}
           </p>
         </div>
       </header>
@@ -245,24 +265,34 @@ function ThreadPane({ runId, t, now, onLogged }: { runId: string; t: InboxThread
 
       {/* Ours */}
       <Message
+        avatar={
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-forest text-lime">
+            <DeptGlyph dept="tide" size={14} />
+          </span>
+        }
         who={
           <>
-            <span className="text-strong">You</span>
-            <span className="text-muted">to {to}</span>
-            <span className="ml-1">
-              <AuthorBadge author={t.author} />
-            </span>
+            <span className="font-semibold text-strong">You</span>
+            <span className="truncate text-muted">to {to}</span>
+            <AuthorBadge author={t.author} />
           </>
         }
         at={t.sentAt}
         now={now}
         tone="ours"
       >
-        <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-strong">{t.body}</p>
-        <p className={cn("mt-3 flex items-center gap-1.5 text-[11.5px]", t.delivery ? "text-lichen" : "text-muted")}>
-          {t.delivery?.safeMode ? <Lock className="size-3" /> : t.delivery ? <Check className="size-3" /> : null}
+        <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-body">{t.body}</p>
+        <p className={cn("mt-4 flex items-center gap-2 border-t border-hairline pt-3 text-[13px]", t.delivery ? "font-medium text-forest" : "text-muted")}>
+          {t.delivery?.safeMode ? (
+            <Pill tone="lichen" className="font-semibold">
+              <Lock className="size-3" />
+              Stand-in
+            </Pill>
+          ) : t.delivery ? (
+            <Check className="size-3.5" />
+          ) : null}
           {deliveryLine(t)}
-          {t.delivery?.threadId && !t.delivery.manual ? <span className="ml-auto truncate font-mono text-muted">{t.delivery.threadId}</span> : null}
+          {t.delivery?.threadId && !t.delivery.manual ? <span className="ml-auto truncate font-mono text-[11px] font-normal text-muted">{t.delivery.threadId}</span> : null}
         </p>
         {t.channel === "x" && !t.delivery ? <XActions t={t} /> : null}
       </Message>
@@ -271,68 +301,88 @@ function ThreadPane({ runId, t, now, onLogged }: { runId: string; t: InboxThread
       {t.replies.map((r) => (
         <React.Fragment key={r.id}>
           <Message
+            avatar={
+              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-raised text-[14px] font-semibold text-forest" aria-hidden>
+                {t.leadName.slice(0, 1).toUpperCase()}
+              </span>
+            }
             who={
               <>
-                <span className="text-strong">{t.leadName}</span>
-                {r.from ? <span className="truncate font-mono text-muted">{r.from}</span> : null}
+                <span className="font-semibold text-strong">{t.leadName}</span>
+                {r.from ? <span className="truncate font-mono text-[12px] text-muted">{r.from}</span> : null}
               </>
             }
             at={r.at}
             now={now}
             tone="theirs"
           >
-            <p className="text-[14px] leading-relaxed whitespace-pre-wrap text-strong">{r.text}</p>
+            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-strong">{r.text}</p>
           </Message>
           <WakeNote r={r} t={t} runId={runId} />
         </React.Fragment>
       ))}
 
-      {t.replies.length === 0 && t.channel === "email" ? <p className="text-[12px] text-muted">No reply yet. Wake is watching this thread.</p> : null}
+      {t.replies.length === 0 && t.channel === "email" ? <p className="text-[13px] text-muted">No reply yet. Wake is watching this thread.</p> : null}
 
       {t.channel === "x" ? <LogReply runId={runId} t={t} onLogged={onLogged} /> : null}
     </article>
   );
 }
 
-function Message({ who, at, now, tone, children }: { who: React.ReactNode; at: string | null; now: number; tone: "ours" | "theirs"; children: React.ReactNode }) {
+function Message({
+  avatar,
+  who,
+  at,
+  now,
+  tone,
+  children,
+}: {
+  avatar: React.ReactNode;
+  who: React.ReactNode;
+  at: string | null;
+  now: number;
+  tone: "ours" | "theirs";
+  children: React.ReactNode;
+}) {
   return (
-    <section className={cn("rounded-card border p-4", tone === "ours" ? "border-hairline bg-recessed" : "border-hairline-strong bg-raised")}>
-      <p className="mb-2.5 flex min-w-0 items-center gap-2 text-[12px]">
-        {who}
+    <section className={cn("rounded-card border p-5", tone === "ours" ? "border-transparent bg-recessed" : "border-hairline bg-paper")}>
+      <div className="mb-3 flex min-w-0 items-center gap-3">
+        {avatar}
+        <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px]">{who}</p>
         {at ? (
-          <time dateTime={at} title={new Date(at).toLocaleString()} className="ml-auto shrink-0 font-mono text-[11px] text-muted tabular-nums">
+          <time dateTime={at} title={new Date(at).toLocaleString()} className="shrink-0 font-mono text-[12px] text-muted tabular">
             {relTime(at, now)}
           </time>
         ) : null}
-      </p>
+      </div>
       {children}
     </section>
   );
 }
 
 function WakeNote({ r, t, runId }: { r: InboxReply; t: InboxThread; runId: string }) {
-  if (!r.cls) return <p className="pl-4 text-[12px] text-muted">Wake is classifying…</p>;
+  if (!r.cls) return <p className="pl-5 text-[13px] text-muted">Wake is classifying…</p>;
   return (
-    <div className="ml-4 flex flex-col gap-2 border-l border-hairline-strong pl-4">
-      <p className="flex flex-wrap items-center gap-2 text-[12px]">
-        <DeptGlyph dept="wake" size={13} className="text-body" />
-        <span className="text-strong">Wake</span>
+    <div className="ml-5 flex flex-col gap-2 border-l-2 border-linen pl-5">
+      <p className="flex flex-wrap items-center gap-2 text-[13px]">
+        <DeptGlyph dept="wake" size={14} className="text-forest" />
+        <span className="font-semibold text-strong">Wake</span>
         <IntentChip reply={r} />
         <span className="font-mono text-[11px] text-muted">{r.cls.sentiment}</span>
       </p>
-      <p className="text-[13px] text-body">{r.cls.summary}</p>
-      <p className="flex items-center gap-1.5 text-[12px] text-muted">
+      <p className="text-[14px] leading-relaxed text-body">{r.cls.summary}</p>
+      <p className="flex items-center gap-1.5 text-[13px] text-muted">
         <CornerDownRight className="size-3.5" />
-        Next: <span className="text-strong">{NEXT_LABEL[r.cls.nextAction]}</span>
+        Next: <span className="font-semibold text-strong">{NEXT_LABEL[r.cls.nextAction]}</span>
       </p>
       {r.cls.intent === "referral" && t.referral ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-control border border-hairline bg-recessed px-3 py-2 text-[12px]">
+        <div className="flex flex-wrap items-center gap-2 rounded-card border border-hairline bg-paper px-4 py-3 text-[13px]">
           <span className="text-muted">New lead</span>
-          <Link href={`/runs/${runId}/leads`} className="text-strong hover:text-lichen">
+          <Link href={`/runs/${runId}/leads`} className="font-semibold text-forest underline decoration-hairline-strong underline-offset-4 hover:decoration-forest">
             {t.referral.leadName}
           </Link>
           {t.referral.draftId ? (
-            <Link href={`/runs/${runId}/review`} className="ml-auto inline-flex items-center gap-1.5 text-body hover:text-lichen">
+            <Link href={`/runs/${runId}/review`} className="ml-auto inline-flex items-center gap-1.5 font-medium text-forest hover:underline">
               Intro draft
               {t.referral.draftStatus ? <StatusPill status={t.referral.draftStatus} /> : null}
             </Link>
@@ -368,7 +418,7 @@ function XActions({ t }: { t: InboxThread }) {
           }
         }}
       >
-        {copied ? <Check className="text-lichen" /> : <Copy />}
+        {copied ? <Check className="text-forest" /> : <Copy />}
         {copied ? "Copied" : "Copy"}
       </Button>
     </div>
@@ -400,26 +450,26 @@ function LogReply({ runId, t, onLogged }: { runId: string; t: InboxThread; onLog
     }
   };
   return (
-    <form onSubmit={submit} className="rounded-card border border-dashed border-hairline-strong p-4">
-      <label htmlFor={`log-${t.id}`} className="flex items-center gap-1.5 text-[12px] text-strong">
-        <XGlyph size={11} />
+    <form onSubmit={submit} className="rounded-card border border-hairline bg-paper p-5">
+      <label htmlFor={`log-${t.id}`} className="flex items-center gap-2 text-[15px] font-semibold text-strong">
+        <XGlyph size={12} />
         Reply on X
       </label>
-      <p className="mt-0.5 text-[11.5px] text-muted">Paste what they said. Wake classifies it like an email.</p>
+      <p className="mt-0.5 text-[13px] text-muted">Paste what they said. Wake classifies it like an email.</p>
       <textarea
         id={`log-${t.id}`}
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={3}
         placeholder="not me, ask @priya, she runs our search infra"
-        className="mt-2.5 w-full resize-y rounded-control border border-hairline-strong bg-recessed px-3 py-2 text-[13px] text-strong outline-none placeholder:text-muted focus:border-lichen/60"
+        className="mt-3 w-full resize-y rounded-card border border-hairline-strong bg-paper px-4 py-3 text-[15px] text-strong outline-none placeholder:text-pebble focus:border-forest"
       />
-      <div className="mt-2 flex items-center gap-3">
-        <Button type="submit" size="sm" disabled={busy || !text.trim()}>
+      <div className="mt-3 flex items-center gap-3">
+        <Button type="submit" variant="cta" disabled={busy || !text.trim()}>
           {busy ? "Logging…" : "Log reply"}
         </Button>
         {msg ? (
-          <span className={cn("text-[12px]", msg.ok ? "text-lichen" : "text-danger")} role="status">
+          <span className={cn("text-[13px]", msg.ok ? "font-medium text-forest" : "text-danger")} role="status">
             {msg.text}
           </span>
         ) : null}

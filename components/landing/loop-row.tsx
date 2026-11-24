@@ -10,21 +10,25 @@ const STEPS: { dept: DeptId; verb: string; line: string }[] = [
   { dept: "wake", verb: "Learn", line: "Replies recalibrate the swarm." },
 ];
 
-/** Six departments as one closed loop. */
+/** Six departments as one closed loop: white feature cards for a fog band. */
 export function LoopRow() {
   return (
-    <ol className="grid grid-cols-2 border-t border-hairline sm:grid-cols-3 lg:grid-cols-6">
+    <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {STEPS.map((s, i) => (
-        <li key={s.dept} className="flex flex-col gap-3 border-b border-hairline px-5 py-6 lg:border-b-0 lg:border-l lg:first:border-l-0">
-          <div className="flex items-center justify-between text-muted">
-            <span className="font-mono text-[11px] tabular">0{i + 1}</span>
-            <DeptGlyph dept={s.dept} className="text-body" />
+        <li key={s.dept} className="flex flex-col gap-5 rounded-large bg-paper p-6 sm:p-8">
+          <div className="flex items-center justify-between">
+            <span className="flex size-12 items-center justify-center rounded-full bg-raised text-forest">
+              <DeptGlyph dept={s.dept} size={20} />
+            </span>
+            <span className="text-[13px] font-semibold text-muted tabular" aria-hidden>
+              0{i + 1}
+            </span>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <span className="eyebrow">{DEPT_LABELS[s.dept]}</span>
-            <span className="text-[17px] font-medium tracking-[-0.02em] text-strong">{s.verb}</span>
+            <h3 className="text-[22px] font-semibold tracking-[-0.02em] text-strong">{s.verb}</h3>
+            <p className="text-[15px] leading-relaxed text-body">{s.line}</p>
           </div>
-          <p className="text-[13px] leading-snug text-body">{s.line}</p>
         </li>
       ))}
     </ol>

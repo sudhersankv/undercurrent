@@ -5,7 +5,7 @@ import { Check, Copy, ExternalLink, GitBranch, Briefcase } from "lucide-react";
 import type { Draft, Lead } from "@/lib/contracts";
 import type { RunStore } from "@/lib/client/run-store";
 import { draftsFor, linkedinUrl, openedIssue } from "@/lib/client/gtm";
-import { Button, Eyebrow } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { MailGlyph, XGlyph, xIntentUrl, xProfileUrl } from "@/components/review/x";
 import { postSend, SendControls } from "./send-controls";
@@ -29,15 +29,15 @@ export function ReachOut({ lead, store }: { lead: Lead; store: RunStore }) {
   const [busy, setBusy] = React.useState(false);
 
   return (
-    <section className="space-y-2" aria-label="Reach out">
-      <Eyebrow>Reach out</Eyebrow>
-      {!drafts.length ? <p className="text-[12px] text-muted">No drafts yet. Approve to have Tide write them.</p> : null}
+    <section className="space-y-2.5" aria-label="Reach out">
+      <h3 className="text-[15px] font-semibold text-strong">Reach out</h3>
+      {!drafts.length ? <p className="rounded-card bg-recessed px-3.5 py-3 text-[13px] text-muted">No drafts yet. Approve to have Tide write them.</p> : null}
 
       <Channel icon={<XGlyph size={12} />} label="X" note={xReply ? "reply to their post" : xDm ? "DM" : undefined}>
         {xReply || xDm ? (
           <>
             <DraftText draft={(xReply ?? xDm)!} />
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {xReply ? (
                 <Button asChild size="sm" variant="outline">
                   <a href={xIntentUrl(xReply)} target="_blank" rel="noopener noreferrer">
@@ -63,24 +63,27 @@ export function ReachOut({ lead, store }: { lead: Lead; store: RunStore }) {
         )}
       </Channel>
 
-      <Channel icon={<Briefcase className="size-3" />} label="LinkedIn" note={li ? "connection note" : undefined}>
+      <Channel icon={<Briefcase className="size-3.5" />} label="LinkedIn" note={li ? "connection note" : undefined}>
         {li ? <DraftText draft={li} /> : null}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {liUrl ? <ProfileLink href={liUrl} label="Profile" /> : null}
           {li ? <CopyBtn text={li.body} label="Copy note" /> : null}
           {!li && !liUrl ? <None /> : null}
         </div>
       </Channel>
 
-      <Channel icon={<MailGlyph size={12} />} label="Email" note={lead.email ? lead.email.address : undefined}>
+      <Channel icon={<MailGlyph size={12} />} label="Email" note={lead.email ? lead.email.address : undefined} mono>
         {emails.length ? (
           emails.map((d) => (
-            <div key={d.id} className="space-y-1.5">
+            <div key={d.id} className="space-y-2.5">
               <DraftText draft={d} />
               {d.status === "sent" ? (
-                <p className="text-[12px] text-lichen">Sent{d.history.at(-1)?.note ? `: ${d.history.at(-1)?.note}` : ""}</p>
+                <p className="inline-flex items-center gap-1.5 rounded-pill bg-linen px-3 py-1 text-[12px] font-semibold text-forest">
+                  <Check className="size-3.5" strokeWidth={3} />
+                  Sent{d.history.at(-1)?.note ? `: ${d.history.at(-1)?.note}` : ""}
+                </p>
               ) : (
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   <SendControls
                     draftId={d.id}
                     disabled={busy}
@@ -100,11 +103,11 @@ export function ReachOut({ lead, store }: { lead: Lead; store: RunStore }) {
         ) : (
           <None />
         )}
-        {msg ? <p className={cn("text-[12px]", msg.ok ? "text-lichen" : "text-danger")}>{msg.text}</p> : null}
+        {msg ? <p className={cn("text-[13px] font-medium", msg.ok ? "text-forest" : "text-danger")}>{msg.text}</p> : null}
       </Channel>
 
-      <Channel icon={<GitBranch className="size-3" />} label="GitHub" note="link only, we never post in issues">
-        <div className="flex flex-wrap gap-1.5">
+      <Channel icon={<GitBranch className="size-3.5" />} label="GitHub" note="link only, we never post in issues">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {lead.handles.github ? <ProfileLink href={`https://github.com/${lead.handles.github}`} label="Profile" /> : null}
           {lead.primaryRepo ? <ProfileLink href={`https://github.com/${lead.primaryRepo}`} label="Repo" /> : null}
           {issue ? <ProfileLink href={issue.url} label="Their issue" /> : null}
@@ -115,13 +118,13 @@ export function ReachOut({ lead, store }: { lead: Lead; store: RunStore }) {
   );
 }
 
-function Channel({ icon, label, note, children }: { icon: React.ReactNode; label: string; note?: string; children: React.ReactNode }) {
+function Channel({ icon, label, note, mono, children }: { icon: React.ReactNode; label: string; note?: string; mono?: boolean; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5 rounded-control border border-hairline bg-recessed p-2.5">
-      <p className="flex items-center gap-1.5 text-[12px] text-strong">
-        {icon}
+    <div className="space-y-3 rounded-card border border-hairline bg-paper p-3.5">
+      <p className="flex min-w-0 items-center gap-2 text-[14px] font-semibold text-strong">
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-raised text-forest">{icon}</span>
         {label}
-        {note ? <span className="truncate font-mono text-[11px] text-muted">{note}</span> : null}
+        {note ? <span className={cn("min-w-0 truncate text-[12px] font-normal text-muted", mono && "font-mono")}>{note}</span> : null}
       </p>
       {children}
     </div>
@@ -130,8 +133,8 @@ function Channel({ icon, label, note, children }: { icon: React.ReactNode; label
 
 function DraftText({ draft }: { draft: Draft }) {
   return (
-    <div className="rounded-control border border-hairline bg-canvas p-2 font-mono text-[11.5px] leading-relaxed text-body">
-      {draft.subject ? <p className="mb-1 text-strong">{draft.subject}</p> : null}
+    <div className="rounded-card bg-recessed px-3.5 py-3 text-[13.5px] leading-relaxed text-body">
+      {draft.subject ? <p className="mb-1.5 font-semibold text-strong">{draft.subject}</p> : null}
       <p className="whitespace-pre-wrap">{draft.body}</p>
     </div>
   );
@@ -139,7 +142,7 @@ function DraftText({ draft }: { draft: Draft }) {
 
 function ProfileLink({ href, label }: { href: string; label: string }) {
   return (
-    <Button asChild size="sm" variant="outline">
+    <Button asChild size="sm" variant="link" className="h-auto px-0">
       <a href={href} target="_blank" rel="noopener noreferrer">
         {label}
         <ExternalLink />
@@ -153,7 +156,8 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
   return (
     <Button
       size="sm"
-      variant="ghost"
+      variant="link"
+      className="h-auto px-0"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
@@ -164,12 +168,12 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
         }
       }}
     >
-      {ok ? <Check className="text-lichen" /> : <Copy />}
+      {ok ? <Check className="text-forest" /> : <Copy />}
       {ok ? "Copied" : label}
     </Button>
   );
 }
 
 function None() {
-  return <p className="text-[12px] text-muted">Nothing found.</p>;
+  return <p className="text-[13px] text-muted">Nothing found.</p>;
 }

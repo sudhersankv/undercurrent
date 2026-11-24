@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
 import { DeptGlyph, DEPT_LABELS } from "@/components/ui";
 import { DEPT_IDS, type DeptId } from "@/lib/contracts";
 import { deptCounts } from "@/lib/client/run-store";
@@ -28,7 +27,7 @@ interface Trip {
 
 const isDept = (d: unknown): d is DeptId => typeof d === "string" && (DEPT_IDS as readonly string[]).includes(d);
 
-/** Six department pills with live counts. A dot travels on each handoff, and back to Swarm on calibration. */
+/** Six-step department indicator with live counts. A dot travels on each handoff, and back to Swarm on calibration. */
 export function LoopStrip() {
   const { store } = useRun();
   const reduce = useReducedMotion();
@@ -82,46 +81,47 @@ export function LoopStrip() {
   const wakeX = centers.wake ?? 0;
 
   return (
-    <div className="border-b border-hairline bg-recessed">
-      <div ref={wrapRef} className="relative mx-auto flex w-full items-center gap-1 overflow-x-auto px-4 pb-4 pt-3 [scrollbar-width:none]">
-        {DEPT_IDS.map((d, i) => {
-          const n = counts[d];
-          const isActive = active === d;
-          return (
-            <div key={d} className="flex shrink-0 items-center gap-1">
-              <div
-                ref={(el) => {
-                  pillRefs.current[d] = el;
-                }}
-                className={cn(
-                  "relative flex h-9 items-center gap-2 rounded-control border px-3 transition-colors duration-300",
-                  isActive ? "border-lichen/50 bg-raised-hover text-strong" : n > 0 ? "border-hairline bg-raised text-strong" : "border-hairline bg-transparent text-muted",
-                )}
-                aria-current={isActive ? "step" : undefined}
-              >
-                {isActive ? (
-                  <span className="relative flex size-1.5" aria-hidden>
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-lichen opacity-60" />
-                    <span className="relative inline-flex size-1.5 rounded-full bg-lichen" />
+    <div className="border-b border-hairline bg-paper">
+      <div ref={wrapRef} className="relative w-full overflow-x-auto px-4 pb-4 pt-3 [scrollbar-width:none] md:px-6">
+        <ol aria-label="Department loop" className="flex w-full min-w-max items-center">
+          {DEPT_IDS.map((d, i) => {
+            const n = counts[d];
+            const isActive = active === d;
+            const done = !isActive && n > 0;
+            return (
+              <li key={d} className={cn("flex items-center", i < DEPT_IDS.length - 1 ? "min-w-0 flex-1" : "shrink-0")} aria-current={isActive ? "step" : undefined}>
+                <div className="flex shrink-0 items-center gap-2.5">
+                  <span
+                    ref={(el) => {
+                      pillRefs.current[d] = el;
+                    }}
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300",
+                      isActive ? "bg-lime text-forest ring-4 ring-linen" : done ? "bg-forest text-lime" : "bg-raised text-muted",
+                    )}
+                  >
+                    <DeptGlyph dept={d} size={18} />
                   </span>
+                  <span className="flex flex-col leading-tight">
+                    <span className={cn("text-[13px] font-semibold", n > 0 || isActive ? "text-strong" : "text-muted")}>{DEPT_LABELS[d]}</span>
+                    <span className="whitespace-nowrap text-[12px] text-muted tabular">
+                      <span className={cn("font-semibold", n > 0 ? "text-forest" : "text-muted")}>{n}</span> {UNITS[d][n === 1 ? 0 : 1]}
+                    </span>
+                  </span>
+                </div>
+                {i < DEPT_IDS.length - 1 ? (
+                  <span aria-hidden className={cn("mx-3 h-px min-w-4 flex-1 transition-colors duration-300", done ? "bg-forest/40" : "bg-hairline-strong")} />
                 ) : null}
-                <DeptGlyph dept={d} className={n > 0 || isActive ? "text-strong" : "text-muted"} />
-                <span className="text-[13px] font-medium">{DEPT_LABELS[d]}</span>
-                <span className={cn("font-mono text-[12px] tabular", n > 0 ? "text-lichen" : "text-muted")}>
-                  {n}
-                  <span className="ml-1 font-sans text-[12px] text-muted">{UNITS[d][n === 1 ? 0 : 1]}</span>
-                </span>
-              </div>
-              {i < DEPT_IDS.length - 1 ? <ChevronRight className="size-3.5 text-muted/60" aria-hidden /> : null}
-            </div>
-          );
-        })}
+              </li>
+            );
+          })}
+        </ol>
 
         {/* return track: Wake back to Swarm (calibration closes the loop) */}
         {swarmX && wakeX ? (
           <div
             aria-hidden
-            className={cn("pointer-events-none absolute bottom-[7px] h-px transition-colors duration-500", trip?.back ? "bg-lichen/40" : "bg-hairline")}
+            className={cn("pointer-events-none absolute bottom-[7px] h-px transition-colors duration-500", trip?.back ? "bg-forest/40" : "bg-hairline")}
             style={{ left: swarmX, width: wakeX - swarmX }}
           />
         ) : null}
@@ -130,7 +130,7 @@ export function LoopStrip() {
           <motion.span
             key={trip.key}
             aria-hidden
-            className={cn("pointer-events-none absolute left-0 size-2 rounded-full bg-lichen", trip.back ? "bottom-[4px]" : "top-[5px]")}
+            className={cn("pointer-events-none absolute left-0 z-10 size-2 rounded-full bg-forest", trip.back ? "bottom-[4px]" : "top-[28px]")}
             initial={{ x: fromX - 4, opacity: 0 }}
             animate={{ x: toX - 4, opacity: [0, 1, 1, 0] }}
             transition={{ duration: trip.back ? 1.6 : 0.9, ease: [0.22, 1, 0.36, 1], opacity: { duration: trip.back ? 1.6 : 0.9, times: [0, 0.1, 0.8, 1] } }}
@@ -140,3 +140,4 @@ export function LoopStrip() {
     </div>
   );
 }
+

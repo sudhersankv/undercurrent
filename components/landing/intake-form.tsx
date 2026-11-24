@@ -109,39 +109,42 @@ export function IntakeForm() {
   };
 
   const field =
-    "w-full rounded-control border border-hairline-strong bg-recessed px-3 text-[14px] text-strong placeholder:text-muted transition-colors hover:border-[rgba(244,250,245,0.24)] focus-visible:border-lichen focus-visible:outline-none";
+    "w-full rounded-card border border-hairline-strong bg-paper px-4 text-[15px] text-strong placeholder:text-pebble transition-colors hover:border-forest/60 focus:border-forest focus:outline-none focus-visible:outline-none";
+  const label = "text-[13px] font-semibold text-strong";
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex w-full max-w-[520px] flex-col gap-3" aria-describedby={error ? `${id}-err` : undefined}>
-      <label htmlFor={`${id}-url`} className="eyebrow">
-        Company URL <span className="normal-case tracking-normal text-muted/70">optional</span>
-      </label>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input
-          id={`${id}-url`}
-          type="url"
-          inputMode="url"
-          autoComplete="url"
-          spellCheck={false}
-          placeholder="https://yourtool.dev"
-          value={f.url}
-          onChange={set("url")}
-          className={cn(field, "h-11 font-mono text-[13px]")}
-        />
-        <Button type="submit" variant="cta" size="lg" disabled={busy} className="h-11 shrink-0 sm:w-auto">
-          {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          Send Sonar
-          {busy ? null : <ArrowRight aria-hidden />}
-        </Button>
+    <form onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-4" aria-describedby={error ? `${id}-err` : undefined}>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={`${id}-url`} className={label}>
+          Company URL <span className="font-normal text-muted">(optional)</span>
+        </label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            id={`${id}-url`}
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            spellCheck={false}
+            placeholder="https://yourtool.dev"
+            value={f.url}
+            onChange={set("url")}
+            className={cn(field, "h-12 min-w-0 font-mono text-[14px]")}
+          />
+          <Button type="submit" variant="cta" size="lg" disabled={busy} className="w-full shrink-0 sm:w-auto">
+            {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
+            Send Sonar
+            {busy ? null : <ArrowRight aria-hidden />}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
           type="button"
           onClick={() => setMore((m) => !m)}
           aria-expanded={more}
           aria-controls={`${id}-more`}
-          className="inline-flex h-7 items-center gap-1 rounded-control text-[13px] text-body transition-colors hover:text-strong"
+          className="inline-flex h-8 items-center gap-1 rounded-pill text-[14px] font-semibold text-forest underline decoration-[1.5px] underline-offset-4 transition-colors hover:decoration-2"
         >
           Tell us more
           <ChevronDown className={cn("size-4 transition-transform duration-200", more && "rotate-180")} aria-hidden />
@@ -149,49 +152,49 @@ export function IntakeForm() {
         <button
           type="button"
           onClick={fillLichen}
-          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-lichen/35 px-3 text-[12px] font-medium text-lichen transition-colors hover:border-lichen/70 hover:bg-lichen/10"
+          className="inline-flex h-8 items-center gap-2 rounded-pill bg-linen px-3.5 text-[13px] font-semibold text-forest transition-colors hover:bg-raised"
         >
-          <span className="size-1.5 rounded-full bg-lichen" aria-hidden />
+          <span className="size-1.5 rounded-full bg-forest" aria-hidden />
           Try with Lichen
         </button>
       </div>
 
       {more ? (
-        <div id={`${id}-more`} className="mt-1 grid grid-cols-1 gap-3 rounded-card border border-hairline bg-raised/60 p-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label htmlFor={`${id}-notes`} className="eyebrow">
+        <div id={`${id}-more`} className="grid grid-cols-1 gap-4 border-t border-hairline pt-5 sm:grid-cols-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <label htmlFor={`${id}-notes`} className={label}>
               What it does
             </label>
-            <textarea id={`${id}-notes`} rows={4} value={f.notes} onChange={set("notes")} placeholder="Product, who buys today, how it's priced" className={cn(field, "resize-y py-2 leading-relaxed")} />
+            <textarea id={`${id}-notes`} rows={4} value={f.notes} onChange={set("notes")} placeholder="Product, who buys today, how it's priced" className={cn(field, "resize-y py-3 leading-relaxed")} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-users`} className="eyebrow">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-users`} className={label}>
               Target users
             </label>
-            <input id={`${id}-users`} value={f.targetUsers} onChange={set("targetUsers")} placeholder="Voice-agent teams" className={cn(field, "h-9")} />
+            <input id={`${id}-users`} value={f.targetUsers} onChange={set("targetUsers")} placeholder="Voice-agent teams" className={cn(field, "h-12")} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-pricing`} className="eyebrow">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-pricing`} className={label}>
               Pricing
             </label>
-            <input id={`${id}-pricing`} value={f.pricingNotes} onChange={set("pricingNotes")} placeholder="Free tier + usage" className={cn(field, "h-9")} />
+            <input id={`${id}-pricing`} value={f.pricingNotes} onChange={set("pricingNotes")} placeholder="Free tier + usage" className={cn(field, "h-12")} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-customers`} className="eyebrow">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-customers`} className={label}>
               Known customers
             </label>
-            <input id={`${id}-customers`} value={f.knownCustomers} onChange={set("knownCustomers")} placeholder="Comma separated" className={cn(field, "h-9")} />
+            <input id={`${id}-customers`} value={f.knownCustomers} onChange={set("knownCustomers")} placeholder="Comma separated" className={cn(field, "h-12")} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-avoid`} className="eyebrow">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-avoid`} className={label}>
               Avoid
             </label>
-            <input id={`${id}-avoid`} value={f.avoid} onChange={set("avoid")} placeholder="Markets to skip" className={cn(field, "h-9")} />
+            <input id={`${id}-avoid`} value={f.avoid} onChange={set("avoid")} placeholder="Markets to skip" className={cn(field, "h-12")} />
           </div>
         </div>
       ) : null}
 
-      <p id={`${id}-err`} role="alert" className={cn("min-h-5 text-[13px] text-danger", !error && "invisible")}>
+      <p id={`${id}-err`} role="alert" className={cn("-mt-1 min-h-5 text-[13px] font-medium text-danger", !error && "invisible")}>
         {error ?? " "}
       </p>
     </form>

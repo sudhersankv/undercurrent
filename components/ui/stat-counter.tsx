@@ -16,7 +16,7 @@ export interface StatCounterProps {
   className?: string;
 }
 
-/** Animated tabular number with optional eyebrow label. Lichen-lime when `accent`. */
+/** Animated tabular number with optional eyebrow label. Forest when `accent`, obsidian otherwise. */
 export function StatCounter({ value, label, decimals = 0, prefix = "", suffix = "", size = "md", accent = true, className }: StatCounterProps) {
   const reduce = useReducedMotion();
   const mv = useMotionValue(value);
@@ -37,11 +37,11 @@ export function StatCounter({ value, label, decimals = 0, prefix = "", suffix = 
       {label ? <span className="eyebrow">{label}</span> : null}
       <span
         className={cn(
-          "font-mono tabular font-medium tracking-tight",
-          accent ? "text-lichen" : "text-strong",
-          size === "sm" && "text-base",
-          size === "md" && "text-2xl",
-          size === "lg" && "text-5xl tracking-[-0.04em]",
+          "tabular font-bold leading-none tracking-[-0.02em]",
+          accent ? "text-forest" : "text-strong",
+          size === "sm" && "text-base font-semibold tracking-normal",
+          size === "md" && "text-[28px]",
+          size === "lg" && "text-5xl tracking-[-0.03em]",
         )}
       >
         {prefix}

@@ -77,9 +77,9 @@ export function SegmentDrawer({ runId, store, segmentId, onClose }: SegmentDrawe
   return (
     <Dialog.Root open={!!seg} onOpenChange={(o) => (!o ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-recessed/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-obsidian/25 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
-          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col border-l border-hairline-strong bg-canvas outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-right-8 data-[state=open]:fade-in-0"
+          className="fixed inset-y-3 right-3 z-50 flex w-[calc(100%-1.5rem)] max-w-[480px] flex-col overflow-hidden rounded-large border border-hairline bg-paper shadow-float outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-right-8 data-[state=open]:fade-in-0"
           aria-describedby={undefined}
         >
           {seg ? <DrawerBody key={seg.id} runId={runId} store={store} segmentId={seg.id} /> : null}
@@ -133,30 +133,35 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
 
   return (
     <>
-      <header className="flex items-start gap-3 border-b border-hairline p-5">
-        <div className="min-w-0 flex-1">
-          <Eyebrow>
+      <header className="border-b border-hairline p-6">
+        <div className="flex items-center gap-3">
+          <VerdictChip verdict={seg.verdict} />
+          <Eyebrow className="min-w-0 flex-1 truncate">
             {ORIGIN[seg.origin]} · Round {seg.round}
             {parent ? ` · from ${parent.name}` : ""}
           </Eyebrow>
-          <Dialog.Title className="mt-1.5 text-xl font-medium leading-tight tracking-[-0.02em] text-strong">{seg.name}</Dialog.Title>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <VerdictChip verdict={seg.verdict} />
-            <Stat label="Swarm" value={seg.simInterest} />
-            <Stat label="World" value={seg.evidenceStrength ?? seg.runningStrength} />
+          <Dialog.Close asChild>
+            <Button variant="raised" size="icon" aria-label="Close" className="-mr-1 shrink-0">
+              <X />
+            </Button>
+          </Dialog.Close>
+        </div>
+        <Dialog.Title className="mt-3 text-2xl font-bold leading-tight tracking-[-0.02em] text-strong">{seg.name}</Dialog.Title>
+        <div className="mt-5 flex items-end gap-6">
+          <div>
+            <p className="text-xs font-semibold text-muted">Evidence strength</p>
+            <p className="tabular mt-0.5 text-[44px] font-bold leading-none tracking-[-0.03em] text-strong">{(seg.evidenceStrength ?? seg.runningStrength).toFixed(2)}</p>
+          </div>
+          <div className="flex flex-col gap-1 pb-1">
+            <Stat label="Swarm" value={seg.simInterest} simulated />
             <span className="text-xs text-muted">
-              <span className="font-mono text-strong">{evidence.length}</span> evidence
+              <span className="tabular font-semibold text-strong">{evidence.length}</span> evidence
             </span>
           </div>
         </div>
-        <Dialog.Close asChild>
-          <Button variant="ghost" size="icon" aria-label="Close">
-            <X />
-          </Button>
-        </Dialog.Close>
       </header>
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-5">
+      <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <Section title="Mechanism">
           <p className="text-[14px] leading-relaxed text-strong">{seg.mechanism.pain}</p>
           <p className="mt-1 font-mono text-[11px] text-muted">{seg.mechanism.capabilityId}</p>
@@ -187,26 +192,19 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
               {evidence.map((e) => {
                 const Icon = SOURCE_ICON[e.source] ?? FileText;
                 return (
-                  <li key={e.id} className="rounded-control border border-hairline bg-recessed p-3">
-                    <div className="flex items-center gap-2 text-[11px] text-muted">
-                      <Icon className="size-3.5 shrink-0" />
+                  <li key={e.id} className="rounded-card bg-recessed p-4">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                      <Icon className="size-3.5 shrink-0 text-forest" />
                       <span>{SOURCE_LABEL[e.source]}</span>
-                      <span
-                        className={cn(
-                          "ml-auto rounded-full border px-1.5 font-mono text-[10px] uppercase tracking-[0.08em]",
-                          e.stance === "supports" && "border-lichen/40 text-lichen",
-                          e.stance === "contradicts" && "border-danger/40 text-danger",
-                          e.stance === "neutral" && "border-hairline-strong text-muted",
-                        )}
-                      >
+                      <Pill tone={e.stance === "supports" ? "lichen" : e.stance === "contradicts" ? "warning" : "neutral"} className="ml-auto font-semibold capitalize">
                         {e.stance}
-                      </span>
+                      </Pill>
                     </div>
-                    <a href={e.url} target="_blank" rel="noopener noreferrer" className="mt-1.5 block text-[13px] font-medium text-strong hover:text-lichen">
+                    <a href={e.url} target="_blank" rel="noopener noreferrer" className="mt-2 block text-[14px] font-semibold leading-snug text-strong hover:underline hover:decoration-forest hover:underline-offset-4">
                       {e.title}
                     </a>
-                    <blockquote className="mt-1.5 border-l border-hairline-strong pl-2.5 text-[13px] leading-relaxed text-body">{e.quote}</blockquote>
-                    <a href={e.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] text-muted hover:text-lichen">
+                    <blockquote className="mt-2 border-l-2 border-forest/25 pl-3 text-[13px] leading-relaxed text-body">{e.quote}</blockquote>
+                    <a href={e.url} target="_blank" rel="noopener noreferrer" className="link-underline mt-3 inline-flex items-center gap-1 text-xs">
                       {linkLabel(e.url)}
                       <ExternalLink className="size-3" />
                     </a>
@@ -225,12 +223,12 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
               {personas.map((p) => {
                 const r = store.reactions[p.id];
                 return (
-                  <li key={p.id} className="rounded-control border border-hairline bg-raised p-3">
+                  <li key={p.id} className="rounded-card border border-dashed border-hairline-strong bg-paper p-4">
                     <div className="flex items-center gap-2">
-                      <p className="flex-1 truncate text-[13px] font-medium text-strong">{p.label}</p>
+                      <p className="flex-1 truncate text-[13px] font-semibold text-strong">{p.label}</p>
                       {r ? (
-                        <span className="font-mono text-[11px] text-muted">
-                          try <span className="text-body">{r.wouldTry.toFixed(2)}</span> · pay <span className="text-body">{r.wouldPay.toFixed(2)}</span>
+                        <span className="tabular text-xs text-muted">
+                          try <span className="font-semibold text-strong">{r.wouldTry.toFixed(2)}</span> · pay <span className="font-semibold text-strong">{r.wouldPay.toFixed(2)}</span>
                         </span>
                       ) : null}
                     </div>
@@ -248,14 +246,14 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
         </Section>
       </div>
 
-      <footer className="border-t border-hairline p-4">
+      <footer className="border-t border-hairline px-6 py-4">
         {messages.length ? (
           <ul className="mb-3 space-y-1 text-xs" aria-live="polite">
             {messages.map(([k, a]) => (
               <li key={k} className={cn(a.status === "error" ? "text-danger" : a.status === "ok" ? "text-lichen" : "text-muted")}>
                 {a.text}
                 {a.href ? (
-                  <a href={a.href} target="_blank" rel="noopener noreferrer" className="ml-2 underline">
+                  <a href={a.href} target="_blank" rel="noopener noreferrer" className="link-underline ml-2">
                     Open
                   </a>
                 ) : null}
@@ -263,17 +261,17 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
             ))}
           </ul>
         ) : null}
-        <div className="grid grid-cols-2 gap-2">
-          <Button disabled={actions.sounding.status === "busy"} onClick={() => chat("sounding", "Sounding", `@Sounding dig deeper on "${seg.name}"`)}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="cta" disabled={actions.sounding.status === "busy"} onClick={() => chat("sounding", "Sounding", `@Sounding dig deeper on "${seg.name}"`)}>
             Dig deeper
           </Button>
-          <Button disabled={actions.swarm.status === "busy"} onClick={() => chat("swarm", "Swarm", `@Swarm explore neighbors of "${seg.name}"`)}>
+          <Button variant="outline" disabled={actions.swarm.status === "busy"} onClick={() => chat("swarm", "Swarm", `@Swarm explore neighbors of "${seg.name}"`)}>
             Explore neighbors
           </Button>
-          <Button disabled={actions.pilot.status === "busy"} onClick={() => chat("pilot", "Pilot", `@Pilot find people in "${seg.name}"`)}>
+          <Button variant="outline" disabled={actions.pilot.status === "busy"} onClick={() => chat("pilot", "Pilot", `@Pilot find people in "${seg.name}"`)}>
             Find people
           </Button>
-          <Button variant="outline" disabled={actions.report.status === "busy"} onClick={report}>
+          <Button variant="link" className="ml-auto" disabled={actions.report.status === "busy"} onClick={report}>
             <FileText />
             Full report
           </Button>
@@ -283,10 +281,11 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | null | undefined }) {
+function Stat({ label, value, simulated }: { label: string; value: number | null | undefined; simulated?: boolean }) {
   return (
-    <span className="text-xs text-muted">
-      {label} <span className="font-mono text-strong">{value == null ? "–" : value.toFixed(2)}</span>
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+      {label} <span className="tabular font-semibold text-strong">{value == null ? "–" : value.toFixed(2)}</span>
+      {simulated ? <Pill tone="muted">Simulated</Pill> : null}
     </span>
   );
 }
@@ -294,9 +293,9 @@ function Stat({ label, value }: { label: string; value: number | null | undefine
 function Section({ title, count, badge, children }: { title: string; count?: number; badge?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section>
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         <Eyebrow as="h2">{title}</Eyebrow>
-        {count != null ? <span className="font-mono text-[11px] text-muted">{count}</span> : null}
+        {count != null ? <span className="tabular rounded-pill bg-raised px-2 text-[11px] font-semibold text-charcoal">{count}</span> : null}
         {badge ? <span className="ml-auto">{badge}</span> : null}
       </div>
       {children}

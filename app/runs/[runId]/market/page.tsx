@@ -7,7 +7,7 @@ export default function MarketPage() {
     <main className="flex h-full min-h-[560px] flex-col gap-3 p-4 md:p-6">
       <header>
         <Eyebrow>Discovery</Eyebrow>
-        <h1 className="mt-1 text-[22px]">Markets you&apos;re not selling to yet</h1>
+        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.02em] md:text-[32px]">Markets you&apos;re not selling to yet</h1>
       </header>
       <div className="min-h-[480px] flex-1">
         <MapSlot />

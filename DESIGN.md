@@ -13,7 +13,7 @@ Tokens live in `app/globals.css`. Primitives live in `components/ui/*`. Use them
 | `bg-raised` / `bg-fog` | `#e8ebe6` | Fog: section bands, toolbar chips, inactive segments |
 | `bg-raised-hover` / `bg-linen` | `#e2f6d5` | Linen Mist: hover, selected rows, soft highlight |
 | `bg-lime` | `#9fe870` | Primary CTA fill and the ONE active state per section |
-| `bg-forest` | `#163300` | Inverted sections, dark cards, the mission header |
+| `bg-forest` | `#163300` | Inverted sections, dark CTA cards (the app top nav stays white) |
 | `bg-spruce` | `#054d28` | Card surfaces inside forest sections |
 | `text-strong` | `#0e0f0c` | Headings, key numbers |
 | `text-body` | `#454745` | Body copy |

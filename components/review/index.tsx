@@ -10,7 +10,7 @@ export { ReviewQueue } from "./review-queue";
 export { DraftCard } from "./draft-card";
 
 const tab =
-  "h-8 rounded-control px-3 text-[13px] text-body transition-colors hover:text-strong data-[state=active]:bg-raised data-[state=active]:text-strong";
+  "inline-flex h-8 items-center rounded-pill px-3 text-sm font-semibold text-charcoal transition-colors hover:bg-paper data-[state=active]:bg-lime data-[state=active]:text-forest";
 
 /** Review page body: HITL queue + campaign tab, driven by the run stream. */
 export function ReviewScreen({ runId }: { runId: string }) {
@@ -18,13 +18,13 @@ export function ReviewScreen({ runId }: { runId: string }) {
   const pending = Object.values(store.drafts).filter((d) => d.status === "pending_review").length;
   const campaigns = Object.keys(store.campaigns).length;
   return (
-    <Tabs.Root defaultValue="queue" className="flex flex-col gap-4">
-      <Tabs.List aria-label="Review" className="flex items-center gap-1">
+    <Tabs.Root defaultValue="queue" className="flex flex-col gap-5">
+      <Tabs.List aria-label="Review" className="inline-flex items-center gap-1 self-start rounded-pill bg-raised p-1">
         <Tabs.Trigger value="queue" className={tab}>
-          Queue {pending ? <span className="ml-1 font-mono text-lichen">{pending}</span> : null}
+          Queue {pending ? <span className="ml-1.5 tabular">{pending}</span> : null}
         </Tabs.Trigger>
         <Tabs.Trigger value="campaign" className={tab}>
-          Campaign {campaigns ? <span className="ml-1 font-mono text-muted">{campaigns}</span> : null}
+          Campaign {campaigns ? <span className="ml-1.5 tabular opacity-70">{campaigns}</span> : null}
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="queue" forceMount className="outline-none data-[state=inactive]:hidden">

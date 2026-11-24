@@ -1,20 +1,23 @@
 import type { EdgeType, GraphEdge, GraphNode, NodeLabel } from "@/lib/graph/types";
 import type { RunStore } from "@/lib/client/run-store";
 
-/** Node colors by label, all drawn from the forest + lichen token palette. */
+/**
+ * Node colors by label for the light canvas. Lime is deliberately absent: on the chart it only appears
+ * as the fill of Sounding-verified segments (segments are filled by verdict, see force-canvas).
+ */
 export const LABEL_COLOR: Record<NodeLabel, string> = {
-  Company: "#F4FAF5", // text-strong
-  Product: "#F4FAF5",
-  Capability: "#CFF5D6", // cta-via
-  Competitor: "#D9A08F", // danger / hype
-  Segment: "#D8F5A2", // lichen
-  Persona: "#6F7F74", // muted
-  Evidence: "#E9DDB0", // promising
-  Person: "#F1E6FF", // cta-to
-  Repo: "#B3C4B8", // text-body
-  Tech: "#B3C4B8",
-  Draft: "#2E7D4F", // cta-from
-  Outcome: "#D8F5A2",
+  Company: "#163300", // forest
+  Product: "#163300",
+  Capability: "#0B4C72", // signal blue
+  Competitor: "#F2A295", // coral (hype)
+  Segment: "#054D28", // spruce ring; fill follows verdict
+  Persona: "#C9CDC5", // fog grey, simulated
+  Evidence: "#454745", // charcoal
+  Person: "#A0E1E1", // bright blue
+  Repo: "#868685", // pebble
+  Tech: "#868685",
+  Draft: "#FFD7EF", // bright pink
+  Outcome: "#260A2F", // dark purple
 };
 
 export const LABEL_SIZE: Partial<Record<NodeLabel, number>> = { Company: 7, Segment: 6, Person: 4.5, Capability: 4.5, Competitor: 4, Evidence: 3, Persona: 2.5 };

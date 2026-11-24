@@ -92,7 +92,7 @@ export function DeptGlyph({ dept, size = 16, className, ...props }: DeptGlyphPro
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.25"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       role="img"
@@ -108,8 +108,8 @@ export function DeptGlyph({ dept, size = 16, className, ...props }: DeptGlyphPro
 /** Glyph + label, e.g. in the loop strip or feed. */
 export function DeptLabel({ dept, className, children }: { dept: EventDept; className?: string; children?: React.ReactNode }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-[13px] text-strong", className)}>
-      <DeptGlyph dept={dept} />
+    <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-semibold text-strong", className)}>
+      <DeptGlyph dept={dept} className="text-forest" />
       {children ?? LABELS[dept]}
     </span>
   );

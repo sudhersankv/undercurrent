@@ -55,25 +55,31 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-4 md:px-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-6 md:px-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow className="flex items-center gap-2">
             Accounts & People
-            <span className={cn("size-1.5 rounded-full", connected ? "bg-lichen" : "bg-muted")} title={connected ? "Live" : "Disconnected"} />
+            <span className={cn("size-1.5 rounded-full", connected ? "bg-forest" : "bg-pebble")} title={connected ? "Live" : "Disconnected"} />
           </Eyebrow>
-          <h1 className="mt-1 text-[22px]">
-            {rows.length} people <span className="text-muted">·</span> <span className="text-body">{tierA} tier A</span> <span className="text-muted">·</span>{" "}
-            <span className="text-body">{approved} in motion</span>
+          <h1 className="mt-1.5 text-[28px] font-bold tracking-[-0.02em]">
+            <span className="tabular">{rows.length}</span> people <span className="font-normal text-pebble">·</span>{" "}
+            <span className="font-semibold text-charcoal">
+              <span className="tabular">{tierA}</span> tier A
+            </span>{" "}
+            <span className="font-normal text-pebble">·</span>{" "}
+            <span className="font-semibold text-charcoal">
+              <span className="tabular">{approved}</span> in motion
+            </span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
           {message && (
-            <span role="status" className="text-[12px] text-body">
+            <span role="status" className="rounded-pill bg-linen px-3 py-1 text-[13px] font-medium text-forest">
               {message}
             </span>
           )}
-          <div role="radiogroup" aria-label="View" className="flex rounded-control border border-hairline bg-recessed p-0.5">
+          <div role="radiogroup" aria-label="View" className="flex rounded-pill bg-raised p-1">
             {(["people", "accounts"] as const).map((v) => (
               <button
                 key={v}
@@ -81,7 +87,7 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
                 role="radio"
                 aria-checked={view === v}
                 onClick={() => setView(v)}
-                className={cn("h-7 rounded-[4px] px-3 text-[13px] capitalize", view === v ? "bg-raised-hover text-strong" : "text-muted hover:text-body")}
+                className={cn("h-8 rounded-pill px-3 text-sm font-semibold capitalize transition-colors", view === v ? "bg-lime text-forest" : "text-charcoal hover:bg-paper")}
               >
                 {v}
               </button>
@@ -92,7 +98,7 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
 
       {view === "people" ? <FunnelStrip rows={rows} /> : null}
 
-      <div className={cn("grid items-start gap-3", selected && "lg:grid-cols-[minmax(0,1fr)_440px]")}>
+      <div className={cn("grid items-start gap-4", selected && "lg:grid-cols-[minmax(0,1fr)_420px]")}>
         <div className="min-w-0">
           {view === "people" ? (
             <LeadGrid rows={rows} store={store} selectedId={selectedId} onSelect={setSelectedId} />

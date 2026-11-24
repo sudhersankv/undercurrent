@@ -139,7 +139,6 @@
   letter-spacing: -0.03em;
   line-height: 0.88;
   text-transform: uppercase;
-  color: var(--color-obsidian);
 }
 
 @utility eyebrow {

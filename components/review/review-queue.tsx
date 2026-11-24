@@ -224,7 +224,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   }, []);
 
   const tabBar = (
-    <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Channel">
+    <div className="inline-flex max-w-full flex-wrap items-center gap-1 self-start rounded-pill bg-raised p-1" role="tablist" aria-label="Channel">
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -237,13 +237,20 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
             setEditing(false);
           }}
           className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-control px-3 text-[13px] transition-colors",
-            t.id === activeTab ? "bg-raised text-strong" : t.total ? "text-body hover:bg-raised hover:text-strong" : "text-muted hover:bg-raised",
+            "inline-flex h-8 items-center gap-1.5 rounded-pill px-3 text-sm font-semibold transition-colors",
+            t.id === activeTab ? "bg-paper text-forest ring-1 ring-hairline" : t.total ? "text-charcoal hover:bg-paper" : "text-muted hover:bg-paper",
           )}
         >
-          <ChannelGlyph channel={t.channels[0]} size={12} className={t.id === activeTab ? "text-strong" : "text-muted"} />
+          <ChannelGlyph channel={t.channels[0]} size={12} className={t.id === activeTab ? "text-forest" : "text-muted"} />
           {t.label}
-          <span className={cn("font-mono text-[11px] tabular-nums", t.pending ? "text-lichen" : "text-muted")}>{t.pending || t.total}</span>
+          <span
+            className={cn(
+              "inline-flex h-5 min-w-5 items-center justify-center rounded-pill px-1.5 text-[11px] tabular",
+              t.pending ? "bg-forest text-lime" : "text-muted",
+            )}
+          >
+            {t.pending || t.total}
+          </span>
         </button>
       ))}
     </div>
@@ -252,17 +259,17 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   if (!cur) {
     if (all.length)
       return (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {tabBar}
-          <div className="rounded-card border border-hairline bg-recessed p-10 text-center">
-            <p className="text-[15px] text-strong">No drafts on this channel.</p>
+          <div className="rounded-large bg-recessed p-10 text-center">
+            <p className="text-[16px] font-semibold text-strong">No drafts on this channel.</p>
           </div>
         </div>
       );
     return (
-      <div className="rounded-card border border-hairline bg-recessed p-10 text-center">
-        <p className="text-[15px] text-strong">No drafts yet.</p>
-        <p className="mt-1 text-[13px] text-muted">Tide drafts appear here once leads are approved.</p>
+      <div className="rounded-large bg-recessed p-10 text-center">
+        <p className="text-[16px] font-semibold text-strong">No drafts yet.</p>
+        <p className="mt-1 text-[14px] text-muted">Tide drafts appear here once leads are approved.</p>
       </div>
     );
   }
@@ -274,12 +281,12 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   const pending = drafts.filter((d) => d.status === "pending_review").length;
 
   return (
-    <div ref={rootRef} className="space-y-4">
+    <div ref={rootRef} className="flex flex-col gap-4">
     {tabBar}
-    <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-      <nav aria-label="Drafts" className="flex flex-col gap-1">
-        <p className="eyebrow mb-1 px-2">
-          <span className="font-mono text-body">{pending}</span> to review
+    <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+      <nav aria-label="Drafts" className="flex flex-col gap-0.5">
+        <p className="mb-2 px-3 text-[13px] text-muted">
+          <span className="tabular text-[15px] font-bold text-strong">{pending}</span> to review
         </p>
         {drafts.map((d, k) => {
           const l = store.leads[d.leadId];
@@ -290,16 +297,16 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
               onClick={() => move(k - i)}
               aria-current={k === i}
               className={cn(
-                "flex flex-col gap-1 rounded-control border px-2.5 py-2 text-left transition-colors",
-                k === i ? "border-hairline-strong bg-raised" : "border-transparent hover:bg-raised",
+                "flex flex-col gap-1 rounded-card px-3 py-2.5 text-left transition-colors",
+                k === i ? "bg-linen" : "hover:bg-linen/50",
               )}
             >
               <span className="flex items-center gap-2">
-                <span className="flex-1 truncate text-[13px] text-strong">{l?.displayName ?? "Lead"}</span>
-                <span className="font-mono text-[11px] text-muted">{d.review.specificity}</span>
+                <span className={cn("flex-1 truncate text-[14px] text-strong", k === i ? "font-semibold" : "font-medium")}>{l?.displayName ?? "Lead"}</span>
+                <span className="font-mono text-[11px] text-muted tabular">{d.review.specificity}</span>
               </span>
               <span className="flex items-center gap-2">
-                <span className="flex-1 truncate text-[11px] text-muted">{d.subject ?? d.body.split("\n")[0]}</span>
+                <span className="flex-1 truncate text-[12px] text-muted">{d.subject ?? d.body.split("\n")[0]}</span>
                 <StatusPill status={d.status} />
               </span>
             </button>
@@ -338,12 +345,12 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
           onRegenOpen={setRegenOpen}
           onPosted={posted}
         />
-        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 text-[12px] text-muted">
           <Kbd k="A">approve</Kbd>
           <Kbd k="E">edit</Kbd>
           <Kbd k="R">reject</Kbd>
           <Kbd k="J / K">next, prev</Kbd>
-          <span className="ml-auto font-mono">
+          <span className="ml-auto tabular font-medium text-charcoal">
             {i + 1} / {drafts.length}
           </span>
         </p>
@@ -356,7 +363,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
 function Kbd({ k, children }: { k: string; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <kbd className="rounded-[4px] border border-hairline-strong px-1 font-mono text-[10px] text-body">{k}</kbd>
+      <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-hairline-strong bg-paper px-1.5 font-mono text-[10.5px] font-medium text-charcoal">{k}</kbd>
       {children}
     </span>
   );

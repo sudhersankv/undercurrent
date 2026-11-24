@@ -87,40 +87,42 @@ export function WakePanel({ runId, store: external, className }: { runId: string
   const utmMax = Math.max(1, ...utm.map((u) => u.clicks));
 
   return (
-    <section aria-label="Wake" className={cn("rounded-card border border-hairline bg-recessed", className)}>
-      <header className="flex items-center justify-between border-b border-hairline px-4 py-3">
-        <span className="flex items-center gap-2 text-[13px] text-strong">
-          <DeptGlyph dept="wake" />
+    <section aria-label="Wake" className={cn("overflow-hidden rounded-card border border-hairline bg-paper", className)}>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
+        <span className="flex items-center gap-2.5 text-[16px] font-semibold text-strong">
+          <span className="inline-flex size-9 items-center justify-center rounded-full bg-raised text-forest">
+            <DeptGlyph dept="wake" />
+          </span>
           Wake
         </span>
         {calib && (
           <span className="flex items-baseline gap-2">
             <span className="eyebrow">Calibration error</span>
-            <span className="font-mono text-[15px] text-lichen">{calib.globalError.toFixed(2)}</span>
+            <span className="tabular text-[22px] font-bold tracking-[-0.02em] text-strong">{calib.globalError.toFixed(2)}</span>
           </span>
         )}
       </header>
 
       <div className="grid gap-px bg-hairline md:grid-cols-2">
         {/* Replies */}
-        <div className="bg-recessed p-4">
-          <Eyebrow className="mb-2">Replies</Eyebrow>
+        <div className="bg-paper p-5">
+          <Eyebrow className="mb-3">Replies</Eyebrow>
           {replies.length === 0 ? (
-            <p className="text-[13px] text-muted">No replies yet.</p>
+            <p className="text-[14px] text-muted">No replies yet.</p>
           ) : (
-            <ol className="relative space-y-3 border-l border-hairline pl-4">
+            <ol className="relative space-y-4 border-l-2 border-linen pl-4">
               {replies.map(({ r, at }) => (
                 <li key={r.draftId + r.leadId} className="relative">
-                  <span className="absolute -left-[19.5px] top-1.5 size-1.5 rounded-full bg-lichen" aria-hidden />
+                  <span className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-forest" aria-hidden />
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] text-strong">{leadName(r.leadId)}</span>
+                    <span className="text-[14px] font-semibold text-strong">{leadName(r.leadId)}</span>
                     <Pill tone={INTENT[r.intent].tone}>{INTENT[r.intent].label}</Pill>
-                    {at && <span className="font-mono text-[11px] text-muted">{clock(at)}</span>}
+                    {at && <span className="ml-auto font-mono text-[11px] text-muted tabular">{clock(at)}</span>}
                   </div>
-                  <p className="mt-0.5 text-[12.5px] text-body">{r.summary}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-body">{r.summary}</p>
                   {r.referredPerson && (
-                    <p className="mt-0.5 text-[12px] text-muted">
-                      Referred to <span className="text-strong">{r.referredPerson.name}</span>
+                    <p className="mt-1 text-[13px] text-muted">
+                      Referred to <span className="font-semibold text-strong">{r.referredPerson.name}</span>
                       {r.referredPerson.role ? `, ${r.referredPerson.role}` : ""}
                     </p>
                   )}
@@ -131,21 +133,23 @@ export function WakePanel({ runId, store: external, className }: { runId: string
         </div>
 
         {/* Follow-ups */}
-        <div className="bg-recessed p-4">
-          <Eyebrow className="mb-2">Follow-ups</Eyebrow>
+        <div className="bg-paper p-5">
+          <Eyebrow className="mb-3">Follow-ups</Eyebrow>
           {followups.length === 0 ? (
-            <p className="text-[13px] text-muted">None scheduled.</p>
+            <p className="text-[14px] text-muted">None scheduled.</p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className="divide-y divide-hairline">
               {followups.map((f) => {
                 const left = Date.parse(f.dueAt) - now;
                 return (
-                  <li key={f.id} className="flex items-center justify-between gap-3 rounded-control border border-hairline px-2.5 py-1.5">
-                    <span className="truncate text-[13px] text-body">{leadName(f.leadId)}</span>
+                  <li key={f.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                    <span className="truncate text-[14px] font-medium text-charcoal">{leadName(f.leadId)}</span>
                     {f.cancelled ? (
-                      <span className="text-[12px] text-muted">Replied, cancelled</span>
+                      <span className="text-[13px] text-muted">Replied, cancelled</span>
+                    ) : left <= 0 ? (
+                      <Pill tone="warning" className="font-semibold">{countdown(left)}</Pill>
                     ) : (
-                      <span className={cn("font-mono text-[13px]", left <= 0 ? "text-verdict-promising" : "text-strong")}>{countdown(left)}</span>
+                      <span className="tabular text-[14px] font-semibold text-strong">{countdown(left)}</span>
                     )}
                   </li>
                 );
@@ -155,34 +159,34 @@ export function WakePanel({ runId, store: external, className }: { runId: string
         </div>
 
         {/* Calibration */}
-        <div className="overflow-x-auto bg-recessed p-4">
-          <Eyebrow className="mb-2">Calibration</Eyebrow>
+        <div className="overflow-x-auto bg-paper p-5">
+          <Eyebrow className="mb-3">Calibration</Eyebrow>
           {calRows.length === 0 ? (
-            <p className="text-[13px] text-muted">Needs replies first.</p>
+            <p className="text-[14px] text-muted">Needs replies first.</p>
           ) : (
-            <table className="w-full min-w-[420px] text-[12.5px]">
+            <table className="w-full min-w-[420px] text-[13px]">
               <thead>
                 <tr className="border-b border-hairline text-left">
-                  <th className="eyebrow pb-1.5 font-normal">Segment</th>
-                  <th className="eyebrow pb-1.5 text-right font-normal">Pred.</th>
-                  <th className="eyebrow pb-1.5 text-right font-normal">Obs.</th>
-                  <th className="eyebrow pb-1.5 text-right font-normal">n</th>
-                  <th className="eyebrow pb-1.5 text-right font-normal">Factor</th>
+                  <th className="pb-2 text-[12px] font-semibold text-muted">Segment</th>
+                  <th className="pb-2 text-right text-[12px] font-semibold text-muted">Pred.</th>
+                  <th className="pb-2 text-right text-[12px] font-semibold text-muted">Obs.</th>
+                  <th className="pb-2 text-right text-[12px] font-semibold text-muted">n</th>
+                  <th className="pb-2 text-right text-[12px] font-semibold text-muted">Factor</th>
                 </tr>
               </thead>
               <tbody>
                 {calRows.map((c) => (
-                  <tr key={c.segmentId} className="border-b border-hairline last:border-b-0">
-                    <td className="py-2 pr-2">
+                  <tr key={c.segmentId} className="border-b border-hairline transition-colors last:border-b-0 hover:bg-linen/50">
+                    <td className="py-2.5 pr-2">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-strong">{segName(c.segmentId)}</span>
+                        <span className="font-medium text-strong">{segName(c.segmentId)}</span>
                         {c.n < SMALL_SAMPLE && <Pill tone="warning">small sample</Pill>}
                       </span>
                     </td>
-                    <td className="py-2 text-right font-mono">{c.predicted.toFixed(2)}</td>
-                    <td className="py-2 text-right font-mono text-strong">{c.observedRate.toFixed(2)}</td>
-                    <td className="py-2 text-right font-mono">{c.n}</td>
-                    <td className={cn("py-2 text-right font-mono", c.factor > 1 ? "text-lichen" : c.factor < 1 ? "text-verdict-hype" : "text-body")}>×{c.factor.toFixed(2)}</td>
+                    <td className="py-2.5 text-right font-mono tabular">{c.predicted.toFixed(2)}</td>
+                    <td className="py-2.5 text-right font-mono font-semibold text-strong tabular">{c.observedRate.toFixed(2)}</td>
+                    <td className="py-2.5 text-right font-mono tabular">{c.n}</td>
+                    <td className={cn("py-2.5 text-right font-mono font-semibold tabular", c.factor > 1 ? "text-forest" : c.factor < 1 ? "text-danger" : "text-body")}>×{c.factor.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -191,24 +195,24 @@ export function WakePanel({ runId, store: external, className }: { runId: string
         </div>
 
         {/* UTM clicks (mock) */}
-        <div className="bg-recessed p-4">
-          <div className="mb-2 flex items-center gap-2">
+        <div className="bg-paper p-5">
+          <div className="mb-3 flex items-center gap-2">
             <Eyebrow>UTM clicks</Eyebrow>
             <Pill tone="muted">mock</Pill>
           </div>
           {utm.length === 0 ? (
-            <p className="text-[13px] text-muted">No campaign links yet.</p>
+            <p className="text-[14px] text-muted">No campaign links yet.</p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {utm.map((u) => (
-                <li key={u.key} className="grid grid-cols-[minmax(0,1fr)_80px_32px] items-center gap-2 text-[12.5px]">
+                <li key={u.key} className="grid grid-cols-[minmax(0,1fr)_96px_36px] items-center gap-3 text-[13px]">
                   <span className="truncate">
-                    <span className="text-strong">{u.label}</span> <span className="text-muted">{u.kind}</span>
+                    <span className="font-medium text-strong">{u.label}</span> <span className="text-muted">{u.kind}</span>
                   </span>
-                  <span className="h-1 overflow-hidden rounded-full bg-raised">
-                    <span className="block h-full rounded-full bg-lichen/60" style={{ width: `${(u.clicks / utmMax) * 100}%` }} />
+                  <span className="h-1.5 overflow-hidden rounded-full bg-raised">
+                    <span className="block h-full rounded-full bg-forest" style={{ width: `${(u.clicks / utmMax) * 100}%` }} />
                   </span>
-                  <span className="text-right font-mono text-strong">{u.clicks}</span>
+                  <span className="tabular text-right font-semibold text-strong">{u.clicks}</span>
                 </li>
               ))}
             </ul>

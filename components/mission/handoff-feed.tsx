@@ -63,16 +63,42 @@ function useElapsed(events: RunEvent[]) {
   );
 }
 
-const Time = ({ v }: { v: string }) => <span className="w-9 shrink-0 pt-px text-right font-mono text-[10.5px] text-muted tabular">{v}</span>;
+const Time = ({ v }: { v: string }) => <span className="w-9 shrink-0 pt-0.5 text-right font-mono text-[11px] text-muted tabular">{v}</span>;
 
 function DeptTag({ dept }: { dept: EventDept }) {
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 text-muted">
-      <DeptGlyph dept={dept} size={14} />
+    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-raised text-forest">
+      <DeptGlyph dept={dept} size={13} />
       <span className="sr-only">{DEPT_LABELS[dept]}</span>
     </span>
   );
 }
+
+const MENTION = /(@[a-z]+)/gi;
+
+/** Renders `@sounding` style department mentions as linen pills. */
+function WithMentions({ text }: { text: string }) {
+  const parts = text.split(MENTION);
+  if (parts.length === 1) return <>{text}</>;
+  return (
+    <>
+      {parts.map((p, i) => {
+        const d = p.slice(1).toLowerCase();
+        if (i % 2 === 1 && Object.hasOwn(DEPT_LABELS, d))
+          return (
+            <span key={i} className="mx-0.5 inline-flex items-center gap-1 rounded-pill bg-linen px-2 align-baseline text-[12px] font-semibold leading-5 text-forest">
+              @{DEPT_LABELS[d as EventDept]}
+            </span>
+          );
+        return <span key={i}>{p}</span>;
+      })}
+    </>
+  );
+}
+
+const Bubble = ({ children }: { children: React.ReactNode }) => (
+  <div className="max-w-[85%] rounded-[16px] rounded-br-[6px] bg-linen px-3.5 py-2 text-[14px] leading-snug text-strong">{children}</div>
+);
 
 const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string) => string }) {
   if (it.kind === "local") {
@@ -80,14 +106,18 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
     if (item.kind === "you")
       return (
         <div className="flex justify-end pl-12">
-          <div className="max-w-[85%] rounded-card rounded-br-control bg-raised-hover px-3 py-2 text-[13px] text-strong">{item.text}</div>
+          <Bubble>
+            <WithMentions text={item.text} />
+          </Bubble>
         </div>
       );
     return (
       <div className={cn("flex gap-2.5 pr-6", item.kind === "error" ? "text-danger" : "text-strong")}>
         <Time v="" />
         {item.dept ? <DeptTag dept={item.dept} /> : null}
-        <p className="text-[13px] leading-snug">{item.text}</p>
+        <p className="pt-0.5 text-[14px] leading-snug">
+          <WithMentions text={item.text} />
+        </p>
       </div>
     );
   }
@@ -99,23 +129,23 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
     case "handoff": {
       const to = (e.toDept ?? (e.payload as { to?: EventDept }).to) as EventDept | undefined;
       return (
-        <Card pad="sm" className="my-1 flex flex-col gap-2 border-hairline-strong">
-          <div className="flex items-center gap-2 text-[12px]">
-            <span className="inline-flex items-center gap-1.5 font-medium text-strong">
-              <DeptGlyph dept={e.dept} size={14} />
+        <Card pad="none" className="my-1.5 flex flex-col gap-2 px-4 py-3">
+          <div className="flex items-center gap-2 text-[13px]">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-strong">
+              <DeptTag dept={e.dept} />
               {DEPT_LABELS[e.dept]}
             </span>
-            <ArrowRight className="size-3.5 text-lichen" aria-label="hands off to" />
+            <ArrowRight className="size-3.5 text-forest" aria-label="hands off to" />
             {to ? (
-              <span className="inline-flex items-center gap-1.5 font-medium text-strong">
-                <DeptGlyph dept={to} size={14} />
+              <span className="inline-flex items-center gap-1.5 font-semibold text-strong">
+                <DeptTag dept={to} />
                 {DEPT_LABELS[to]}
               </span>
             ) : null}
-            <span className="ml-auto font-mono text-[10.5px] text-muted tabular">{time(e.at)}</span>
+            <span className="ml-auto font-mono text-[11px] text-muted tabular">{time(e.at)}</span>
           </div>
           {/* the header already says "A → B", so drop it from the message */}
-          <p className="text-[14px] leading-snug text-strong">{e.message.replace(/^\s*\w+\s*(→|->)\s*\w+\s*:\s*/, "")}</p>
+          <p className="text-[14px] leading-snug text-body">{e.message.replace(/^\s*\w+\s*(→|->)\s*\w+\s*:\s*/, "")}</p>
         </Card>
       );
     }
@@ -126,8 +156,8 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
         <div className="flex gap-2.5 pr-6">
           <Time v={time(e.at)} />
           <DeptTag dept="swarm" />
-          <p className="min-w-0 text-[13px] leading-snug text-body">
-            <span className="mr-1.5 font-mono text-[11px] text-muted">{p.persona?.label ?? "persona"}</span>
+          <p className="min-w-0 pt-0.5 text-[13px] leading-snug text-body">
+            <span className="mr-1.5 text-[12px] font-semibold text-muted">{p.persona?.label ?? "persona"}</span>
             <span className="italic">{msg}</span>
           </p>
         </div>
@@ -136,8 +166,10 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
     case "human":
       return (
         <div className="flex flex-col items-end gap-1 pl-12">
-          <span className="eyebrow text-[10px]">You · {time(e.at)}</span>
-          <div className="max-w-[85%] rounded-card rounded-br-control bg-raised-hover px-3 py-2 text-[13px] text-strong">{e.message}</div>
+          <span className="text-[11px] font-medium text-muted">You · <span className="tabular">{time(e.at)}</span></span>
+          <Bubble>
+            <WithMentions text={e.message} />
+          </Bubble>
         </div>
       );
     case "chat": {
@@ -147,19 +179,21 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
         <div className="flex gap-2.5 pr-6">
           <Time v={time(e.at)} />
           <DeptTag dept={dept} />
-          <div className="min-w-0 rounded-card rounded-bl-control border border-hairline bg-raised px-3 py-2">
-            <span className="eyebrow text-[10px]">{DEPT_LABELS[dept]}</span>
-            <p className="mt-0.5 text-[13px] leading-snug text-strong">{p.text ?? e.message}</p>
+          <div className="min-w-0 rounded-[16px] rounded-tl-[6px] border border-hairline bg-paper px-3.5 py-2">
+            <span className="text-[12px] font-semibold text-forest">{DEPT_LABELS[dept]}</span>
+            <p className="mt-0.5 text-[14px] leading-snug text-strong">
+              <WithMentions text={p.text ?? e.message} />
+            </p>
           </div>
         </div>
       );
     }
     case "result":
       return (
-        <div className="flex gap-2.5 rounded-control bg-raised/50 py-1.5 pr-3">
+        <div className="flex gap-2.5 rounded-card bg-recessed py-2 pr-3">
           <Time v={time(e.at)} />
           <DeptTag dept={e.dept} />
-          <p className="min-w-0 flex-1 text-[13px] leading-snug text-strong">{e.message}</p>
+          <p className="min-w-0 flex-1 pt-0.5 text-[13px] font-medium leading-snug text-strong">{e.message}</p>
           {isEvent(e, "sounding.verdict") ? <VerdictChip verdict={e.payload.verdict} className="self-start" /> : null}
         </div>
       );
@@ -168,7 +202,7 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
         <div className="flex gap-2.5 pr-6">
           <Time v={time(e.at)} />
           <DeptTag dept={e.dept} />
-          <p className="text-[13px] leading-snug text-danger">{e.message}</p>
+          <p className="pt-0.5 text-[13px] font-medium leading-snug text-danger">{e.message}</p>
         </div>
       );
     default:
@@ -176,7 +210,7 @@ const Item = memo(function Item({ it, time }: { it: FeedItem; time: (at: string)
         <div className="flex gap-2.5 pr-6">
           <Time v={time(e.at)} />
           <DeptTag dept={e.dept} />
-          <p className="text-[13px] leading-snug text-body">{e.message}</p>
+          <p className="pt-0.5 text-[13px] leading-snug text-body">{e.message}</p>
         </div>
       );
   }
@@ -192,25 +226,25 @@ function Thinking({ events, time }: { events: RunEvent[]; time: (at: string) => 
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="group flex min-h-7 items-center gap-2.5 rounded-control pr-2 text-left text-muted transition-colors hover:bg-raised/60 hover:text-body"
+        className="group flex min-h-8 items-center gap-2.5 rounded-pill pr-3 text-left text-muted transition-colors hover:bg-linen/60 hover:text-body"
       >
         <span className="w-9 shrink-0 text-right">
           <ChevronRight className={cn("ml-auto size-3.5 transition-transform duration-150", open && "rotate-90")} aria-hidden />
         </span>
-        <span className="flex shrink-0 items-center gap-1">
+        <span className="flex shrink-0 items-center gap-1 text-forest">
           {depts.map((d) => (
             <DeptGlyph key={d} dept={d} size={12} />
           ))}
         </span>
-        <span className="shrink-0 text-[12px]">Agent thinking</span>
-        <span className="font-mono text-[11px] tabular">{events.length}</span>
-        {!open ? <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted/80">{last.message}</span> : null}
+        <span className="shrink-0 text-[12px] font-semibold">Agent thinking</span>
+        <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-raised px-1.5 text-[11px] font-semibold text-charcoal tabular">{events.length}</span>
+        {!open ? <span className="min-w-0 flex-1 truncate text-[12px] text-muted">{last.message}</span> : null}
       </button>
       {open ? (
-        <ol className="ml-[46px] flex flex-col gap-1 border-l border-hairline pl-3">
+        <ol className="ml-[46px] flex flex-col gap-1 border-l border-hairline-strong pl-3">
           {events.map((e) => (
-            <li key={e.seq} className="flex gap-2 font-mono text-[11.5px] leading-snug text-body">
-              <span className="shrink-0 text-muted tabular">{time(e.at)}</span>
+            <li key={e.seq} className="flex gap-2 text-[12px] leading-snug text-body">
+              <span className="shrink-0 font-mono text-[11px] text-muted tabular">{time(e.at)}</span>
               <span className="min-w-0 break-words">{e.message}</span>
             </li>
           ))}
@@ -241,16 +275,21 @@ export function HandoffFeed() {
   };
 
   return (
-    <section aria-label="Handoff feed" className="relative flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
-        <h2 className="eyebrow">Handoffs</h2>
-        <Pill tone="muted" mono>
+    <section aria-label="Handoff feed" className="relative flex min-h-0 flex-1 flex-col bg-paper">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-hairline px-4">
+        <h2 className="text-[15px] font-semibold text-strong">Handoffs</h2>
+        <Pill tone="neutral" className="tabular">
           {store.events.length} events
         </Pill>
       </div>
-      <div ref={scrollRef} onScroll={onScroll} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-4" role="log">
+      <div ref={scrollRef} onScroll={onScroll} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-4 pt-3" role="log">
         {items.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center text-[13px] text-muted">Waiting for Sonar.</div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[14px] text-muted">
+            <span className="flex size-10 items-center justify-center rounded-full bg-raised text-forest">
+              <DeptGlyph dept="sonar" size={18} />
+            </span>
+            Waiting for Sonar.
+          </div>
         ) : (
           items.map((it) => <Item key={it.key} it={it} time={time} />)
         )}
@@ -259,7 +298,7 @@ export function HandoffFeed() {
         <button
           type="button"
           onClick={() => setPinned(true)}
-          className="absolute bottom-3 left-1/2 inline-flex h-7 -translate-x-1/2 items-center gap-1 rounded-full border border-hairline-strong bg-raised-hover px-3 text-[12px] text-strong"
+          className="absolute bottom-3 left-1/2 inline-flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-forest px-3.5 text-[13px] font-semibold text-paper shadow-float transition-colors hover:bg-spruce"
         >
           <ArrowDown className="size-3.5" aria-hidden />
           Latest

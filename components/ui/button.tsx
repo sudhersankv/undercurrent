@@ -28,6 +28,8 @@ export const buttonVariants = cva(
         icon: "size-9",
       },
     },
+    // Size padding/height would otherwise override the link look.
+    compoundVariants: [{ variant: "link", className: "h-auto px-0" }],
     defaultVariants: { variant: "raised", size: "md" },
   },
 );
