@@ -1,0 +1,2705 @@
+[
+  {
+    "kind": "person",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:li:ahmed-mukhtar",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:li:ahmed-mukhtar",
+      "displayName": "Ahmed Mukhtar",
+      "handles": {
+        "linkedin": "https://www.linkedin.com/in/ahmedmukhtar-ai"
+      },
+      "company": {
+        "name": "AgenixAI"
+      },
+      "email": null,
+      "primaryRepo": null,
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Founder, AgenixAI",
+      "linkedinUrl": "https://www.linkedin.com/in/ahmedmukhtar-ai"
+    },
+    "brief": {
+      "leadId": "seed:li:ahmed-mukhtar",
+      "profile": "Founder of AgenixAI, builds and sells inbound voice AI agents (Twilio, LiveKit, Ultravox, FastAPI, n8n) and publishes latency tests of voice RAG on LinkedIn.",
+      "howWeFit": "Runs Pinecone for RAG over the network and measured remote search adding 450ms+. Lichen runs in-process beside his FastAPI/LiveKit agent with sub-10ms lookups, removing that hop.",
+      "whyNow": "He is actively rebuilding voice RAG for latency, and his Jan 2026 post argues local search beats hosted vector DBs.",
+      "evidence": [
+        {
+          "text": "But the RAG search? That's usually the bottleneck.",
+          "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-aiagents-rag-activity-7415720738415960064-kCCl"
+        },
+        {
+          "text": "each check took around 300 milliseconds over the internet",
+          "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-aiagents-livekit-activity-7511395320275116034-9N7D"
+        },
+        {
+          "text": "Pinecone for RAG",
+          "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-ultravox-ai-activity-7291028707069063170-Slrr"
+        }
+      ],
+      "risks": [
+        "Already moved one check to a local open-source model, so may prefer self-hosted FAISS",
+        "Content is LinkedIn posts; no repo or direct contact confirmed",
+        "Small agency scale may limit deal size"
+      ],
+      "suggestedChannels": [
+        "linkedin"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:li:ahmed-mukhtar:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-aiagents-rag-activity-7415720738415960064-kCCl",
+        "source": "web",
+        "title": "I tested 4 vector databases for voice AI RAG—and one dominated. | Ahmed Mukhtar",
+        "author": "Ahmed Mukhtar",
+        "createdAt": "2026-01-10T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "But the RAG search? That's usually the bottleneck.",
+        "whyItMatters": "Names RAG search as the voice latency bottleneck, the exact pain Lichen removes."
+      },
+      {
+        "id": "ev:li:ahmed-mukhtar:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-aiagents-livekit-activity-7511395320275116034-9N7D",
+        "source": "web",
+        "title": "System-One models like Jev are exactly what voice agents were missing. | Ahmed Mukhtar",
+        "author": "Ahmed Mukhtar",
+        "createdAt": "2026-10-01T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.85,
+        "quote": "each check took around 300 milliseconds over the internet",
+        "whyItMatters": "Shows a network hop cost hundreds of ms, so in-process lookup is needed."
+      },
+      {
+        "id": "ev:li:ahmed-mukhtar:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://www.linkedin.com/posts/ahmedmukhtar-ai_voiceai-ultravox-ai-activity-7291028707069063170-Slrr",
+        "source": "web",
+        "title": "How I rebuilt my Voice AI Agent to cut costs by 83% (+$20/m saved in hosting) | Ahmed Mukhtar",
+        "author": "Ahmed Mukhtar",
+        "createdAt": "2025-01-31T00:00:00.000Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Pinecone for RAG",
+        "whyItMatters": "Currently runs a hosted vector DB in his voice agent stack that Lichen could replace."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:gh:pheonix-delta",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:pheonix-delta",
+      "displayName": "Shubham Dev",
+      "handles": {
+        "github": "pheonix-delta",
+        "linkedin": "https://www.linkedin.com/in/shubhamdev"
+      },
+      "company": {
+        "name": "ZippiAi"
+      },
+      "email": {
+        "address": "devcoder29cse@gmail.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "pheonix-delta/axiom-voice-agent",
+      "fitScore": 70,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Systems Engineer, axiom-voice-agent",
+      "location": "149 New Montgomery St, San Francisco, CA 94105, United States",
+      "linkedinUrl": "https://www.linkedin.com/in/shubhamdev"
+    },
+    "brief": {
+      "leadId": "seed:gh:pheonix-delta",
+      "profile": "First-year CSE student and systems engineer building offline, local AI voice agents for a university robotics lab. Builds AXIOM (sub-400ms voice agent on a GTX 1650) and WiredBrain, a hierarchical RAG system over 693K chunks.",
+      "howWeFit": "AXIOM uses semantic RAG and WiredBrain runs pgvector+Postgres over a network hop. Lichen's in-process index would keep lookups inside the voice process and cut retrieval latency from the turn budget.",
+      "whyNow": "Clone traction (330+ in 12hrs) and a sub-400ms voice pipeline make retrieval hop latency the next bottleneck.",
+      "evidence": [
+        {
+          "text": "Fully offline, no API keys required.",
+          "url": "https://github.com/pheonix-delta/axiom-voice-agent"
+        },
+        {
+          "text": "Hierarchical RAG architecture scaling to 693K chunks on consumer hardware",
+          "url": "https://github.com/pheonix-delta/WiredBrain-Hierarchical-Rag"
+        },
+        {
+          "text": "693k points of data with pgvector+ postgress",
+          "url": "https://news.ycombinator.com/item?id=46926344"
+        }
+      ],
+      "risks": [
+        "Repo relicensed to AGPLv3 with a commercial option, which may complicate closed-source use.",
+        "Student project; production readiness and buyer authority are unclear.",
+        "Local retrieval may already be fast enough at this scale, so the latency gain is unproven."
+      ],
+      "suggestedChannels": [
+        "email",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:pheonix-delta:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/pheonix-delta/axiom-voice-agent",
+        "source": "github_repo",
+        "title": "pheonix-delta/axiom-voice-agent",
+        "author": "pheonix-delta",
+        "createdAt": "2026-05-24T17:59:23Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Fully offline, no API keys required.",
+        "whyItMatters": "Shows he builds fully offline voice agents, where an in-process index fits."
+      },
+      {
+        "id": "ev:gh:pheonix-delta:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/pheonix-delta/WiredBrain-Hierarchical-Rag",
+        "source": "github_repo",
+        "title": "pheonix-delta/WiredBrain-Hierarchical-Rag",
+        "author": "pheonix-delta",
+        "createdAt": "2026-02-11T13:17:10Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Hierarchical RAG architecture scaling to 693K chunks on consumer hardware",
+        "whyItMatters": "Confirms a large semantic retrieval layer already runs on consumer hardware."
+      },
+      {
+        "id": "ev:gh:pheonix-delta:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://news.ycombinator.com/item?id=46926344",
+        "source": "hn_story",
+        "title": "Show HN: I built a <400ms latency voice agent that runs on a 4gb vram GTX 1650\"",
+        "author": "shubham-coder",
+        "createdAt": "2026-02-07T18:44:12Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "693k points of data with pgvector+ postgress",
+        "whyItMatters": "Retrieval depends on a pgvector/Postgres round trip that Lichen could replace in-process."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:gh:mirkobozzetto",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:mirkobozzetto",
+      "displayName": "Mirko Bozzetto",
+      "handles": {
+        "github": "mirkobozzetto",
+        "x": "bozzetto_mirko",
+        "linkedin": "https://www.linkedin.com/in/bozzettomirko"
+      },
+      "company": {
+        "name": "mirko.re"
+      },
+      "email": null,
+      "primaryRepo": "mirkobozzetto/flowflow",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Founding Full-Stack & AI Engineer",
+      "location": "Brussels",
+      "xProfile": {
+        "handle": "bozzetto_mirko",
+        "url": "https://x.com/bozzetto_mirko"
+      },
+      "linkedinUrl": "https://www.linkedin.com/in/bozzettomirko",
+      "website": "https://www.mirko.re/"
+    },
+    "brief": {
+      "leadId": "seed:gh:mirkobozzetto",
+      "profile": "Full-stack and AI engineer building FlowFlow, a Rust voice-notes app for iPhone and Mac that transcribes speech and answers questions over past notes via on-device RAG. Also works on IgnitionRAG, a self-hosted RAG backend.",
+      "howWeFit": "FlowFlow uses LanceDB and SQLite locally for retrieval. Lichen would replace that with an in-process embedded index and built-in embeddings, keeping lookups on-device with sub-10 ms latency.",
+      "whyNow": "FlowFlow is actively developed and on-device retrieval is a core feature of the app.",
+      "evidence": [
+        {
+          "text": "FlowFlow, voice notes with on-device RAG in Rust for iOS",
+          "url": "https://news.ycombinator.com/item?id=48098955"
+        },
+        {
+          "text": "Agentic Voice Notes for iPhone and macOS - Rust, Dioxus, LanceDB + RIG + SQLite",
+          "url": "https://github.com/mirkobozzetto/flowflow"
+        },
+        {
+          "text": "IgnitionRAG is an administrable AI backend for multimodal RAG agents.",
+          "url": "https://github.com/mirkobozzetto/ignition-rag-community"
+        }
+      ],
+      "risks": [
+        "Target is a consumer notes app, not a voice-agent team; the latency budget pain is inferred, not stated.",
+        "Already runs LanceDB locally, so switching cost may be low value unless retrieval speed is a problem.",
+        "Open-source hobby-scale project may have little budget for usage-based pricing."
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:mirkobozzetto:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://news.ycombinator.com/item?id=48098955",
+        "source": "hn_story",
+        "title": "FlowFlow, voice notes with on-device RAG in Rust for iOS",
+        "author": "mirkobozzetto",
+        "createdAt": "2026-05-11T18:41:34Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "FlowFlow, voice notes with on-device RAG in Rust for iOS",
+        "whyItMatters": "Shows he already ships on-device RAG inside a voice product, the exact place an in-process index would sit."
+      },
+      {
+        "id": "ev:gh:mirkobozzetto:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/mirkobozzetto/flowflow",
+        "source": "github_repo",
+        "title": "mirkobozzetto/flowflow",
+        "author": "mirkobozzetto",
+        "createdAt": "2026-11-12T12:16:05Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Agentic Voice Notes for iPhone and macOS - Rust, Dioxus, LanceDB + RIG + SQLite",
+        "whyItMatters": "Current stack pairs an embedded LanceDB store with SQLite, a local retrieval layer Lichen could replace."
+      },
+      {
+        "id": "ev:gh:mirkobozzetto:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/mirkobozzetto/ignition-rag-community",
+        "source": "github_repo",
+        "title": "mirkobozzetto/ignition-rag-community",
+        "author": "mirkobozzetto",
+        "createdAt": "2026-05-22T08:32:34Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.3,
+        "quote": "IgnitionRAG is an administrable AI backend for multimodal RAG agents.",
+        "whyItMatters": "Signals broader RAG backend work, though the retrieval latency pain is not stated directly."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:gh:joynal-alam-enosis",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:joynal-alam-enosis",
+      "displayName": "Md Joynal Alam",
+      "handles": {
+        "github": "joynal-alam-enosis"
+      },
+      "company": null,
+      "email": {
+        "address": "joynal.alam@enosisbd.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "joynal-alam-enosis/Multi-Tenant-Messaging-App",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Engineer, OmniVox voice-agent knowledge platform"
+    },
+    "brief": {
+      "leadId": "seed:gh:joynal-alam-enosis",
+      "profile": "Engineer building OmniVox, a multi-persona hospitality voice agent platform with tenant-scoped document uploads and RAG grounding, on Django and ChromaDB.",
+      "howWeFit": "Today retrieval runs through ChromaDB behind a backend hop. Lichen would embed the per-tenant index in-process next to the voice agent, cutting lookup latency within the turn budget.",
+      "whyNow": "Persona-scoped knowledge and grounding modes are being built now, so the retrieval layer is still open to change.",
+      "evidence": [
+        {
+          "text": "uploaded operational documents are pooled into a single flat tenant vector collection",
+          "url": "https://github.com/joynal-alam-enosis/Multi-Tenant-Messaging-App/issues/2"
+        },
+        {
+          "text": "When a voice agent fails to retrieve information, operators cannot diagnose whether the text chunk was lost",
+          "url": "https://github.com/gautam-chowdhury-enosis/Smart-AI-Voice-Agent/issues/45"
+        },
+        {
+          "text": "Operators have zero insight into whether an upload is still processing or has crashed",
+          "url": "https://github.com/gautam-chowdhury-enosis/Smart-AI-Voice-Agent/issues/43"
+        }
+      ],
+      "risks": [
+        "Latency pain is inferred from retrieval issues; no explicit turn-latency complaint appears in the items",
+        "Work is an issue-driven prototype and may not reach production soon",
+        "Existing ChromaDB investment may make a switch harder to justify"
+      ],
+      "suggestedChannels": [
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:joynal-alam-enosis:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/joynal-alam-enosis/Multi-Tenant-Messaging-App/issues/2",
+        "source": "github_issue",
+        "title": "Dynamic Knowledge Base Assignment & Multi-Source Response Engine for Autonomous Voice Agents",
+        "author": "joynal-alam-enosis",
+        "createdAt": "2026-11-11T06:46:48Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "uploaded operational documents are pooled into a single flat tenant vector collection",
+        "whyItMatters": "Shows a live per-tenant vector collection queried by voice personas, a retrieval path Lichen could replace."
+      },
+      {
+        "id": "ev:gh:joynal-alam-enosis:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/gautam-chowdhury-enosis/Smart-AI-Voice-Agent/issues/45",
+        "source": "github_issue",
+        "title": "Multi-File Batch Drag-and-Drop Uploader & Vector Chunk Inspector",
+        "author": "joynal-alam-enosis",
+        "createdAt": "2026-11-18T12:42:11Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "When a voice agent fails to retrieve information, operators cannot diagnose whether the text chunk was lost",
+        "whyItMatters": "Retrieval failures in voice agents are a live pain tied to the ChromaDB lookup path."
+      },
+      {
+        "id": "ev:gh:joynal-alam-enosis:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/gautam-chowdhury-enosis/Smart-AI-Voice-Agent/issues/43",
+        "source": "github_issue",
+        "title": "Ingestion Status State Machine & Resilient Error Handling",
+        "author": "joynal-alam-enosis",
+        "createdAt": "2026-11-18T12:40:36Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.3,
+        "quote": "Operators have zero insight into whether an upload is still processing or has crashed",
+        "whyItMatters": "Indicates an ingestion and retrieval pipeline that is fragile and hard to observe."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:gh:naim-munshi",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:naim-munshi",
+      "displayName": "Md Naim",
+      "handles": {
+        "github": "naim-munshi"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "naim-munshi/aqlyra-rag-ai",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, aqlyra-rag-ai (solo builder)"
+    },
+    "brief": {
+      "leadId": "seed:gh:naim-munshi",
+      "profile": "Solo builder of Aqlyra, a deployed full-stack AI app with private-document RAG and voice AI, on Vercel, Render and Neon pgvector. Also built CortexLite, a C/C++ vector-search portfolio project.",
+      "howWeFit": "Today retrieval goes to Neon pgvector over the network from a Render API. Lichen could run an embedded index beside the API or voice worker, cutting that hop and keeping private RAG content local.",
+      "whyNow": "Release hardening is in progress and the voice and RAG path is being optimized, so the retrieval hop is a live target.",
+      "evidence": [
+        {
+          "text": "Neon PostgreSQL + 384-dimensional pgvector embeddings",
+          "url": "https://github.com/naim-munshi/aqlyra-rag-ai/issues/108"
+        },
+        {
+          "text": "Enterprise AI workspace powered by Advanced RAG, Voice AI, persistent memory, and multi-LLM architecture.",
+          "url": "https://github.com/naim-munshi/aqlyra-rag-ai"
+        },
+        {
+          "text": "High-Performance AI Inference & Vector Search Engine using C, C++ and Python",
+          "url": "https://github.com/naim-munshi/cortexlite-ai-engine"
+        }
+      ],
+      "risks": [
+        "Project is an engineering beta, not production certified, and the release is gated by manual blockers",
+        "Public profile is student-stage, so buying authority is uncertain",
+        "Voice latency pain is inferred, not stated in the items"
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:naim-munshi:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/naim-munshi/aqlyra-rag-ai/issues/108",
+        "source": "github_issue",
+        "title": "[Execution] Aqlyra production recovery & advanced intelligence — P0/P1/P2",
+        "author": "naim-munshi",
+        "createdAt": "2026-11-03T23:42:31Z",
+        "type": "adoption",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Neon PostgreSQL + 384-dimensional pgvector embeddings",
+        "whyItMatters": "Retrieval runs as a network call to hosted Postgres, the hop Lichen would remove from the voice turn path."
+      },
+      {
+        "id": "ev:gh:naim-munshi:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/naim-munshi/aqlyra-rag-ai",
+        "source": "github_repo",
+        "title": "naim-munshi/aqlyra-rag-ai",
+        "author": "naim-munshi",
+        "createdAt": "2026-11-24T04:51:11Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Enterprise AI workspace powered by Advanced RAG, Voice AI, persistent memory, and multi-LLM architecture.",
+        "whyItMatters": "Shows a live RAG plus voice product where per-turn retrieval latency matters."
+      },
+      {
+        "id": "ev:gh:naim-munshi:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/naim-munshi/cortexlite-ai-engine",
+        "source": "github_repo",
+        "title": "naim-munshi/cortexlite-ai-engine",
+        "author": "naim-munshi",
+        "createdAt": "2026-10-20T10:38:48Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.4,
+        "quote": "High-Performance AI Inference & Vector Search Engine using C, C++ and Python",
+        "whyItMatters": "Shows hands-on interest in low-latency local vector search, a natural audience for an in-process index."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:org:lynpoint",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:lynpoint",
+      "displayName": "Lynpoint",
+      "handles": {
+        "github": "Lynpoint"
+      },
+      "company": {
+        "name": "Lynpoint"
+      },
+      "email": null,
+      "primaryRepo": "Lynpoint/CyberVerse",
+      "fitScore": 70,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, CyberVerse",
+      "account": {
+        "name": "Lynpoint",
+        "domain": null,
+        "sizeBand": "solo",
+        "sizeSource": "https://github.com/orgs/Lynpoint/people (0 public members; headcount unverified)",
+        "contacts": [
+          {
+            "displayName": "dsd",
+            "role": "maintainer of Lynpoint/CyberVerse (194 commits)",
+            "github": "dsd2077",
+            "githubUrl": "https://github.com/dsd2077"
+          },
+          {
+            "displayName": "CJstate",
+            "role": "Independent, maintainer of Lynpoint/CyberVerse (7 commits)",
+            "github": "CJstate",
+            "githubUrl": "https://github.com/CJstate"
+          }
+        ],
+        "industry": "Voice AI / digital humans",
+        "whyFit": "RAG currently builds a LangChain Chroma store inside the engine, and issue #31 asks for Milvus over a server. Lichen runs in-process next to the app, so lookups skip the network hop and fit voice turn budgets."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:lynpoint",
+      "profile": "Solo maintainer of Lynpoint/CyberVerse, an open-source self-hosted real-time digital-human agent framework with WebRTC, persona memory, tools and RAG for voice-first agents.",
+      "howWeFit": "RAG currently builds a LangChain Chroma store inside the engine, and issue #31 asks for Milvus over a server. Lichen runs in-process next to the app, so lookups skip the network hop and fit voice turn budgets.",
+      "whyNow": "Open issue #31 is already asking for a pluggable vector store backend, so the retrieval layer is open for change.",
+      "evidence": [
+        {
+          "text": "It uses WebRTC, persona memory, tools, RAG, and optional digital-human video capabilities",
+          "url": "https://github.com/Lynpoint/CyberVerse"
+        },
+        {
+          "text": "some users may want to use the same RAG flow with a server-backed vector database",
+          "url": "https://github.com/Lynpoint/CyberVerse/issues/31"
+        },
+        {
+          "text": "lower turn-taking latency",
+          "url": "https://github.com/Lynpoint/CyberVerse/issues/21"
+        }
+      ],
+      "risks": [
+        "Solo maintainer with limited bandwidth for adopting a new dependency",
+        "Chroma default may already meet their needs at current scale",
+        "Issue #31 may be closed or routed to an external adapter instead"
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:lynpoint:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/Lynpoint/CyberVerse",
+        "source": "github_repo",
+        "title": "Lynpoint/CyberVerse",
+        "author": "Lynpoint",
+        "createdAt": "2026-11-22T08:50:03Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "It uses WebRTC, persona memory, tools, RAG, and optional digital-human video capabilities",
+        "whyItMatters": "Confirms a voice-first agent framework that already runs retrieval inside the agent loop."
+      },
+      {
+        "id": "ev:org:lynpoint:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/Lynpoint/CyberVerse/issues/31",
+        "source": "github_issue",
+        "title": "Proposal: pluggable RAG vector store backend and optional Milvus support",
+        "author": "zc277584121",
+        "createdAt": "2026-07-15T11:42:36Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "some users may want to use the same RAG flow with a server-backed vector database",
+        "whyItMatters": "Shows demand to move retrieval off a server-backed vector DB, the network hop Lichen removes."
+      },
+      {
+        "id": "ev:org:lynpoint:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/Lynpoint/CyberVerse/issues/21",
+        "source": "github_issue",
+        "title": "Feature: Add SenseVoice as STT engine — 5x faster, built-in emotion detection",
+        "author": "LauraGPT",
+        "createdAt": "2026-05-31T12:25:01Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "lower turn-taking latency",
+        "whyItMatters": "Shows the team cares about voice turn latency, where a retrieval network hop eats the budget."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:org:salesforceairesearch",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:salesforceairesearch",
+      "displayName": "Salesforce AI Research",
+      "handles": {
+        "github": "SalesforceAIResearch"
+      },
+      "company": {
+        "name": "Salesforce AI Research"
+      },
+      "email": {
+        "address": "ospo@salesforce.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "SalesforceAIResearch/VoiceAgentRAG",
+      "fitScore": 70,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, VoiceAgentRAG",
+      "account": {
+        "name": "Salesforce AI Research",
+        "domain": null,
+        "sizeBand": "enterprise",
+        "sizeSource": "https://stockanalysis.com/stocks/crm/employees/",
+        "contacts": [
+          {
+            "displayName": "Jielin-Qiu",
+            "role": "maintainer of SalesforceAIResearch/VoiceAgentRAG (4 commits)",
+            "github": "Jielin-Qiu",
+            "githubUrl": "https://github.com/Jielin-Qiu",
+            "website": "https://jielin-qiu.github.io/"
+          }
+        ],
+        "industry": "AI research / voice agents",
+        "whyFit": "Today the cache is backed by a hosted Qdrant Cloud index with network round trips on misses. Lichen could run embedded beside the Fast Talker so cache misses and prefetch queries skip the network hop entirely."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:salesforceairesearch",
+      "profile": "Salesforce AI Research team that released VoiceAgentRAG, an open-source dual-agent memory router for voice agents. A background Slow Thinker prefetches context into a fast cache while a Fast Talker reads only from it.",
+      "howWeFit": "Today the cache is backed by a hosted Qdrant Cloud index with network round trips on misses. Lichen could run embedded beside the Fast Talker so cache misses and prefetch queries skip the network hop entirely.",
+      "whyNow": "VoiceAgentRAG was released in March 2026 alongside a paper, so the team is actively shaping its retrieval layer now.",
+      "evidence": [
+        {
+          "text": "A 200ms+ vector database lookup blows the latency budget",
+          "url": "https://github.com/SalesforceAIResearch/VoiceAgentRAG"
+        },
+        {
+          "text": "A typical vector database query adds 50–300ms to the response pipeline",
+          "url": "https://arxiv.org/html/2603.02206v2"
+        },
+        {
+          "text": "Salesforce AI research team has released VoiceAgentRAG, an open-source dual-agent architecture",
+          "url": "https://www.marktechpost.com/2026/03/30/salesforce-ai-research-releases-voiceagentrag-a-dual-agent-memory-router-that-cuts-voice-rag-retrieval-latency-by-316x/"
+        }
+      ],
+      "risks": [
+        "Their 0.35ms cache hit path already meets the latency budget, so the gain is mainly on misses.",
+        "Research-stage repo with few commits; adoption and maintenance commitment are uncertain.",
+        "Qdrant backend may be a deliberate choice for scale or hybrid search that an embedded index would not cover."
+      ],
+      "suggestedChannels": [
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:salesforceairesearch:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/SalesforceAIResearch/VoiceAgentRAG",
+        "source": "github_repo",
+        "title": "SalesforceAIResearch/VoiceAgentRAG",
+        "author": "SalesforceAIResearch",
+        "createdAt": "2026-06-02T18:59:28Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "A 200ms+ vector database lookup blows the latency budget",
+        "whyItMatters": "Names the exact network-lookup latency problem Lichen removes by running the index in-process."
+      },
+      {
+        "id": "ev:org:salesforceairesearch:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://arxiv.org/html/2603.02206v2",
+        "source": "web",
+        "title": "VoiceAgentRAG: Solving the RAG Latency Bottleneck in Real-Time Voice Agents Using Dual-Agent Architectures",
+        "author": "Jielin Qiu",
+        "createdAt": "2026-03-03T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "A typical vector database query adds 50–300ms to the response pipeline",
+        "whyItMatters": "Quantifies the per-query round-trip cost that an embedded index avoids."
+      },
+      {
+        "id": "ev:org:salesforceairesearch:2",
+        "segmentId": "seed-seg:voice",
+        "url": "https://www.marktechpost.com/2026/03/30/salesforce-ai-research-releases-voiceagentrag-a-dual-agent-memory-router-that-cuts-voice-rag-retrieval-latency-by-316x/",
+        "source": "web",
+        "title": "Salesforce AI Research Releases VoiceAgentRAG: A Dual-Agent Memory Router that Cuts Voice RAG Retrieval Latency by 316x - MarkTechPost",
+        "author": "Asif Razzaq",
+        "createdAt": "2026-03-30T09:56:14.000Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Salesforce AI research team has released VoiceAgentRAG, an open-source dual-agent architecture",
+        "whyItMatters": "Shows they are actively building voice RAG infrastructure where an in-app index would slot in."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:org:deuz-ai",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:deuz-ai",
+      "displayName": "Deuz AI",
+      "handles": {
+        "github": "Deuz-AI",
+        "linkedin": "https://linkedin.com/company/deuzai"
+      },
+      "company": {
+        "name": "Deuz AI"
+      },
+      "email": null,
+      "primaryRepo": "Deuz-AI/Deuz-SDK",
+      "fitScore": 62,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, Deuz-SDK",
+      "location": "United Kingdom",
+      "linkedinUrl": "https://linkedin.com/company/deuzai",
+      "account": {
+        "name": "Deuz AI",
+        "domain": null,
+        "sizeBand": "startup",
+        "sizeSource": "https://linkedin.com/company/deuzai",
+        "contacts": [
+          {
+            "displayName": "Umut CAN",
+            "role": "Deuz AI, maintainer of Deuz-AI/Deuz-SDK (1217 commits)",
+            "github": "U-C4N",
+            "githubUrl": "https://github.com/U-C4N",
+            "linkedinUrl": "https://www.linkedin.com/in/umutcn"
+          }
+        ],
+        "industry": "Developer tools / AI agents",
+        "whyFit": "Their RAG and memory lookups likely go to hosted or external stores. Lichen could run an embedded index inside the SDK on Node and edge, removing the network hop from voice-turn retrieval."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:deuz-ai",
+      "profile": "Deuz AI, a startup behind Deuz-SDK: a zero-dependency TypeScript SDK for agents, swarms, hybrid RAG, MCP, and realtime voice across Node, Bun, Deno and edge runtimes.",
+      "howWeFit": "Their RAG and memory lookups likely go to hosted or external stores. Lichen could run an embedded index inside the SDK on Node and edge, removing the network hop from voice-turn retrieval.",
+      "whyNow": "Issue #17 is an open request to add a hosted memory backend to Deuz Context, so the retrieval layer is under active change.",
+      "evidence": [
+        {
+          "text": "hybrid RAG, MCP client/server",
+          "url": "https://github.com/Deuz-AI/Deuz-SDK"
+        },
+        {
+          "text": "retrieve a few relevant memories in a later run",
+          "url": "https://github.com/Deuz-AI/Deuz-SDK/issues/17"
+        }
+      ],
+      "risks": [
+        "Voice latency pain is inferred from features, not stated in the items.",
+        "They may prefer pluggable hosted memory adapters over an embedded index.",
+        "Maintainer-led project; buying authority and budget are unclear."
+      ],
+      "suggestedChannels": [
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:deuz-ai:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/Deuz-AI/Deuz-SDK",
+        "source": "github_repo",
+        "title": "Deuz-AI/Deuz-SDK",
+        "author": "Deuz-AI",
+        "createdAt": "2026-11-24T18:20:44Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "hybrid RAG, MCP client/server",
+        "whyItMatters": "Shows they already build retrieval-augmented agents inside a TypeScript SDK that runs in-process."
+      },
+      {
+        "id": "ev:org:deuz-ai:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/Deuz-AI/Deuz-SDK/issues/17",
+        "source": "github_issue",
+        "title": "MemCode backend for Deuz Context memory",
+        "author": "vivekgupta-memcode",
+        "createdAt": "2026-09-29T06:34:58Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "retrieve a few relevant memories in a later run",
+        "whyItMatters": "Shows an active need for fast memory retrieval inside agent runs, which an embedded index could serve."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "voice",
+    "segmentName": "Voice-agent teams needing fast retrieval",
+    "stated": true,
+    "lead": {
+      "id": "seed:org:gizclaw",
+      "runId": "seed",
+      "segmentId": "seed-seg:voice",
+      "personId": "person:gh:gizclaw",
+      "displayName": "GizClaw",
+      "handles": {
+        "github": "GizClaw"
+      },
+      "company": {
+        "name": "GizClaw"
+      },
+      "email": null,
+      "primaryRepo": "GizClaw/flowcraft",
+      "fitScore": 40,
+      "tier": "C",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, GizClaw/flowcraft",
+      "account": {
+        "name": "GizClaw",
+        "domain": null,
+        "sizeBand": "solo",
+        "sizeSource": "https://github.com/orgs/GizClaw/people (1 public members)",
+        "contacts": [
+          {
+            "displayName": "lIang",
+            "role": "haivivi, maintainer of GizClaw/flowcraft (1537 commits)",
+            "github": "lIang70",
+            "githubUrl": "https://github.com/lIang70",
+            "email": "gog_017@outlook.com",
+            "location": "Beijing"
+          },
+          {
+            "displayName": "Yan",
+            "role": "maintainer of GizClaw/flowcraft (19 commits)",
+            "github": "idy",
+            "githubUrl": "https://github.com/idy",
+            "website": "https://idy.dev/",
+            "email": "github@idy.dev"
+          }
+        ],
+        "industry": "AI agent frameworks (Go)",
+        "whyFit": "Their memory backend uses an internal vector lane with a persisted projection. Lichen could replace that lane with an embedded in-process index, removing the separate projection store and digest checks."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:gizclaw",
+      "profile": "Solo Go developer behind GizClaw/flowcraft, a platform for building AI agents with memory, knowledge retrieval, tools, sandboxed execution and voice. Active issue tracker on memory backends and vector projections.",
+      "howWeFit": "Their memory backend uses an internal vector lane with a persisted projection. Lichen could replace that lane with an embedded in-process index, removing the separate projection store and digest checks.",
+      "whyNow": null,
+      "evidence": [
+        {
+          "text": "long-term memory, knowledge retrieval, and voice",
+          "url": "https://github.com/GizClaw/flowcraft"
+        },
+        {
+          "text": "the retrieval degrades silently",
+          "url": "https://github.com/GizClaw/flowcraft/issues/651"
+        }
+      ],
+      "risks": [
+        "No voice-latency or retrieval-latency complaint appears in the items",
+        "Solo maintainer with limited production signal",
+        "Current pain is digest/toolchain correctness, not search speed"
+      ],
+      "suggestedChannels": [
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:gizclaw:0",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/GizClaw/flowcraft",
+        "source": "github_repo",
+        "title": "GizClaw/flowcraft",
+        "author": "GizClaw",
+        "createdAt": "2026-11-24T15:07:23Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "long-term memory, knowledge retrieval, and voice",
+        "whyItMatters": "Builds retrieval and voice into a Go agent SDK, so a fast in-process index could sit in its retrieval path."
+      },
+      {
+        "id": "ev:org:gizclaw:1",
+        "segmentId": "seed-seg:voice",
+        "url": "https://github.com/GizClaw/flowcraft/issues/651",
+        "source": "github_issue",
+        "title": "backends/memory: a lane read can fail its projection digest check, and the retrieval degrades silently",
+        "author": "lIang70",
+        "createdAt": "2026-10-15T09:01:00Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.4,
+        "quote": "the retrieval degrades silently",
+        "whyItMatters": "Their vector lane failing in the memory backend shows retrieval reliability problems, though the pain is correctness rather than latency."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "localfirst",
+    "segmentName": "Local-first app & Obsidian plugin builders",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:brianpetro",
+      "runId": "seed",
+      "segmentId": "seed-seg:localfirst",
+      "personId": "person:gh:brianpetro",
+      "displayName": "🌴 Brian",
+      "handles": {
+        "github": "brianpetro",
+        "x": "wfhbrian"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "brianpetro/obsidian-smart-connections",
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, obsidian-smart-connections",
+      "xProfile": {
+        "handle": "wfhbrian",
+        "url": "https://x.com/wfhbrian"
+      },
+      "website": "https://smartconnections.app/"
+    },
+    "brief": {
+      "leadId": "seed:gh:brianpetro",
+      "profile": "Brian (brianpetro) builds Smart Connections, a free local-first Obsidian plugin that surfaces related notes via local embeddings and a Smart Environment index, with Smart Graph for semantic clustering.",
+      "howWeFit": "Today the plugin runs transformer embedding models and a Smart Environment index inside Obsidian, with queue stalls and Ollama/LM Studio backends. Lichen could supply an in-process index with built-in embeddings, avoiding queue-driven fail…",
+      "whyNow": "Recent issues show embedding queue failures and indexing UX pain in v4.7.x, a timely window to offer a simpler index.",
+      "evidence": [
+        {
+          "text": "A local embedding model powers semantic search. Zero setup. No API key.",
+          "url": "https://github.com/brianpetro/obsidian-smart-connections"
+        },
+        {
+          "text": "I'd be very in favor of also having LM studio support",
+          "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1144"
+        },
+        {
+          "text": "This is the same message shown for an actual indexing problem, so it suggests something is broken.",
+          "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1383"
+        },
+        {
+          "text": "Embedding result 13 contains non-finite values.",
+          "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1379"
+        }
+      ],
+      "risks": [
+        "Smart Connections already ships a working local embedding pipeline, so switching costs may be high",
+        "Lichen's built-in model may not match the E5 and bge models users already rely on",
+        "Plugin users are cost-sensitive and may resist any pricing beyond the free tier"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:brianpetro:0",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/brianpetro/obsidian-smart-connections",
+        "source": "github_repo",
+        "title": "brianpetro/obsidian-smart-connections",
+        "author": "brianpetro",
+        "createdAt": "2026-11-21T18:25:47Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "A local embedding model powers semantic search. Zero setup. No API key.",
+        "whyItMatters": "Shows the core product is local semantic search inside the app, the exact layer Lichen would replace."
+      },
+      {
+        "id": "ev:gh:brianpetro:1",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1144",
+        "source": "github_issue",
+        "title": "[FR] LM Studio supported embeddings",
+        "author": "brianpetro",
+        "createdAt": "2025-07-30T23:10:18Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "I'd be very in favor of also having LM studio support",
+        "whyItMatters": "Users keep asking for more embedding backends, a sign the embedding stack is still a moving target."
+      },
+      {
+        "id": "ev:gh:brianpetro:2",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1383",
+        "source": "github_issue",
+        "title": "Show a distinct message when the current note is too short to embed (instead of \"No results found\")",
+        "author": "spiky1224",
+        "createdAt": "2026-11-14T13:45:27Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "This is the same message shown for an actual indexing problem, so it suggests something is broken.",
+        "whyItMatters": "Indexing and connection lookup UX is fragile, and a faster, simpler in-process index could reduce these failure modes."
+      },
+      {
+        "id": "ev:gh:brianpetro:3",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/1379",
+        "source": "github_issue",
+        "title": "[Bug]: Embedding failed: Embedding result 13 contains non-finite values.",
+        "author": "Josh5A",
+        "createdAt": "2026-10-07T07:35:43Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Embedding result 13 contains non-finite values.",
+        "whyItMatters": "Embedding pipeline failures stall the queue, so users must manually re-run tests to recover search."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "localfirst",
+    "segmentName": "Local-first app & Obsidian plugin builders",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:wirux",
+      "runId": "seed",
+      "segmentId": "seed-seg:localfirst",
+      "personId": "person:gh:wirux",
+      "displayName": "Adam Wilczek",
+      "handles": {
+        "github": "wirux",
+        "linkedin": "https://www.linkedin.com/in/adam-wilczek"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "wirux/mcp-markdown-vault",
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, mcp-markdown-vault",
+      "location": "Silesia",
+      "linkedinUrl": "https://www.linkedin.com/in/adam-wilczek"
+    },
+    "brief": {
+      "leadId": "seed:gh:wirux",
+      "profile": "Adam Wilczek (wirux) maintains @wirux/mcp-markdown-vault, a headless MCP server giving AI agents hybrid semantic and TF-IDF search over Obsidian, Logseq and other markdown vaults, with local MiniLM embeddings.",
+      "howWeFit": "Today it loads ONNX Runtime and a MiniLM model per process and persists a flat vector file. Lichen's in-process index with a built-in WASM embedding model could cut per-instance memory and cold-start load.",
+      "whyNow": "Open issues report cold-start stdout breaks and orphaned processes at 250-500 MB each on v2.3.x.",
+      "evidence": [
+        {
+          "text": "Hybrid search: cosine-similarity vectors + TF-IDF + word proximity",
+          "url": "https://github.com/wirux/mcp-markdown-vault"
+        },
+        {
+          "text": "stdio: a single non-JSON line on stdout breaks MCP clients on every cold start",
+          "url": "https://github.com/wirux/mcp-markdown-vault/issues/51"
+        },
+        {
+          "text": "Because each instance loads an ONNX runtime plus the local embedding model, every orphan holds",
+          "url": "https://github.com/wirux/mcp-markdown-vault/issues/45"
+        }
+      ],
+      "risks": [
+        "Adoption is small (44 weekly npm downloads, 0 dependents)",
+        "Already ships a working local-embedding stack, so switching cost may be high",
+        "Qdrant client dependency suggests a possible hosted-DB path the maintainer may prefer"
+      ],
+      "suggestedChannels": [
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:wirux:0",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/wirux/mcp-markdown-vault",
+        "source": "github_repo",
+        "title": "wirux/mcp-markdown-vault",
+        "author": "wirux",
+        "createdAt": "2026-10-03T20:50:01Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Hybrid search: cosine-similarity vectors + TF-IDF + word proximity",
+        "whyItMatters": "Builds local semantic search over markdown vaults, the exact segment Lichen targets."
+      },
+      {
+        "id": "ev:gh:wirux:1",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/wirux/mcp-markdown-vault/issues/51",
+        "source": "github_issue",
+        "title": "stdio: a single non-JSON line on stdout breaks MCP clients on every cold start",
+        "author": "find1521",
+        "createdAt": "2026-11-16T13:26:28Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "stdio: a single non-JSON line on stdout breaks MCP clients on every cold start",
+        "whyItMatters": "Cold-start index loading is a visible pain point for local semantic search."
+      },
+      {
+        "id": "ev:gh:wirux:2",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/wirux/mcp-markdown-vault/issues/45",
+        "source": "github_issue",
+        "title": "stdio transport: server never exits when the parent dies, orphaned processes accumulate (250-500 MB each)",
+        "author": "Fl0p",
+        "createdAt": "2026-08-04T08:05:03Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "Because each instance loads an ONNX runtime plus the local embedding model, every orphan holds",
+        "whyItMatters": "Each instance's model and runtime load costs 250-500 MB, a heavy local stack Lichen could replace."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "localfirst",
+    "segmentName": "Local-first app & Obsidian plugin builders",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:goberomsu",
+      "runId": "seed",
+      "segmentId": "seed-seg:localfirst",
+      "personId": "person:gh:goberomsu",
+      "displayName": "Beomsu Koh",
+      "handles": {
+        "github": "GoBeromsu",
+        "x": "BeromArtDev",
+        "linkedin": "https://www.linkedin.com/in/beomsu-koh"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "GoBeromsu/obsidian-open-connections",
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, obsidian-open-connections",
+      "location": "대한민국",
+      "xProfile": {
+        "handle": "BeromArtDev",
+        "url": "https://x.com/BeromArtDev"
+      },
+      "linkedinUrl": "https://www.linkedin.com/in/beomsu-koh",
+      "website": "https://beomsukoh.com/"
+    },
+    "brief": {
+      "leadId": "seed:gh:goberomsu",
+      "profile": "Builds Open Connections, an Obsidian plugin for semantic related-notes and meaning-based lookup, plus an MCP server. Also maintains obsidian-qmd for local search. Works with Transformers.js, Ollama, and LM Studio.",
+      "howWeFit": "Today embeddings run via Transformers.js or an external Ollama/LM Studio server, with a local cache that goes stale (#159). Lichen runs in-process with a built-in model, removing the server hop and the external index to keep in sync.",
+      "whyNow": "Open issues show indexing stalls and stale entries on large vaults; an embedded index addresses both directly.",
+      "evidence": [
+        {
+          "text": "Lookup view searches the vault by meaning instead of keywords.",
+          "url": "https://github.com/GoBeromsu/obsidian-open-connections"
+        },
+        {
+          "text": "The Connections view lists notes that are no longer in the vault.",
+          "url": "https://github.com/GoBeromsu/obsidian-open-connections/issues/159"
+        },
+        {
+          "text": "The status never advances on its own.",
+          "url": "https://github.com/GoBeromsu/obsidian-open-connections/issues/93"
+        }
+      ],
+      "risks": [
+        "Already has a working local default via Transformers.js, so switching costs must be clearly lower",
+        "Lichen's Obsidian/Electron compatibility would need verification",
+        "Maintainer may prioritize MCP and provider breadth over index internals"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:goberomsu:0",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/GoBeromsu/obsidian-open-connections",
+        "source": "github_repo",
+        "title": "GoBeromsu/obsidian-open-connections",
+        "author": "GoBeromsu",
+        "createdAt": "2026-11-04T04:06:13Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Lookup view searches the vault by meaning instead of keywords.",
+        "whyItMatters": "Ships semantic lookup inside an Obsidian plugin, the exact local-first search surface Lichen targets."
+      },
+      {
+        "id": "ev:gh:goberomsu:1",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/GoBeromsu/obsidian-open-connections/issues/159",
+        "source": "github_issue",
+        "title": "Connections view shows notes that no longer exist (files removed or renamed while Obsidian was closed are never pruned)",
+        "author": "r3lativo",
+        "createdAt": "2026-11-07T18:39:54Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.75,
+        "quote": "The Connections view lists notes that are no longer in the vault.",
+        "whyItMatters": "Stale index entries persist across restarts, a sync and index-consistency problem an in-process index can avoid."
+      },
+      {
+        "id": "ev:gh:goberomsu:2",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/GoBeromsu/obsidian-open-connections/issues/93",
+        "source": "github_issue",
+        "title": "First-time indexing stops at ~50 notes; remaining 1,700+ notes need manual note-switching",
+        "author": "riverai",
+        "createdAt": "2026-10-01T00:35:10Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "The status never advances on its own.",
+        "whyItMatters": "Embedding pipeline stalls on a 1,779-note vault, showing the cost of running embeddings through an external server."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "localfirst",
+    "segmentName": "Local-first app & Obsidian plugin builders",
+    "stated": false,
+    "lead": {
+      "id": "seed:org:lovstudio",
+      "runId": "seed",
+      "segmentId": "seed-seg:localfirst",
+      "personId": "person:gh:lovstudio",
+      "displayName": "Lovstudio.AI",
+      "handles": {
+        "github": "lovstudio"
+      },
+      "company": {
+        "name": "Lovstudio.AI",
+        "domain": "lovstudio.ai"
+      },
+      "email": {
+        "address": "founder@lovstudio.ai",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "lovstudio/Ataru",
+      "fitScore": 62,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, lovstudio/Ataru",
+      "website": "https://lovstudio.ai/",
+      "account": {
+        "name": "Lovstudio.AI",
+        "domain": "lovstudio.ai",
+        "sizeBand": "solo",
+        "sizeSource": "https://github.com/orgs/lovstudio/people (0 public members; headcount unverified)",
+        "contacts": [
+          {
+            "displayName": "Mark",
+            "role": "maintainer of lovstudio/Ataru (604 commits)",
+            "github": "MarkShawn2020",
+            "githubUrl": "https://github.com/MarkShawn2020",
+            "website": "https://lovstudio.ai/",
+            "email": "shawninjuly@gmail.com",
+            "location": "Beijing, China"
+          },
+          {
+            "displayName": "Miak",
+            "role": "maintainer of lovstudio/Ataru (2 commits)",
+            "github": "yesimmia",
+            "githubUrl": "https://github.com/yesimmia",
+            "location": "Beijing"
+          }
+        ],
+        "industry": "Developer tools / AI coding",
+        "whyFit": "Ataru uses Tantivy keyword search with semantic recall as an optional add-on. Lichen could run as an in-process embedded index next to the Rust core, giving offline semantic recall without a separate embedding server."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:lovstudio",
+      "profile": "Lovstudio.AI is a solo studio building Ataru, a local-first AI memory retrieval tool. Ataru has a Rust search core with Tantivy and Jieba keyword search, a desktop GUI, and optional semantic recall over local agent session history.",
+      "howWeFit": "Ataru uses Tantivy keyword search with semantic recall as an optional add-on. Lichen could run as an in-process embedded index next to the Rust core, giving offline semantic recall without a separate embedding server.",
+      "whyNow": "Ataru already has optional semantic recall and an offline fallback path, so an embedded index could fill that gap now.",
+      "evidence": [
+        {
+          "text": "Tantivy + Jieba keyword search, optional semantic recall",
+          "url": "https://github.com/lovstudio/Ataru"
+        },
+        {
+          "text": "Full-text search** across OpenCode conversations",
+          "url": "https://github.com/lovstudio/Ataru/issues/33"
+        }
+      ],
+      "risks": [
+        "Ataru is a solo project with a small user base, so adoption may be slow",
+        "Existing keyword search may already meet most needs, reducing urgency for semantic recall",
+        "Integration with the Rust core may require SDK work beyond a simple drop-in"
+      ],
+      "suggestedChannels": [
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:lovstudio:0",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/lovstudio/Ataru",
+        "source": "github_repo",
+        "title": "lovstudio/Ataru",
+        "author": "lovstudio",
+        "createdAt": "2026-08-24T01:52:08Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Tantivy + Jieba keyword search, optional semantic recall",
+        "whyItMatters": "Ataru already ships a local search core and plans optional semantic recall, which is where an in-process index fits."
+      },
+      {
+        "id": "ev:org:lovstudio:1",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/lovstudio/Ataru/issues/33",
+        "source": "github_issue",
+        "title": "feat: Import and browse OpenCode session history",
+        "author": "afaf-tech",
+        "createdAt": "2026-08-03T02:33:13Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.4,
+        "quote": "Full-text search** across OpenCode conversations",
+        "whyItMatters": "Search across local agent session history is a recurring feature request, so retrieval speed matters for the product."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "localfirst",
+    "segmentName": "Local-first app & Obsidian plugin builders",
+    "stated": false,
+    "lead": {
+      "id": "seed:org:mathomhaus",
+      "runId": "seed",
+      "segmentId": "seed-seg:localfirst",
+      "personId": "person:gh:mathomhaus",
+      "displayName": "mathomhaus",
+      "handles": {
+        "github": "mathomhaus",
+        "x": "kunallanjewar"
+      },
+      "company": {
+        "name": "mathomhaus"
+      },
+      "email": null,
+      "primaryRepo": "mathomhaus/guild",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, mathomhaus/guild",
+      "location": "United States of America",
+      "xProfile": {
+        "handle": "kunallanjewar",
+        "url": "https://x.com/kunallanjewar"
+      },
+      "account": {
+        "name": "mathomhaus",
+        "domain": null,
+        "sizeBand": "solo",
+        "sizeSource": "https://github.com/orgs/mathomhaus/people (0 public members; headcount unverified)",
+        "contacts": [
+          {
+            "displayName": "Kunal Lanjewar",
+            "role": "RiotGames, maintainer of mathomhaus/guild (41 commits)",
+            "github": "kunallanjewar",
+            "githubUrl": "https://github.com/kunallanjewar",
+            "xProfile": {
+              "handle": "kunallanjewar",
+              "url": "https://x.com/kunallanjewar"
+            },
+            "linkedinUrl": "https://www.linkedin.com/in/kunallanjewar",
+            "location": "California"
+          },
+          {
+            "displayName": "Matt Van Horn",
+            "role": "maintainer of mathomhaus/guild (8 commits)",
+            "github": "mvanhorn",
+            "githubUrl": "https://github.com/mvanhorn",
+            "xProfile": {
+              "handle": "mvanhorn",
+              "url": "https://x.com/mvanhorn"
+            }
+          }
+        ],
+        "industry": "Developer tools / AI agents",
+        "whyFit": "guild runs local SQLite with a fused BM25 and vector pipeline plus an optional Ollama embedder. Lichen could replace the embed-rebuild and vector-table layer with an in-process index, but its SDKs are TypeScript and Python, not Go."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:mathomhaus",
+      "profile": "Solo builder behind mathomhaus/guild, a single Go binary providing shared context, memory, and task coordination for AI coding agents. Uses embedded SQLite with BM25 plus vector hybrid search and an optional Ollama embedding backend.",
+      "howWeFit": "guild runs local SQLite with a fused BM25 and vector pipeline plus an optional Ollama embedder. Lichen could replace the embed-rebuild and vector-table layer with an in-process index, but its SDKs are TypeScript and Python, not Go.",
+      "whyNow": "Open issues on RRF ranking quality and embed-rebuild coverage show the vector layer is actively being reworked.",
+      "evidence": [
+        {
+          "text": "State is stored locally, and the default embedding backend runs on your machine.",
+          "url": "https://github.com/mathomhaus/guild"
+        },
+        {
+          "text": "results that match a single common keyword via BM25 can dominate the fused ranking even when their semantic score is weak.",
+          "url": "https://github.com/mathomhaus/guild/issues/92"
+        },
+        {
+          "text": "Net result: the corpus stays at 0% coverage and the rebuild appears to silently no-op.",
+          "url": "https://github.com/mathomhaus/guild/issues/88"
+        }
+      ],
+      "risks": [
+        "No Go SDK, so integration would need a WASM or FFI path or a language change",
+        "Current stack is already local, so the gain is mainly in ranking quality and rebuild reliability",
+        "Solo maintainer with limited budget for switching embedding infrastructure"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:mathomhaus:0",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/mathomhaus/guild",
+        "source": "github_repo",
+        "title": "mathomhaus/guild",
+        "author": "mathomhaus",
+        "createdAt": "2026-11-09T17:45:09Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "State is stored locally, and the default embedding backend runs on your machine.",
+        "whyItMatters": "Already builds local-first semantic search in a Go binary on embedded SQLite, the same in-process pattern Lichen targets."
+      },
+      {
+        "id": "ev:org:mathomhaus:1",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/mathomhaus/guild/issues/92",
+        "source": "github_issue",
+        "title": "[bug] lore_appraise RRF surfaces off-topic results on shared-keyword BM25 hits",
+        "author": "kunallanjewar",
+        "createdAt": "2026-05-11T17:29:32Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "results that match a single common keyword via BM25 can dominate the fused ranking even when their semantic score is weak.",
+        "whyItMatters": "Hybrid BM25 and vector rank fusion is producing off-topic results, a retrieval-quality problem Lichen's built-in embeddings could address."
+      },
+      {
+        "id": "ev:org:mathomhaus:2",
+        "segmentId": "seed-seg:localfirst",
+        "url": "https://github.com/mathomhaus/guild/issues/88",
+        "source": "github_issue",
+        "title": "[bug] lore embed-rebuild leaves coverage at 0% while lore_health reports embedder enabled",
+        "author": "kunallanjewar",
+        "createdAt": "2026-05-11T17:29:27Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Net result: the corpus stays at 0% coverage and the rebuild appears to silently no-op.",
+        "whyItMatters": "Embedding rebuild and vector index state are failing silently, showing the operational cost of maintaining a separate embedding stack."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "ext",
+    "segmentName": "Browser extension builders doing semantic search",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:marswangyang",
+      "runId": "seed",
+      "segmentId": "seed-seg:ext",
+      "personId": "person:gh:marswangyang",
+      "displayName": "Mars Wang",
+      "handles": {
+        "github": "marswangyang"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "marswangyang/personal-ai-memory",
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Creator, personal-ai-memory (Chrome extension)",
+      "location": "United States",
+      "website": "https://ai-memory-beta.vercel.app/"
+    },
+    "brief": {
+      "leadId": "seed:gh:marswangyang",
+      "profile": "Creator of a local-first Chrome extension that captures ChatGPT, Gemini, Claude, Perplexity and Grok chats into a private memory graph, with in-browser hybrid RAG (vector + BM25).",
+      "howWeFit": "Today the hybrid vector+BM25 search is hand-rolled on WebAssembly and IndexedDB. Lichen replaces that with an embedded index and built-in embedding model, giving sub-10 ms lookups with no separate store.",
+      "whyNow": null,
+      "evidence": [
+        {
+          "text": "Features in-browser Hybrid RAG (Vector + BM25), semantic search, and 100% privacy via WebAssembly and IndexedDB.",
+          "url": "https://github.com/marswangyang/personal-ai-memory"
+        },
+        {
+          "text": "All data is stored locally using IndexedDB. Your conversations never leave your device.",
+          "url": "https://chromewebstore.google.com/detail/personal-ai-memory/cjkjgbddkaoogdbfffiooeppnmbplpnh"
+        },
+        {
+          "text": "We prioritize your privacy with local-first architecture using Manifest V3 and WebAssembly.",
+          "url": "https://ai-memory-beta.vercel.app/"
+        }
+      ],
+      "risks": [
+        "Small project with few ratings (5), so traction and willingness to pay are unproven",
+        "Existing WASM plus IndexedDB stack already works and may feel good enough",
+        "Could prefer to keep the hybrid BM25 logic custom rather than adopt an external index"
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:marswangyang:0",
+        "segmentId": "seed-seg:ext",
+        "url": "https://github.com/marswangyang/personal-ai-memory",
+        "source": "github_repo",
+        "title": "marswangyang/personal-ai-memory",
+        "author": "marswangyang",
+        "createdAt": "2026-03-24T23:47:26Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "Features in-browser Hybrid RAG (Vector + BM25), semantic search, and 100% privacy via WebAssembly and IndexedDB.",
+        "whyItMatters": "Already builds in-browser semantic retrieval inside an extension, the exact segment Lichen targets."
+      },
+      {
+        "id": "ev:gh:marswangyang:1",
+        "segmentId": "seed-seg:ext",
+        "url": "https://chromewebstore.google.com/detail/personal-ai-memory/cjkjgbddkaoogdbfffiooeppnmbplpnh",
+        "source": "web",
+        "title": "Personal AI Memory - Chrome Web Store",
+        "author": null,
+        "createdAt": null,
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "All data is stored locally using IndexedDB. Your conversations never leave your device.",
+        "whyItMatters": "Data must stay on-device, which rules out a hosted vector DB round trip."
+      },
+      {
+        "id": "ev:gh:marswangyang:2",
+        "segmentId": "seed-seg:ext",
+        "url": "https://ai-memory-beta.vercel.app/",
+        "source": "web",
+        "title": "Personal AI Memory - Local AI Conversation Manager & Prompt Extension",
+        "author": null,
+        "createdAt": null,
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "We prioritize your privacy with local-first architecture using Manifest V3 and WebAssembly.",
+        "whyItMatters": "Shows a Manifest V3 plus WebAssembly architecture where an embedded index would run natively."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "ext",
+    "segmentName": "Browser extension builders doing semantic search",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:hangwin",
+      "runId": "seed",
+      "segmentId": "seed-seg:ext",
+      "personId": "person:gh:hangwin",
+      "displayName": "hangwin",
+      "handles": {
+        "github": "hangwin"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "hangwin/mcp-chrome",
+      "fitScore": 72,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, mcp-chrome"
+    },
+    "brief": {
+      "leadId": "seed:gh:hangwin",
+      "profile": "Maintainer of mcp-chrome, a Chrome extension MCP server (about 11.6k GitHub stars) that lets AI assistants control and search the user's real browser, including semantic tab search.",
+      "howWeFit": "Semantic tab search runs on a custom WebAssembly vector search stack inside the extension. Lichen's built-in WASM embedding model and small in-process index could replace that stack with less code and no network hop.",
+      "whyNow": null,
+      "evidence": [
+        {
+          "text": "enabling complex browser automation, content analysis, and semantic search",
+          "url": "https://github.com/hangwin/mcp-chrome"
+        },
+        {
+          "text": "WebAssembly vector search",
+          "url": "https://explaingit.com/hangwin/mcp-chrome"
+        }
+      ],
+      "risks": [
+        "Existing WASM vector search may already meet current needs, so switching cost could outweigh gains",
+        "Early-stage project per its README; priorities may shift away from search",
+        "Single-maintainer open-source repo with no revenue signal for pricing"
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:hangwin:0",
+        "segmentId": "seed-seg:ext",
+        "url": "https://github.com/hangwin/mcp-chrome",
+        "source": "github_repo",
+        "title": "hangwin/mcp-chrome",
+        "author": "hangwin",
+        "createdAt": "2026-01-06T13:05:39Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "enabling complex browser automation, content analysis, and semantic search",
+        "whyItMatters": "Shows the project is built to add semantic search inside a Chrome extension."
+      },
+      {
+        "id": "ev:gh:hangwin:1",
+        "segmentId": "seed-seg:ext",
+        "url": "https://explaingit.com/hangwin/mcp-chrome",
+        "source": "web",
+        "title": "hangwin/mcp-chrome explained: what it does · ExplainGit",
+        "author": null,
+        "createdAt": null,
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.75,
+        "quote": "WebAssembly vector search",
+        "whyItMatters": "Confirms an in-extension WASM vector search stack, the exact setup Lichen would replace."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "games",
+    "segmentName": "Game devs: in-engine NPC lore retrieval",
+    "stated": false,
+    "lead": {
+      "id": "seed:li:towsif-ahamed-labib",
+      "runId": "seed",
+      "segmentId": "seed-seg:games",
+      "personId": "person:li:towsif-ahamed-labib",
+      "displayName": "Towsif Ahamed Labib",
+      "handles": {
+        "linkedin": "https://www.linkedin.com/in/towsif-ahmed-labib"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": null,
+      "fitScore": 62,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Creator, GameRAGKit",
+      "linkedinUrl": "https://www.linkedin.com/in/towsif-ahmed-labib"
+    },
+    "brief": {
+      "leadId": "seed:li:towsif-ahamed-labib",
+      "profile": "Senior ML engineer at Markopolo.ai in Dhaka. Creator of GameRAGKit, an open-source toolkit that gives game NPCs memory, persona and lore via RAG across Unity C#, Unreal over HTTP and Minecraft/Java.",
+      "howWeFit": "GameRAGKit needs a retrieval layer per NPC; today it relies on local Ollama or cloud providers. Lichen could be an embedded in-process index in C#, cutting the HTTP hop for Unreal and per-call cloud cost.",
+      "whyNow": "GameRagKit v0.1.10 just shipped on NuGet, so the retrieval layer is still being shaped.",
+      "evidence": [
+        {
+          "text": "Scales to thousands of NPCs: tiered knowledge (world / region / faction / per-NPC memory) keeps retrieval fast and lean.",
+          "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_gameragkit-0110-activity-7400431167969349632-95c6"
+        },
+        {
+          "text": "cloud models are awesome, but the cost can grow really fast once your NPCs are chatting at scale",
+          "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_gameragkit-gamedev-unity-activity-7406042265594265600-uJ3k"
+        },
+        {
+          "text": "2. Latency & Retrieval Speed",
+          "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_llm-rag-machinelearning-activity-7260202711931854848-Oi4I"
+        }
+      ],
+      "risks": [
+        "Open-source solo project, so buying intent is uncertain",
+        "He may already consider local Ollama sufficient and skip an extra index",
+        "Lichen's JS/Python SDKs may not match his C# and Java stack"
+      ],
+      "suggestedChannels": [
+        "linkedin"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:li:towsif-ahamed-labib:0",
+        "segmentId": "seed-seg:games",
+        "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_gameragkit-0110-activity-7400431167969349632-95c6",
+        "source": "web",
+        "title": "Introducing GameRAGKit — a drop-in toolkit to give NPCs real memory, persona, and world knowledge across engines. | Towsif Ahamed Labib",
+        "author": "Towsif Ahamed Labib",
+        "createdAt": "2025-11-29T00:00:00.000Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Scales to thousands of NPCs: tiered knowledge (world / region / faction / per-NPC memory) keeps retrieval fast and lean.",
+        "whyItMatters": "Shows he already builds tiered NPC retrieval, the exact lore lookup Lichen would replace."
+      },
+      {
+        "id": "ev:li:towsif-ahamed-labib:1",
+        "segmentId": "seed-seg:games",
+        "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_gameragkit-gamedev-unity-activity-7406042265594265600-uJ3k",
+        "source": "web",
+        "title": "Just shipped GameRagKit v0.1.10 (the first stable version) on NuGet. | Towsif Ahamed Labib",
+        "author": "Towsif Ahamed Labib",
+        "createdAt": "2025-12-14T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "cloud models are awesome, but the cost can grow really fast once your NPCs are chatting at scale",
+        "whyItMatters": "Names per-call cloud cost at NPC scale, which an in-process index avoids."
+      },
+      {
+        "id": "ev:li:towsif-ahamed-labib:2",
+        "segmentId": "seed-seg:games",
+        "url": "https://www.linkedin.com/posts/towsif-ahmed-labib_llm-rag-machinelearning-activity-7260202711931854848-Oi4I",
+        "source": "web",
+        "title": "🚀 Best Practices for Pre-Deploying LLM with Retrieval-Augmented Generation (RAG): Ensuring Accuracy & Efficiency | Towsif Ahamed Labib",
+        "author": "Towsif Ahamed Labib",
+        "createdAt": "2024-11-07T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "2. Latency & Retrieval Speed",
+        "whyItMatters": "Retrieval latency is a core concern in his RAG pre-deployment guidance."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "games",
+    "segmentName": "Game devs: in-engine NPC lore retrieval",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:letuhao",
+      "runId": "seed",
+      "segmentId": "seed-seg:games",
+      "personId": "person:gh:letuhao",
+      "displayName": "Lê Tú Hào",
+      "handles": {
+        "github": "letuhao"
+      },
+      "company": {
+        "name": "ACFC"
+      },
+      "email": {
+        "address": "letuhao1994@gmail.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "letuhao/lore-weave",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, lore-weave",
+      "location": "Ho Chi Minh City, Vietnam"
+    },
+    "brief": {
+      "leadId": "seed:gh:letuhao",
+      "profile": "Vietnamese developer and project lead building lore-weave, an open-source AI co-author with RAG lore glossary and an MMO RPG extension where LLM NPCs use the author's canon. Also builds VarVault and free-context-hub.",
+      "howWeFit": "lore-weave runs RAG over a server-side stack (Go, Python, NestJS). Lichen could move NPC canon lookup in-process, removing the server round trip for in-engine NPC lore retrieval.",
+      "whyNow": "The living-world NPC extension is in progress, so in-engine lore lookup is still open to design.",
+      "evidence": [
+        {
+          "text": "where LLM-driven NPCs bring your canon to life",
+          "url": "https://github.com/letuhao/lore-weave"
+        },
+        {
+          "text": "intent-based repo indexing (pgvector)",
+          "url": "https://github.com/letuhao/free-context-hub"
+        },
+        {
+          "text": "Builds a knowledge graph from your manuscript so every draft, translation, and suggestion stays consistent with your canon.",
+          "url": "https://skills.rest/repo/letuhao/lore-weave"
+        }
+      ],
+      "risks": [
+        "Server-side RAG may be intentional, so in-engine lookup might not be needed.",
+        "Small community: 37 stars and 2 forks, so limited commercial signal.",
+        "Focus is novel writing; game-engine NPC integration is unproven."
+      ],
+      "suggestedChannels": [
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:letuhao:0",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/letuhao/lore-weave",
+        "source": "github_repo",
+        "title": "letuhao/lore-weave",
+        "author": "letuhao",
+        "createdAt": "2026-11-23T17:50:46Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "where LLM-driven NPCs bring your canon to life",
+        "whyItMatters": "Builds LLM-driven NPCs that need canon lookup, the exact in-engine retrieval Lichen targets."
+      },
+      {
+        "id": "ev:gh:letuhao:1",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/letuhao/free-context-hub",
+        "source": "github_repo",
+        "title": "letuhao/free-context-hub",
+        "author": "letuhao",
+        "createdAt": "2026-08-14T13:49:38Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "intent-based repo indexing (pgvector)",
+        "whyItMatters": "Runs pgvector for retrieval, a network-hop vector store Lichen could replace with an in-process index."
+      },
+      {
+        "id": "ev:gh:letuhao:2",
+        "segmentId": "seed-seg:games",
+        "url": "https://skills.rest/repo/letuhao/lore-weave",
+        "source": "web",
+        "title": "lore-weave — Agent Skills Repository by letuhao | skills.rest",
+        "author": null,
+        "createdAt": null,
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "Builds a knowledge graph from your manuscript so every draft, translation, and suggestion stays consistent with your canon.",
+        "whyItMatters": "Shows lore consistency depends on retrieval across drafts, a need for fast local semantic lookup."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "games",
+    "segmentName": "Game devs: in-engine NPC lore retrieval",
+    "stated": false,
+    "lead": {
+      "id": "seed:org:undreamai",
+      "runId": "seed",
+      "segmentId": "seed-seg:games",
+      "personId": "person:gh:undreamai",
+      "displayName": "undreamai",
+      "handles": {
+        "github": "undreamai",
+        "linkedin": "https://linkedin.com/company/undreamai"
+      },
+      "company": {
+        "name": "undreamai"
+      },
+      "email": null,
+      "primaryRepo": "undreamai/LLMUnity",
+      "fitScore": 74,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, LLMUnity",
+      "linkedinUrl": "https://linkedin.com/company/undreamai",
+      "account": {
+        "name": "undreamai",
+        "domain": null,
+        "sizeBand": "startup",
+        "sizeSource": "https://linkedin.com/company/undreamai",
+        "contacts": [
+          {
+            "displayName": "Antonis Makropoulos",
+            "role": "maintainer of undreamai/LLMUnity (1413 commits)",
+            "github": "amakropoulos",
+            "githubUrl": "https://github.com/amakropoulos",
+            "linkedinUrl": "https://www.linkedin.com/in/antonios-makropoulos",
+            "email": "benuix@gmail.com"
+          },
+          {
+            "displayName": "Bruce Kristelijn",
+            "role": "maintainer of undreamai/LLMUnity (5 commits)",
+            "github": "BruceKristelijn",
+            "githubUrl": "https://github.com/BruceKristelijn",
+            "xProfile": {
+              "handle": "FourtyFourr_",
+              "url": "https://x.com/FourtyFourr_"
+            },
+            "website": "https://brucekristelijn.nl/"
+          }
+        ],
+        "industry": "Game dev tooling / AI",
+        "whyFit": "Their RAG runs ANN search through a separate backend stack. Lichen's embedded in-process index with a built-in WASM embedding model could replace that lookup with sub-10 ms local retrieval inside Unity."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:undreamai",
+      "profile": "Undreamai builds LLMUnity, an open-source Unity package for running LLM-powered characters locally, with a RAG system for semantic search over character knowledge. Startup serving 7500+ game developers.",
+      "howWeFit": "Their RAG runs ANN search through a separate backend stack. Lichen's embedded in-process index with a built-in WASM embedding model could replace that lookup with sub-10 ms local retrieval inside Unity.",
+      "whyNow": "Developers are asking for grouped and NPC-specific lore retrieval now, which a single in-process index can simplify.",
+      "evidence": [
+        {
+          "text": "The package includes a Retrieval-Augmented Generation (RAG) system for semantic search across your data, which can be used to enhance the character's knowledge.",
+          "url": "https://github.com/undreamai/LLMUnity"
+        },
+        {
+          "text": "for NPC-exclusive information, the current API interface requires two separate searches",
+          "url": "https://github.com/undreamai/LLMUnity/issues/394"
+        },
+        {
+          "text": "i want to summary the history as memory.",
+          "url": "https://github.com/undreamai/LLMUnity/issues/406"
+        }
+      ],
+      "risks": [
+        "Their RAG is already shipped and free, so switching cost may feel high",
+        "Unity C# integration path for Lichen SDK needs validation",
+        "Their backend is llama.cpp-based, not a pure retrieval stack"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "email",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:undreamai:0",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/undreamai/LLMUnity",
+        "source": "github_repo",
+        "title": "undreamai/LLMUnity",
+        "author": "undreamai",
+        "createdAt": "2026-04-29T09:23:09Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "The package includes a Retrieval-Augmented Generation (RAG) system for semantic search across your data, which can be used to enhance the character's knowledge.",
+        "whyItMatters": "Ships a built-in RAG semantic search for NPC knowledge inside Unity, the exact in-engine lore lookup Lichen targets."
+      },
+      {
+        "id": "ev:org:undreamai:1",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/undreamai/LLMUnity/issues/394",
+        "source": "github_issue",
+        "title": "Suggestions for RAG System Functionality",
+        "author": "sdhexu",
+        "createdAt": "2026-03-07T08:47:35Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.75,
+        "quote": "for NPC-exclusive information, the current API interface requires two separate searches",
+        "whyItMatters": "Shows per-NPC and shared lore retrieval is clunky, needing two separate searches per query."
+      },
+      {
+        "id": "ev:org:undreamai:2",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/undreamai/LLMUnity/issues/406",
+        "source": "github_issue",
+        "title": "Visual Novel mode",
+        "author": "Muruaaki",
+        "createdAt": "2026-05-15T21:01:19Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "i want to summary the history as memory.",
+        "whyItMatters": "Users want NPC memory lookup in-engine for visual novel characters, a retrieval need Lichen serves locally."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "games",
+    "segmentName": "Game devs: in-engine NPC lore retrieval",
+    "stated": false,
+    "lead": {
+      "id": "seed:org:justinternetai",
+      "runId": "seed",
+      "segmentId": "seed-seg:games",
+      "personId": "person:gh:justinternetai",
+      "displayName": "JustInternetAI",
+      "handles": {
+        "github": "JustInternetAI"
+      },
+      "company": {
+        "name": "JustInternetAI"
+      },
+      "email": null,
+      "primaryRepo": "JustInternetAI/AgentArena",
+      "fitScore": 58,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, JustInternetAI/AgentArena",
+      "account": {
+        "name": "JustInternetAI",
+        "domain": null,
+        "sizeBand": "startup",
+        "sizeSource": "https://prospeo.io/c/justinternetai",
+        "contacts": [
+          {
+            "displayName": "justinmadison",
+            "role": "maintainer of JustInternetAI/AgentArena (74 commits)",
+            "github": "justinmadison",
+            "githubUrl": "https://github.com/justinmadison"
+          },
+          {
+            "displayName": "AndrewBMadison",
+            "role": "maintainer of JustInternetAI/AgentArena (47 commits)",
+            "github": "AndrewBMadison",
+            "githubUrl": "https://github.com/AndrewBMadison"
+          }
+        ],
+        "industry": "Game dev / AI tooling",
+        "whyFit": "They run a Python long-term vector store with RAG and a separate Python harness for NPC memory. Lichen could replace that with an in-process index that sits next to the Godot-side agent loop, cutting lookup latency and removing a service h…"
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:justinternetai",
+      "profile": "Solo JustInternetAI team (Justin and Andrew Madison) building AgentArena, a Godot 4 framework for LLM-driven NPCs with tools, episodic memory, and RAG, focused on local models and simulation testbeds.",
+      "howWeFit": "They run a Python long-term vector store with RAG and a separate Python harness for NPC memory. Lichen could replace that with an in-process index that sits next to the Godot-side agent loop, cutting lookup latency and removing a service h…",
+      "whyNow": "They are actively building query tools for spatial and episode memory (issue 86), which is the lookup path Lichen would serve.",
+      "evidence": [
+        {
+          "text": "A Godot-native framework for LLM-driven NPCs with tools, memory, and goal-oriented behavior",
+          "url": "https://github.com/JustInternetAI/AgentArena"
+        },
+        {
+          "text": "Query tools resolve instantly in Python (no IPC to Godot)",
+          "url": "https://github.com/JustInternetAI/AgentArena/issues/86"
+        },
+        {
+          "text": "no agent framework provides grid-based 3D spatial indexing with object lifecycle tracking",
+          "url": "https://github.com/JustInternetAI/AgentArena/issues/85"
+        }
+      ],
+      "risks": [
+        "Architecture is Python harness plus C++ module, so an in-engine Godot integration path for Lichen may need extra work.",
+        "Solo maintainers with a research focus may not prioritize swapping out a working vector store.",
+        "Their memory may be mostly structured spatial data, reducing the value of semantic embedding search."
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:justinternetai:0",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/JustInternetAI/AgentArena",
+        "source": "github_repo",
+        "title": "JustInternetAI/AgentArena",
+        "author": "JustInternetAI",
+        "createdAt": "2026-03-06T18:30:47Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "A Godot-native framework for LLM-driven NPCs with tools, memory, and goal-oriented behavior",
+        "whyItMatters": "Builds LLM-driven NPCs with memory directly in Godot, the exact in-engine setting Lichen targets."
+      },
+      {
+        "id": "ev:org:justinternetai:1",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/JustInternetAI/AgentArena/issues/86",
+        "source": "github_issue",
+        "title": "Add query tools for framework adapters (spatial memory, episode memory)",
+        "author": "justinmadison",
+        "createdAt": "2026-02-24T01:39:40Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Query tools resolve instantly in Python (no IPC to Godot)",
+        "whyItMatters": "Shows they care about avoiding cross-process hops for memory lookups during NPC reasoning."
+      },
+      {
+        "id": "ev:org:justinternetai:2",
+        "segmentId": "seed-seg:games",
+        "url": "https://github.com/JustInternetAI/AgentArena/issues/85",
+        "source": "github_issue",
+        "title": "Migrate SpatialMemory to SDK as standalone module",
+        "author": "justinmadison",
+        "createdAt": "2026-02-24T01:39:17Z",
+        "type": "discussion",
+        "stance": "supports",
+        "strength": 0.5,
+        "quote": "no agent framework provides grid-based 3D spatial indexing with object lifecycle tracking",
+        "whyItMatters": "Signals they are investing in custom in-process spatial memory rather than a hosted store."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "health",
+    "segmentName": "Healthcare apps keeping PHI on-device",
+    "stated": false,
+    "lead": {
+      "id": "seed:li:ryan-luginbuhl--md",
+      "runId": "seed",
+      "segmentId": "seed-seg:health",
+      "personId": "person:li:ryan-luginbuhl--md",
+      "displayName": "Ryan Luginbuhl, MD",
+      "handles": {
+        "linkedin": "https://www.linkedin.com/in/ryan-luginbuhl-md-7470735a"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": null,
+      "fitScore": 72,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Founder, Chief Health AI (inferred)",
+      "linkedinUrl": "https://www.linkedin.com/in/ryan-luginbuhl-md-7470735a"
+    },
+    "brief": {
+      "leadId": "seed:li:ryan-luginbuhl--md",
+      "profile": "Physician and Stanford Medicine health futurist building open-source, local-first health AI. Ships Chief Health AI, an iPhone app running Gemma 4 on-device, plus laptop-hosted MedGemma tools grounded in clinical protocols.",
+      "howWeFit": "Grounds MedGemma in a 2,894-page protocol manual with a search-retrieve step on a laptop. Lichen would replace that retrieval stack with an in-process index that runs on-device, with no server or vector DB.",
+      "whyNow": "Gemma 4 E2B now runs on iPhone, and his app already does on-device record Q&A. Retrieval is the next layer to tune.",
+      "evidence": [
+        {
+          "text": "The system searches the protocols, retrieves the relevant sections",
+          "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_healthai-medgemma-opensource-activity-7441829426943688707-PJr2"
+        },
+        {
+          "text": "Your records never leave it.",
+          "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_ownyourhealthai-evidencebasedai-localai-activity-7457777347983810560-87wi"
+        },
+        {
+          "text": "No data leaving the machine.",
+          "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_healthai-medgemma-opensource-activity-7436755381764321281-2Gi1"
+        }
+      ],
+      "risks": [
+        "Prototype stage on TestFlight; retrieval may stay hand-rolled",
+        "Small corpora may not need a dedicated index",
+        "Buyer may be individual patients or educators, not health systems"
+      ],
+      "suggestedChannels": [
+        "linkedin"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:li:ryan-luginbuhl,-md:0",
+        "segmentId": "seed-seg:health",
+        "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_healthai-medgemma-opensource-activity-7441829426943688707-PJr2",
+        "source": "web",
+        "title": "I built a clinical AI that cites its sources and knows when to stop. | Ryan Luginbuhl, MD",
+        "author": "Ryan Luginbuhl, MD",
+        "createdAt": "2026-03-23T00:00:00.000Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "The system searches the protocols, retrieves the relevant sections",
+        "whyItMatters": "Already builds on-device retrieval over clinical protocols, which is Lichen's use case."
+      },
+      {
+        "id": "ev:li:ryan-luginbuhl,-md:1",
+        "segmentId": "seed-seg:health",
+        "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_ownyourhealthai-evidencebasedai-localai-activity-7457777347983810560-87wi",
+        "source": "web",
+        "title": "I haven't connected my records to ChatGPT Health. | Ryan Luginbuhl, MD",
+        "author": "Ryan Luginbuhl, MD",
+        "createdAt": "2026-05-06T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Your records never leave it.",
+        "whyItMatters": "Health records must stay on the device, so a hosted vector DB is ruled out."
+      },
+      {
+        "id": "ev:li:ryan-luginbuhl,-md:2",
+        "segmentId": "seed-seg:health",
+        "url": "https://www.linkedin.com/posts/ryan-luginbuhl-md-7470735a_healthai-medgemma-opensource-activity-7436755381764321281-2Gi1",
+        "source": "web",
+        "title": "I just made Google's medical AI available on my website. | Ryan Luginbuhl, MD",
+        "author": "Ryan Luginbuhl, MD",
+        "createdAt": "2026-03-09T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "No data leaving the machine.",
+        "whyItMatters": "Privacy-first local design makes a network hop to a vector DB a conflict."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "health",
+    "segmentName": "Healthcare apps keeping PHI on-device",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:byerlikaya",
+      "runId": "seed",
+      "segmentId": "seed-seg:health",
+      "personId": "person:gh:byerlikaya",
+      "displayName": "Barış Yerlikaya",
+      "handles": {
+        "github": "byerlikaya",
+        "x": "byerlikaya86"
+      },
+      "company": {
+        "name": "Q Investment Bank Inc."
+      },
+      "email": {
+        "address": "b.yerlikaya@outlook.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "byerlikaya/Septum",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, byerlikaya/Septum",
+      "location": "Antalya, Turkey",
+      "xProfile": {
+        "handle": "byerlikaya86",
+        "url": "https://x.com/byerlikaya86"
+      }
+    },
+    "brief": {
+      "leadId": "seed:gh:byerlikaya",
+      "profile": "Barış Yerlikaya is a developer at Q Investment Bank who builds privacy-first AI tooling. Septum masks personal data locally before cloud LLM calls. He also builds SmartRAG, a multi-modal RAG library for .NET.",
+      "howWeFit": "Septum stores local vector and BM25 indexes in Docker volumes. Lichen could replace that separate index stack with an in-process, sub-10 ms semantic index that runs fully offline.",
+      "whyNow": "Septum's Docker setup persists vector and BM25 indexes locally, so index infrastructure is already a live concern for him.",
+      "evidence": [
+        {
+          "text": "Your data never leaves. Your AI still works.",
+          "url": "https://github.com/byerlikaya/Septum"
+        },
+        {
+          "text": "Multi-Modal RAG for .NET — query databases, documents, images and audio in natural language.",
+          "url": "https://github.com/byerlikaya/SmartRAG"
+        },
+        {
+          "text": "Privacy-first AI middleware — mask PII locally, chat with any LLM, raw data never leaves.",
+          "url": "https://hub.docker.com/r/byerlikaya/septum"
+        }
+      ],
+      "risks": [
+        "Septum's current index stack may already meet his needs without changes",
+        "Healthcare PHI focus is inferred from privacy and HIPAA wording, not shown in his work",
+        "Lichen has no stated HIPAA-ready or audited component for regulated data"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "email",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:byerlikaya:0",
+        "segmentId": "seed-seg:health",
+        "url": "https://github.com/byerlikaya/Septum",
+        "source": "github_repo",
+        "title": "byerlikaya/Septum",
+        "author": "byerlikaya",
+        "createdAt": "2026-11-22T16:34:59Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Your data never leaves. Your AI still works.",
+        "whyItMatters": "Builds privacy-first local middleware where sensitive data must stay on-device, matching the PHI constraint."
+      },
+      {
+        "id": "ev:gh:byerlikaya:1",
+        "segmentId": "seed-seg:health",
+        "url": "https://github.com/byerlikaya/SmartRAG",
+        "source": "github_repo",
+        "title": "byerlikaya/SmartRAG",
+        "author": "byerlikaya",
+        "createdAt": "2026-03-09T10:01:57Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Multi-Modal RAG for .NET — query databases, documents, images and audio in natural language.",
+        "whyItMatters": "Actively builds RAG retrieval tooling, so an in-process semantic index fits his stack."
+      },
+      {
+        "id": "ev:gh:byerlikaya:2",
+        "segmentId": "seed-seg:health",
+        "url": "https://hub.docker.com/r/byerlikaya/septum",
+        "source": "web",
+        "title": "byerlikaya/septum - Docker Image",
+        "author": null,
+        "createdAt": null,
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Privacy-first AI middleware — mask PII locally, chat with any LLM, raw data never leaves.",
+        "whyItMatters": "Shows he needs PII and raw data kept local, the same pressure that blocks hosted vector DBs for PHI."
+      }
+    ]
+  },
+  {
+    "kind": "account",
+    "segmentKey": "health",
+    "segmentName": "Healthcare apps keeping PHI on-device",
+    "stated": false,
+    "lead": {
+      "id": "seed:org:lifevalue",
+      "runId": "seed",
+      "segmentId": "seed-seg:health",
+      "personId": "person:gh:lifevalue",
+      "displayName": "Life Value (ex-Tech Stack Apps)",
+      "handles": {
+        "github": "LifeValue",
+        "x": "lifevalueco",
+        "linkedin": "https://linkedin.com/company/lifevalue"
+      },
+      "company": {
+        "name": "Life Value (ex-Tech Stack Apps)",
+        "domain": "lifevalue.com"
+      },
+      "email": {
+        "address": "hello@lifevalue.com",
+        "source": "github_public",
+        "verified": false
+      },
+      "primaryRepo": "LifeValue/HealthWallet.me",
+      "fitScore": 55,
+      "tier": "B",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, LifeValue/HealthWallet.me",
+      "location": "Europe",
+      "xProfile": {
+        "handle": "lifevalueco",
+        "url": "https://x.com/lifevalueco"
+      },
+      "linkedinUrl": "https://linkedin.com/company/lifevalue",
+      "website": "https://lifevalue.com/",
+      "account": {
+        "name": "Life Value (ex-Tech Stack Apps)",
+        "domain": "lifevalue.com",
+        "sizeBand": "startup",
+        "sizeSource": "https://linkedin.com/company/lifevalue",
+        "contacts": [
+          {
+            "displayName": "Beniamin Szilagyi",
+            "role": "Life Value, maintainer of LifeValue/HealthWallet.me (273 commits)",
+            "github": "beniamin-szilagyi",
+            "githubUrl": "https://github.com/beniamin-szilagyi",
+            "xProfile": {
+              "handle": "lifevalueco",
+              "url": "https://x.com/lifevalueco"
+            },
+            "linkedinUrl": "https://www.linkedin.com/in/beniamin-szilagyi",
+            "website": "https://techstackapps.com/",
+            "location": "Europe"
+          },
+          {
+            "displayName": "Mihai Pop",
+            "role": "Life Value, maintainer of LifeValue/HealthWallet.me (123 commits)",
+            "github": "mihaipop-tsa",
+            "githubUrl": "https://github.com/mihaipop-tsa",
+            "website": "https://lifevalue.com/",
+            "location": "Europe"
+          }
+        ],
+        "industry": "Healthcare software",
+        "whyFit": "Their Flutter app and FastenHealth backend keep records local, but semantic search would need a hosted vector DB. Lichen adds an in-process index with an embedded model, so PHI retrieval stays on the device."
+      }
+    },
+    "brief": {
+      "leadId": "seed:org:lifevalue",
+      "profile": "Life Value builds compliant healthcare software and open-source HealthWallet.me, a patient-controlled, offline-first health record app with on-device AI that aggregates FHIR R4 data from 52K+ providers.",
+      "howWeFit": "Their Flutter app and FastenHealth backend keep records local, but semantic search would need a hosted vector DB. Lichen adds an in-process index with an embedded model, so PHI retrieval stays on the device.",
+      "whyNow": "Their clinical agent work logs retrieval context for audits, so PHI retrieval must stay local.",
+      "evidence": [
+        {
+          "text": "Scans paper documents with a local LLM — your data never leaves your device.",
+          "url": "https://github.com/LifeValue/HealthWallet.me"
+        },
+        {
+          "text": "Medical records on your device, no compromise on privacy",
+          "url": "https://lifevalue.com/"
+        },
+        {
+          "text": "No public-API calls on PHI.",
+          "url": "https://lifevalue.com/sub-services/custom-ai-agents"
+        }
+      ],
+      "risks": [
+        "No explicit search or RAG feature is shown in the HealthWallet.me text",
+        "Embedding quality on clinical documents is unproven for Lichen",
+        "Regulated healthcare sales cycles are long"
+      ],
+      "suggestedChannels": [
+        "x_reply",
+        "x_dm",
+        "email",
+        "linkedin",
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:org:lifevalue:0",
+        "segmentId": "seed-seg:health",
+        "url": "https://github.com/LifeValue/HealthWallet.me",
+        "source": "github_repo",
+        "title": "LifeValue/HealthWallet.me",
+        "author": "LifeValue",
+        "createdAt": "2026-11-21T00:02:12Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "Scans paper documents with a local LLM — your data never leaves your device.",
+        "whyItMatters": "Their app already runs on-device AI over PHI, so in-process retrieval fits their architecture."
+      },
+      {
+        "id": "ev:org:lifevalue:1",
+        "segmentId": "seed-seg:health",
+        "url": "https://lifevalue.com/",
+        "source": "web",
+        "title": "Compliant Healthcare Software Development, AI & Strategy | Life Value",
+        "author": "Narcis Baraiac Co-Founder @ Lendr",
+        "createdAt": null,
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "Medical records on your device, no compromise on privacy",
+        "whyItMatters": "Their core promise is keeping medical records on the device, which rules out hosted vector DBs."
+      },
+      {
+        "id": "ev:org:lifevalue:2",
+        "segmentId": "seed-seg:health",
+        "url": "https://lifevalue.com/sub-services/custom-ai-agents",
+        "source": "web",
+        "title": "Custom AI Agents for Healthcare | FHIR-Native | Life Value",
+        "author": null,
+        "createdAt": null,
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.6,
+        "quote": "No public-API calls on PHI.",
+        "whyItMatters": "Their agent work forbids sending PHI to external APIs, which pushes retrieval to a local index."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "edge",
+    "segmentName": "Edge & robotics offline lookup",
+    "stated": false,
+    "lead": {
+      "id": "seed:gh:xyver",
+      "runId": "seed",
+      "segmentId": "seed-seg:edge",
+      "personId": "person:gh:xyver",
+      "displayName": "xyver",
+      "handles": {
+        "github": "xyver"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": "xyver/disaster-clippy-public",
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "Maintainer, disaster-clippy-public"
+    },
+    "brief": {
+      "leadId": "seed:gh:xyver",
+      "profile": "Maintainer of Disaster Clippy, an offline-capable AI search system over curated source packs, plus the DaedalMap geographic query engine. Targets Raspberry Pi, LAN and air-gapped deployments.",
+      "howWeFit": "Today they load local embedding models from a Hugging Face cache plus a server container. Lichen runs an embedded index and built-in model in-process, removing model downloads and startup delay.",
+      "whyNow": "Their issue shows model downloads delaying container startup; an in-process model with no network fetch removes that step.",
+      "evidence": [
+        {
+          "text": "Conversational search over your own data, online, offline, and locally",
+          "url": "https://github.com/xyver/disaster-clippy-public"
+        },
+        {
+          "text": "local embedding models being downloaded from huggingface repositories",
+          "url": "https://github.com/xyver/disaster-clippy-public/issues/2"
+        }
+      ],
+      "risks": [
+        "Single-maintainer public repo with limited adoption signals",
+        "Existing local embedding fallback may be good enough once models are cached",
+        "Ollama-based stack may not want a separate retrieval library"
+      ],
+      "suggestedChannels": [
+        "credit_gift"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:gh:xyver:0",
+        "segmentId": "seed-seg:edge",
+        "url": "https://github.com/xyver/disaster-clippy-public",
+        "source": "github_repo",
+        "title": "xyver/disaster-clippy-public",
+        "author": "xyver",
+        "createdAt": "2026-10-01T17:39:19Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Conversational search over your own data, online, offline, and locally",
+        "whyItMatters": "Builds offline search over curated packs, the exact deployment where in-process retrieval matters."
+      },
+      {
+        "id": "ev:gh:xyver:1",
+        "segmentId": "seed-seg:edge",
+        "url": "https://github.com/xyver/disaster-clippy-public/issues/2",
+        "source": "github_issue",
+        "title": "Required embedding model files not being downloaded properly",
+        "author": "joksan",
+        "createdAt": "2026-01-15T20:52:46Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.85,
+        "quote": "local embedding models being downloaded from huggingface repositories",
+        "whyItMatters": "Embedding model fetching slows container startup and depends on an unreliable cache, a dependency Lichen's built-in model avoids."
+      }
+    ]
+  },
+  {
+    "kind": "person",
+    "segmentKey": "edge",
+    "segmentName": "Edge & robotics offline lookup",
+    "stated": false,
+    "lead": {
+      "id": "seed:li:sasha-denisov",
+      "runId": "seed",
+      "segmentId": "seed-seg:edge",
+      "personId": "person:li:sasha-denisov",
+      "displayName": "Sasha Denisov",
+      "handles": {
+        "linkedin": "https://www.linkedin.com/in/aleks-denisov"
+      },
+      "company": null,
+      "email": null,
+      "primaryRepo": null,
+      "fitScore": 78,
+      "tier": "A",
+      "stage": "discovered",
+      "isDemoRecipient": false,
+      "role": "CTO & Co-Founder, Brainform.ai",
+      "linkedinUrl": "https://www.linkedin.com/in/aleks-denisov"
+    },
+    "brief": {
+      "leadId": "seed:li:sasha-denisov",
+      "profile": "CTO & Co-Founder at Brainform.ai and creator of flutter_gemma (now Flutter Edge AI). Builds on-device AI, RAG and offline memory for Flutter apps, Reachy Mini robots and smart glasses.",
+      "howWeFit": "Uses qdrant-edge via Rust FFI inside flutter_gemma and a robot memory in three shards. Lichen is an in-process index with a built-in embedding model, sub-10 ms lookups, and no native shim to maintain.",
+      "whyNow": "Flutter Edge AI (Oct 2026) makes vector stores swappable, and he is actively choosing embedded indexes.",
+      "evidence": [
+        {
+          "text": "Thanks to Qdrant Edge, adding the database was the easy part: it runs as a library inside the robots own process, with no server to run.",
+          "url": "https://www.linkedin.com/posts/aleks-denisov_inside-the-reachy-mini-robot-is-a-raspberry-activity-7518693632984637440-6mFY"
+        },
+        {
+          "text": "In 0.16 the same workload takes 3.5 seconds, with p95 search under 1.5 ms on every platform I tested.",
+          "url": "https://www.linkedin.com/posts/aleks-denisov_flutter-dart-ondeviceai-activity-7462912529107791872-t0mJ"
+        },
+        {
+          "text": "Now you can build apps with real memory: semantic search, agent memory, personal knowledge bases — all fully offline, right on the device.",
+          "url": "https://www.linkedin.com/posts/aleks-denisov_after-version-0160-fluttergemma-combined-activity-7470026631357779969-xMEH"
+        }
+      ],
+      "risks": [
+        "Qdrant Edge is already embedded and working, so switching cost is real",
+        "Lichen SDKs are TypeScript and Python, not Dart, which limits fit for his Flutter stack",
+        "He is a builder and speaker; purchasing authority for infrastructure is unconfirmed"
+      ],
+      "suggestedChannels": [
+        "linkedin"
+      ]
+    },
+    "evidence": [
+      {
+        "id": "ev:li:sasha-denisov:0",
+        "segmentId": "seed-seg:edge",
+        "url": "https://www.linkedin.com/posts/aleks-denisov_inside-the-reachy-mini-robot-is-a-raspberry-activity-7518693632984637440-6mFY",
+        "source": "web",
+        "title": "Inside the Reachy Mini robot is a Raspberry Pi: four cores, four gigabytes. This summer I showed that a Raspberry Pi can run what a robot needs to hear, see and answer … | Sasha Denisov",
+        "author": "Sasha Denisov",
+        "createdAt": "2026-10-21T00:00:00.000Z",
+        "type": "builder_exists",
+        "stance": "supports",
+        "strength": 0.9,
+        "quote": "Thanks to Qdrant Edge, adding the database was the easy part: it runs as a library inside the robots own process, with no server to run.",
+        "whyItMatters": "Builds robot memory as an in-process index with no server, the exact setup Lichen targets."
+      },
+      {
+        "id": "ev:li:sasha-denisov:1",
+        "segmentId": "seed-seg:edge",
+        "url": "https://www.linkedin.com/posts/aleks-denisov_flutter-dart-ondeviceai-activity-7462912529107791872-t0mJ",
+        "source": "web",
+        "title": "On-device RAG in Flutter Gemma just got dramatically faster. | Sasha Denisov",
+        "author": "Sasha Denisov",
+        "createdAt": "2026-05-20T00:00:00.000Z",
+        "type": "adoption",
+        "stance": "supports",
+        "strength": 0.7,
+        "quote": "In 0.16 the same workload takes 3.5 seconds, with p95 search under 1.5 ms on every platform I tested.",
+        "whyItMatters": "Cares about on-device search latency and indexing speed, which Lichen's sub-10 ms lookups address."
+      },
+      {
+        "id": "ev:li:sasha-denisov:2",
+        "segmentId": "seed-seg:edge",
+        "url": "https://www.linkedin.com/posts/aleks-denisov_after-version-0160-fluttergemma-combined-activity-7470026631357779969-xMEH",
+        "source": "web",
+        "title": "After version 0.16.0 flutter_gemma combined LiteRT-LM and Qdrant Edge — opening up fundamentally new opportunities for Flutter developers building apps with on-device and hybrid AI. | Sasha Denisov",
+        "author": "Sasha Denisov",
+        "createdAt": "2026-06-09T00:00:00.000Z",
+        "type": "pain",
+        "stance": "supports",
+        "strength": 0.8,
+        "quote": "Now you can build apps with real memory: semantic search, agent memory, personal knowledge bases — all fully offline, right on the device.",
+        "whyItMatters": "Wants fully offline semantic memory in apps, the core need Lichen's embedded index serves."
+      }
+    ]
+  }
+]
