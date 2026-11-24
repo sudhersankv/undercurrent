@@ -72,5 +72,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ draftId: stri
     }
   }
   const saved = await saveDraft(runId, next);
+  if (b.action === "edit") dctx.emit({ dept: "tide", type: "tide.draft_updated", level: "human", message: `Draft edited by ${actor.slice(6)}`, payload: { draft: saved } });
   return Response.json({ draft: saved, compliance: compliance(saved) });
 }

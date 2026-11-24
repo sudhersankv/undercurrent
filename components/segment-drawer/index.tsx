@@ -49,7 +49,7 @@ function linkLabel(url: string): string {
 }
 
 type ActionKey = "sounding" | "swarm" | "pilot" | "report";
-type ActionState = { status: "idle" | "busy" | "ok" | "missing" | "error"; text?: string; href?: string };
+type ActionState = { status: "idle" | "busy" | "ok" | "error"; text?: string; href?: string };
 
 async function post(url: string, body: unknown): Promise<{ status: number; json: Record<string, unknown> | null }> {
   const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -107,7 +107,6 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
     set(k, { status: "busy" });
     try {
       const { status, json } = await post(`/api/runs/${runId}/chat`, { message, dept: k });
-      if (status === 404) return set(k, { status: "missing", text: "Chat isn't live yet." });
       if (status >= 400) return set(k, { status: "error", text: String(json?.error ?? `Failed (${status})`) });
       set(k, { status: "ok", text: `Sent to ${dept}.` });
     } catch {
@@ -118,11 +117,11 @@ function DrawerBody({ runId, store, segmentId }: { runId: string; store: RunStor
   const report = async () => {
     set("report", { status: "busy" });
     try {
-      const { status, json } = await post(`/api/reports/${segmentId}`, { runId });
-      if (status === 404) return set("report", { status: "missing", text: "Reports aren't live yet." });
+      const { status, json } = await post(`/api/reports/${encodeURIComponent(segmentId)}?format=json`, { runId });
       if (status >= 400) return set("report", { status: "error", text: String(json?.error ?? `Failed (${status})`) });
-      const href = typeof json?.url === "string" ? json.url : undefined;
-      set("report", { status: "ok", text: href ? "Report ready." : "Report queued.", href });
+      const md = typeof json?.markdown === "string" ? json.markdown : null;
+      const href = md ? URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" })) : undefined;
+      set("report", { status: href ? "ok" : "error", text: href ? "Report ready." : "Empty report.", href });
     } catch {
       set("report", { status: "error", text: "Network error. Try again." });
     }

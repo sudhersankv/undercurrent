@@ -6,9 +6,18 @@ import { LICHEN_ALIAS, LICHEN_INTAKE, type RunEvent } from "@/lib/contracts";
 import { bus } from "@/lib/events";
 import { setCallStructuredOverride } from "@/lib/llm";
 import { MemoryGraph } from "@/lib/graph";
+import { departments } from "@/lib/departments/shared";
 import { keywordRoute, parseMention, routeChat } from "@/lib/departments/shared/chat-router";
 import { approveLead, getRunSnapshot, notifyDraftSent, startRun } from "@/lib/orchestrator";
+import { stubDepartments } from "@/lib/orchestrator/test-stubs";
 import { companySlug, loadRecording } from "@/lib/replay";
+
+// Hermetic: no network tools, no gateway. The state-machine tests use stub departments;
+// the "offline" test runs the real departments on fixtures + LLM fallbacks.
+const realDepartments = { ...departments };
+const offlineLlm = async () => {
+  throw new Error("LLM offline (test)");
+};
 
 const ctx = { graph: new MemoryGraph() };
 const states = (evs: RunEvent[]) => evs.filter((e) => e.type === "run.state_changed").map((e) => (e.payload as { to: string }).to);
@@ -16,18 +25,33 @@ const handoffs = (evs: RunEvent[]) => evs.filter((e) => e.type === "helm.handoff
 
 let dir: string;
 const prevDb = process.env.DATABASE_URL;
+const prevTools = process.env.TOOLS_MODE;
 beforeAll(async () => {
   dir = await mkdtemp(path.join(os.tmpdir(), "uc-replay-"));
   process.env.REPLAY_FIXTURES_DIR = dir;
+  process.env.TOOLS_MODE = "fixture";
   delete process.env.DATABASE_URL; // memory-only
 });
 afterAll(async () => {
   delete process.env.REPLAY_FIXTURES_DIR;
+  if (prevTools === undefined) delete process.env.TOOLS_MODE;
+  else process.env.TOOLS_MODE = prevTools;
   if (prevDb) process.env.DATABASE_URL = prevDb;
+  Object.assign(departments, realDepartments);
+  setCallStructuredOverride(null);
   await rm(dir, { recursive: true, force: true });
 });
 
 describe("orchestrator (stub departments)", () => {
+  beforeAll(() => {
+    Object.assign(departments, stubDepartments);
+    setCallStructuredOverride(offlineLlm);
+  });
+  afterAll(() => {
+    Object.assign(departments, realDepartments);
+    setCallStructuredOverride(null);
+  });
+
   it("walks every state with a handoff per department transition, then Tide/Wake on approval", async () => {
     const { runId, done } = await startRun({ url: LICHEN_INTAKE.url, notes: LICHEN_INTAKE.notes }, LICHEN_ALIAS, { mode: "record", ctx });
     await done;
@@ -85,7 +109,28 @@ describe("orchestrator (stub departments)", () => {
   });
 });
 
+describe("orchestrator (real departments, fixtures, no LLM)", () => {
+  beforeAll(() => setCallStructuredOverride(offlineLlm));
+  afterAll(() => setCallStructuredOverride(null));
+
+  it("reaches BRIEF_REVIEW with a coherent map, leads, and drafts on approval", async () => {
+    const { runId, done } = await startRun({ url: LICHEN_INTAKE.url, notes: LICHEN_INTAKE.notes }, LICHEN_ALIAS, { mode: "off", ctx });
+    await done;
+    const snap = (await getRunSnapshot(runId))!;
+    expect(snap.state).toBe("BRIEF_REVIEW");
+    const verdicts = snap.segments.map((s) => s.verdict);
+    expect(verdicts).toContain("VERIFIED");
+    expect(verdicts.some((v) => v === "HYPE" || v === "KILLED")).toBe(true);
+    expect(verdicts).not.toContain("PENDING");
+    expect(snap.leads.length).toBeGreaterThan(0);
+    const tide = await approveLead(runId, snap.leads[0].id);
+    expect(tide?.drafts.length).toBeGreaterThan(0);
+  }, 60_000);
+});
+
 describe("chat router", () => {
+  beforeAll(() => Object.assign(departments, stubDepartments));
+  afterAll(() => Object.assign(departments, realDepartments));
   afterEach(() => setCallStructuredOverride(null));
 
   it("parses @mentions", () => {

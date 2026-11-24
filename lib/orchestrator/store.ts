@@ -92,3 +92,35 @@ export function mergeBy<T>(list: T[], items: T[], key: (t: T) => string): T[] {
 export const TERMINAL: RunState[] = ["DONE", "FAILED", "CANCELLED"];
 /** States that only make progress while this process is running the pipeline. */
 export const IN_FLIGHT: RunState[] = ["INTAKE", "SONAR", "SWARM_R1", "SOUNDING_R1", "SWARM_R2", "SOUNDING_R2", "PILOT", "TIDE"];
+
+// ---- cross-store sync (leaf helpers: Tide's draft store and Wake's lead store call these) ----
+
+/** Mirror a draft into its run's in-memory record (no-op when the run isn't in this process). */
+export function syncRunDraft(runId: string, draft: Draft): void {
+  const rec = runs.get(runId);
+  if (rec) rec.data.drafts = mergeBy(rec.data.drafts, [draft], (x) => x.id);
+}
+
+/** Mirror a lead into its run's in-memory record. */
+export function syncRunLead(lead: Lead): void {
+  const rec = runs.get(lead.runId);
+  if (rec) rec.data.leads = mergeBy(rec.data.leads, [lead], (l) => l.id);
+}
+
+/** Find a lead in any in-memory run (Pilot's leads before Wake/Tide have seen them). */
+export function findRunLead(leadId: string): Lead | null {
+  for (const rec of runs.values()) {
+    const l = rec.data.leads.find((x) => x.id === leadId);
+    if (l) return l;
+  }
+  return null;
+}
+
+/** Find a draft in any in-memory run (e.g. a replayed run's drafts). */
+export function findRunDraft(draftId: string): { runId: string; draft: Draft } | null {
+  for (const rec of runs.values()) {
+    const d = rec.data.drafts.find((x) => x.id === draftId);
+    if (d) return { runId: rec.runId, draft: d };
+  }
+  return null;
+}

@@ -3,13 +3,14 @@ import { LeadStage } from "@/lib/contracts";
 import { createDeptContext } from "@/lib/departments/shared/context";
 import { moveStage, recomputeCalibration } from "@/lib/departments/wake/engine";
 import { getLead } from "@/lib/departments/wake/store";
+import { approveLead } from "@/lib/orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const Body = z.object({ to: LeadStage, actor: z.string().optional(), cause: z.string().optional() });
 
-/** PATCH /api/leads/:id/stage  { to, actor?, cause? }: manual moves (SPEC §9.8), attributed to a human. */
+/** PATCH /api/leads/:id/stage  { to, actor?, cause? }: manual moves (SPEC §9.8), attributed to a human. `to: "approved"` also runs Tide. */
 export async function PATCH(req: Request, ctx: { params: Promise<{ leadId: string }> }) {
   const { leadId } = await ctx.params;
   const parsed = Body.safeParse(await req.json().catch(() => null));
@@ -20,5 +21,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ leadId: strin
   const dctx = createDeptContext(lead.runId);
   const { lead: next, change } = await moveStage(dctx, lead, parsed.data.to, actor, parsed.data.cause ?? "Manual move");
   if (change && (parsed.data.to === "lost" || lead.stage === "lost")) await recomputeCalibration(dctx);
-  return Response.json({ lead: next, change });
+  // Approving a brief hands the lead to Tide (drafts stream into the review queue).
+  let tide: "started" | null = null;
+  if (parsed.data.to === "approved") {
+    tide = "started";
+    void approveLead(lead.runId, leadId).catch((e) => console.error("[leads/stage] approveLead", e));
+  }
+  return Response.json({ lead: next, change, tide });
 }

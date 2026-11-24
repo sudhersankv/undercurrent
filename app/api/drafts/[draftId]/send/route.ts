@@ -5,6 +5,7 @@ import { recordSend } from "@/lib/departments/wake/engine";
 import { getLead } from "@/lib/departments/wake/store";
 import { send } from "@/lib/tools/agentmail";
 import { SafeModeBlocked } from "@/lib/tools/types";
+import { notifyDraftSent } from "@/lib/orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ draftId: strin
   try {
     const res = await send({ to, subject: draft.subject ?? "hello", body: draft.body, leadId: draft.leadId });
     const sent = await recordSend(dctx, draft, lead, res, approver);
+    // Orchestrator: Tide → Wake handoff, run state WAKE, Wake folds the send into calibration.
+    await notifyDraftSent(runId, sent).catch((e) => console.warn("[send] notifyDraftSent:", e instanceof Error ? e.message : e));
     return Response.json({
       draft: sent,
       deliveredTo: res.deliveredTo,

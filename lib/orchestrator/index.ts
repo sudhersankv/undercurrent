@@ -6,9 +6,11 @@ import { createDeptContext, departments, type DeptContext } from "@/lib/departme
 import { pickExplorationTargets, ucb as ucbScore } from "@/lib/scoring/swarm";
 import { companySlug, loadRecording, replayMode, replayRecording, saveRecording, type Recording } from "@/lib/replay";
 import { failOrphanedRuns, loadRunFromDb, persistData, persistRunRow, persistState } from "./persist";
-import { bootedOnce, emptyRunData, mergeBy, runs, TERMINAL, type RunData, type RunRecord } from "./store";
+import { bootedOnce, emptyRunData, mergeBy, runs, syncRunDraft, syncRunLead, TERMINAL, type RunData, type RunRecord } from "./store";
+import { saveLead } from "@/lib/departments/wake/store";
 
 export type { RunData, RunRecord } from "./store";
+export { findRunDraft, findRunLead } from "./store";
 
 /**
  * Orchestrator (SPEC §5.7 + AMENDMENTS).
@@ -340,12 +342,13 @@ export async function approveLead(runId: string, leadId: string): Promise<TideOu
   if (!rec) throw new Error(`unknown run ${runId}`);
   const lead = rec.data.leads.find((l) => l.id === leadId);
   if (!lead) throw new Error(`unknown lead ${leadId}`);
-  if (lead.stage === "discovered") rec.data.leads = mergeBy(rec.data.leads, [{ ...lead, stage: "approved" }], (l) => l.id);
+  const approved: Lead = lead.stage === "discovered" ? { ...lead, stage: "approved" } : lead;
+  if (approved !== lead) await saveLead(approved); // Wake store, mirrored into rec.data.leads
   if (rec.tideLeads.has(leadId)) return null;
   rec.tideLeads.add(leadId);
   handoff(runId, "pilot", "tide", `${lead.displayName} approved. Drafting outreach.`);
   try {
-    return await runTide(rec, [lead]);
+    return await runTide(rec, [approved]);
   } catch (err) {
     rec.tideLeads.delete(leadId);
     warn(runId, `Tide failed for ${lead.displayName}: ${err instanceof Error ? err.message : err}`.slice(0, 200));
@@ -396,14 +399,12 @@ async function runTide(rec: RunRecord, leads: Lead[], referral?: { fromLeadId: s
 
 /** Update a draft in the orchestrator's memory (review routes edit/approve/reject in Postgres themselves). */
 export function upsertDraft(runId: string, draft: Draft) {
-  const rec = runs.get(runId);
-  if (rec) rec.data.drafts = mergeBy(rec.data.drafts, [draft], (x) => x.id);
+  syncRunDraft(runId, draft);
 }
 
 /** Update a lead in memory (e.g. Wake stage changes). */
 export function upsertLead(runId: string, lead: Lead) {
-  const rec = runs.get(runId);
-  if (rec) rec.data.leads = mergeBy(rec.data.leads, [lead], (l) => l.id);
+  syncRunLead({ ...lead, runId });
 }
 
 /**

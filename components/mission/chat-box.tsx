@@ -76,7 +76,7 @@ export function ChatBox() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dept ? { message, dept } : { message }),
       });
-      if (!res.ok) throw new Error(res.status === 404 ? "Chat isn't wired up yet." : `Chat failed (${res.status}).`);
+      if (!res.ok) throw new Error(res.status === 404 ? "Run not found." : `Chat failed (${res.status}).`);
       // Replies arrive as helm.chat_reply events; if the route answers inline instead, show that.
       const j = (await res.json().catch(() => null)) as { text?: string; dept?: DeptId; reply?: { text?: string; dept?: DeptId } } | null;
       const reply = j?.reply ?? j;

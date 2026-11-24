@@ -94,6 +94,7 @@ describe("tools: github search rate limit", () => {
   it("keeps search ≤30/min under a burst of 60 calls", async () => {
     vi.useFakeTimers();
     vi.stubEnv("GITHUB_TOKEN", "test-token");
+    vi.stubEnv("TOOLS_MODE", "live"); // fetch is mocked below
     resetLimiter("github-search");
     clearGithubCache();
     const starts: number[] = [];

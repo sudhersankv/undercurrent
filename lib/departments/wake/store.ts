@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { Lead, SegmentHypothesis, type Calibration, type LeadStage, type Outcome, type StageChange } from "@/lib/contracts";
 import { maybeDb, schema, withRetry } from "@/lib/db";
+import { findRunLead, syncRunLead } from "@/lib/orchestrator/store";
 
 /**
  * Wake state: leads, segments (for calibration), outcomes, stage changes.
@@ -37,6 +38,7 @@ export function rememberSegments(segs: SegmentHypothesis[]): void {
 
 export async function saveLead(lead: Lead): Promise<void> {
   wakeState.leads.set(lead.id, lead);
+  syncRunLead(lead); // keep the orchestrator's run snapshot in step
   const db = maybeDb();
   if (!db) return;
   await withRetry(() =>
@@ -50,6 +52,11 @@ export async function saveLead(lead: Lead): Promise<void> {
 export async function getLead(id: string): Promise<Lead | null> {
   const hit = wakeState.leads.get(id);
   if (hit) return hit;
+  const mem = findRunLead(id); // Pilot's leads live in the orchestrator until Tide/Wake see them
+  if (mem) {
+    wakeState.leads.set(id, mem);
+    return mem;
+  }
   const db = maybeDb();
   if (!db) return null;
   const rows = await withRetry(() => db.select().from(schema.leads).where(eq(schema.leads.id, id)).limit(1)).catch(() => []);

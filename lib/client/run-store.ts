@@ -150,6 +150,15 @@ export function reduceRunEvent(s: RunStore, e: RunEvent): RunStore {
     case "tide.draft_created":
       n.drafts = { ...n.drafts, [p.draft.id]: p.draft };
       break;
+    case "tide.draft_updated":
+      n.drafts = { ...n.drafts, [p.draft.id]: p.draft };
+      break;
+    case "tide.approved":
+    case "tide.rejected": {
+      const d = n.drafts[p.draftId];
+      if (d && d.status === "pending_review") n.drafts = { ...n.drafts, [p.draftId]: { ...d, status: e.type === "tide.approved" ? "approved" : "rejected" } };
+      break;
+    }
     case "tide.sent": {
       const d = n.drafts[p.draftId];
       if (d) n.drafts = { ...n.drafts, [p.draftId]: { ...d, status: "sent", threadId: p.threadId } };

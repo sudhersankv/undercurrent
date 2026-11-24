@@ -7,6 +7,7 @@ import type { ChatContext, Department, DeptContext } from "../shared/types";
 import { dedupeByUrl, planQueries, runQuery, segmentSearchPhrases, type PlannedQuery } from "./collect";
 import { writeSoundingGraph } from "./graph";
 import { JUDGE_BATCH, judgeBatch } from "./judge";
+import { heuristicJudge, sampleEvidenceFor } from "./offline";
 import { getSoundingState, mergeSoundingState } from "./store";
 
 export { quoteIsValid, toEvidence } from "./judge";
@@ -160,6 +161,7 @@ export async function soundSegment(
   // C: judge in batches of 8, emitting evidence as it lands so the bubble rises
   const evidence: Evidence[] = [...(opts.prior ?? [])];
   let dropped = 0;
+  let failed = 0;
   const chunks: RawEvidence[][] = [];
   for (let i = 0; i < candidates.length; i += JUDGE_BATCH) chunks.push(candidates.slice(i, i + JUDGE_BATCH));
   await Promise.all(
@@ -180,10 +182,35 @@ export async function soundSegment(
           });
         }
       } catch (err) {
+        failed++;
         ctx.emit({ dept: "sounding", type: "sounding.judge_failed", level: "warning", message: `Judge batch failed for ${segment.name}`, payload: { segmentId: segment.id, error: String(err).slice(0, 200) } });
       }
     }),
   );
+  // No model at all: sample evidence for sample segments, keyword judge otherwise.
+  if (chunks.length > 0 && failed === chunks.length && !ctx.signal.aborted) {
+    const sample = sampleEvidenceFor(ctx.runId, segment);
+    const offline = sample ?? heuristicJudge(segment, candidates, phrases);
+    ctx.emit({
+      dept: "sounding",
+      type: "sounding.judge_fallback",
+      level: "warning",
+      message: sample ? `Judge offline. Sample evidence for ${segment.name}.` : `Judge offline. Keyword match for ${segment.name}.`,
+      payload: { segmentId: segment.id, mode: sample ? "sample" : "keyword", count: offline.length },
+    });
+    for (const e of offline) {
+      if (evidence.some((x) => x.url === e.url)) continue;
+      evidence.push(e);
+      const running = strengthBreakdown(evidence).evidenceStrength;
+      ctx.emit({
+        dept: "sounding",
+        type: "sounding.evidence_found",
+        level: "thinking",
+        message: `${e.stance === "supports" ? "+" : e.stance === "contradicts" ? "−" : "·"} ${e.type} (${e.source}): ${e.title}`,
+        payload: { segmentId: segment.id, evidence: e, runningStrength: Number(running.toFixed(4)), evidenceCount: evidence.length, nodeIds: [e.id, segment.id] },
+      });
+    }
+  }
   if (dropped) {
     ctx.emit({ dept: "sounding", type: "sounding.quotes_dropped", level: "thinking", message: `Dropped ${dropped} item(s) whose quote wasn't in the source`, payload: { segmentId: segment.id, dropped } });
   }

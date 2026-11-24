@@ -176,6 +176,8 @@ const EVIDENCE_SEEDS: EvSeed[] = [
   ["obsidian", "github_issue", "https://github.com/brianpetro/obsidian-smart-connections/issues/595", "Local embedding model locks the app", "pain", "supports", 0.8, "the app is unusable for minutes while it embeds my vault"],
   ["obsidian", "web", "https://forum.obsidian.md/t/113716", "Local, mobile-compatible embeddings?", "pain", "supports", 0.64, "need something that runs on mobile without a server"],
   ["obsidian", "github_repo", "https://github.com/Minitour/semlocal", "semlocal: local semantic search", "builder_exists", "supports", 0.6, "semantic search for your notes, fully local"],
+  ["ext", "github_issue", "https://github.com/nicedoc/history-search/issues/31", "Embeddings in a service worker", "pain", "supports", 0.62, "the hosted embedding call makes the popup feel sluggish"],
+  ["ext", "hn_comment", "https://news.ycombinator.com/item?id=46616534", "Re: private browsing-history search", "pain", "supports", 0.5, "i don't want my history leaving the browser"],
 ];
 
 export function lichenEvidence(runId: string): Evidence[] {

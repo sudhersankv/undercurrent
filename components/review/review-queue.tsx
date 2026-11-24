@@ -71,51 +71,66 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     [drafts.length],
   );
 
+  /** Persist local edits (if any) so the server copy is exactly what the reviewer sees. */
+  const saveEdits = async (d: Draft) => {
+    if (!local[d.id]?.dirty) return null;
+    const r = await callApi("PATCH", `/api/drafts/${d.id}`, { action: "edit", subject: d.subject ? d.subject.slice(0, 60) : null, body: d.body, actor: "human:reviewer" });
+    if (r.ok) patch(d.id, { dirty: false });
+    return r;
+  };
+
   const approve = async () => {
     if (!cur || busy || cur.status !== "pending_review") return;
     const id = cur.id;
     setBusy(id);
     setEditing(false);
     say(id, { tone: "muted", text: "Sending…" });
-    const a = await callApi("PATCH", `/api/drafts/${id}`, { status: "approved", subject: cur.subject, body: cur.body, actor: "human:reviewer" });
-    if (!a.ok && !a.missing) {
+    const e = await saveEdits(cur);
+    if (e && !e.ok) {
+      setBusy(null);
+      return say(id, { tone: "error", text: errorText(e) });
+    }
+    const a = await callApi("PATCH", `/api/drafts/${id}`, { action: "approve", actor: "human:reviewer" });
+    if (!a.ok) {
       setBusy(null);
       return say(id, { tone: "error", text: errorText(a) });
     }
     patch(id, { status: "approved", dirty: false });
-    const s = await callApi("POST", `/api/drafts/${id}/send`, {});
+    const s = await callApi("POST", `/api/drafts/${id}/send`, { actor: "reviewer" });
     setBusy(null);
-    if (s.missing) return say(id, { tone: "muted", text: "Approved. Send route isn't live yet." });
-    if (!s.ok) return say(id, { tone: "error", text: errorText(s) });
     const j = s.json ?? {};
-    const threadId = typeof j.threadId === "string" ? j.threadId : null;
-    const status = (typeof j.status === "string" ? j.status : "sent") as Draft["status"];
+    const sentDraft = (j.draft ?? null) as Partial<Draft> | null;
+    if (!s.ok) {
+      if (sentDraft?.status) patch(id, { status: sentDraft.status });
+      return say(id, { tone: "error", text: errorText(s) });
+    }
+    const threadId = typeof sentDraft?.threadId === "string" ? sentDraft.threadId : null;
     patch(id, {
-      status,
+      status: (sentDraft?.status ?? "sent") as Draft["status"],
       sent: threadId
-        ? { threadId, deliveredTo: j.deliveredTo as string | undefined, standIn: (j.standIn as string | null | undefined) ?? null, safeMode: j.safeMode as boolean | undefined }
+        ? { threadId, deliveredTo: j.deliveredTo as string | undefined, standIn: (j.standIn as string | null | undefined) ?? null, safeMode: j.safeModeRedirected as boolean | undefined }
         : undefined,
     });
-    say(id, null);
+    say(id, typeof j.banner === "string" ? { tone: "ok", text: j.banner } : null);
   };
 
   const save = async () => {
     if (!cur || busy) return;
     setBusy(cur.id);
-    const r = await callApi("PATCH", `/api/drafts/${cur.id}`, { subject: cur.subject, body: cur.body, actor: "human:reviewer" });
+    const r = await saveEdits(cur);
     setBusy(null);
     setEditing(false);
-    if (r.ok || r.missing) patch(cur.id, { dirty: false });
-    say(cur.id, r.ok ? { tone: "ok", text: "Saved." } : r.missing ? { tone: "muted", text: "Saved here. Draft route isn't live yet." } : { tone: "error", text: errorText(r) });
+    if (!r) return say(cur.id, null);
+    say(cur.id, r.ok ? { tone: "ok", text: "Saved." } : { tone: "error", text: errorText(r) });
   };
 
   const reject = async (reason: string) => {
     if (!cur || busy) return;
     setRejectOpen(false);
     setBusy(cur.id);
-    const r = await callApi("PATCH", `/api/drafts/${cur.id}`, { status: "rejected", note: reason || undefined, actor: "human:reviewer" });
+    const r = await callApi("PATCH", `/api/drafts/${cur.id}`, { action: "reject", reason: reason.trim() || "Rejected by reviewer", actor: "human:reviewer" });
     setBusy(null);
-    if (!r.ok && !r.missing) return say(cur.id, { tone: "error", text: errorText(r) });
+    if (!r.ok) return say(cur.id, { tone: "error", text: errorText(r) });
     patch(cur.id, { status: "rejected" });
     say(cur.id, { tone: "muted", text: reason ? `Rejected: ${reason}` : "Rejected." });
     move(1);
@@ -128,10 +143,10 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     say(cur.id, { tone: "muted", text: "Regenerating…" });
     const r = await callApi("PATCH", `/api/drafts/${cur.id}`, { action: "regenerate", instruction, actor: "human:reviewer" });
     setBusy(null);
-    if (r.missing) return say(cur.id, { tone: "muted", text: "Regenerate isn't live yet." });
     if (!r.ok) return say(cur.id, { tone: "error", text: errorText(r) });
     const d = (r.json?.draft ?? r.json) as Partial<Draft> | null;
-    if (d?.body) patch(cur.id, { body: d.body, subject: d.subject ?? cur.subject ?? undefined });
+    // The server copy is now the regenerated draft; drop local edits so the card shows it.
+    if (d?.body) setLocal((s) => ({ ...s, [cur.id]: { ...s[cur.id], body: d.body, subject: d.subject ?? undefined, dirty: false } }));
     say(cur.id, { tone: "ok", text: "New draft ready." });
   };
 

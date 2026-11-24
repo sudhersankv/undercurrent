@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { Draft, StyleProfile } from "@/lib/contracts";
 import { maybeDb, schema, withRetry } from "@/lib/db";
+import { findRunDraft, syncRunDraft } from "@/lib/orchestrator/store";
 
 /**
  * Draft store: Postgres `drafts` table when DATABASE_URL is set, plus an in-process cache
@@ -16,6 +17,7 @@ const st: DraftState = (g.__ucDrafts ??= { drafts: new Map(), styles: new Map() 
 export async function saveDraft(runId: string, draft: Draft): Promise<Draft> {
   const d = Draft.parse(draft);
   st.drafts.set(d.id, { runId, draft: d });
+  syncRunDraft(runId, d); // keep the orchestrator's run snapshot in step
   const db = maybeDb();
   if (db) {
     await withRetry(() =>
@@ -34,6 +36,11 @@ export async function saveDraft(runId: string, draft: Draft): Promise<Draft> {
 export async function getDraft(id: string): Promise<{ runId: string; draft: Draft } | null> {
   const hit = st.drafts.get(id);
   if (hit) return hit;
+  const mem = findRunDraft(id); // e.g. a replayed run whose drafts only live in the orchestrator
+  if (mem) {
+    st.drafts.set(id, mem);
+    return mem;
+  }
   const db = maybeDb();
   if (!db) return null;
   const rows = await withRetry(() => db.select().from(schema.drafts).where(eq(schema.drafts.id, id)).limit(1)).catch(() => []);

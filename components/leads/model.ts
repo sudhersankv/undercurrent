@@ -46,7 +46,7 @@ export interface LeadRow {
 
 /**
  * Leads as the UI sees them: SSE store + optimistic human moves.
- * Human moves call PATCH /api/leads/:id/stage; if the route isn't there yet (404) the move stays local.
+ * Human moves call PATCH /api/leads/:id/stage (approving runs Tide); a failed move is rolled back.
  */
 export function useLeads(store: RunStore) {
   const [local, setLocal] = useState<Record<string, StageMove>>({});
@@ -92,10 +92,15 @@ export function useLeads(store: RunStore) {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ runId: store.runId, from: lead.stage, to, actor: "human:you", cause }),
         });
-        if (res.status === 404) setNotice("Stage API offline. Saved locally.");
-        else if (!res.ok) setNotice(`Move failed (${res.status}). Saved locally.`);
+        if (!res.ok) {
+          setLocal((s) => {
+            const { [lead.id]: _undo, ...rest } = s;
+            return rest;
+          });
+          setNotice(`Move failed (${res.status}).`);
+        } else if (to === "approved") setNotice(`Tide is drafting for ${lead.displayName}.`);
       } catch {
-        setNotice("Network error. Saved locally.");
+        setNotice("Network error. Try again.");
       }
     },
     [store.lastSeq, store.runId],

@@ -35,13 +35,14 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
   const findSimilar = async (name: string) => {
     setFlash(`Asked Pilot for leads like ${name}`);
     try {
-      await fetch(`/api/runs/${runId}/chat`, {
+      const res = await fetch(`/api/runs/${runId}/chat`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ dept: "pilot", message: `Find more leads like ${name}` }),
       });
+      if (!res.ok) setFlash(`Pilot didn't answer (${res.status}).`);
     } catch {
-      /* chat route may not exist yet; the flash already told the user */
+      setFlash("Network error. Try again.");
     }
   };
 

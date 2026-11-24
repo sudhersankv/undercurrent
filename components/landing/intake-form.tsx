@@ -38,7 +38,7 @@ function normalizeUrl(raw: string): string | null | undefined {
   }
 }
 
-/** POST /api/runs; falls back to the dev fake run while the orchestrator isn't merged. */
+/** POST /api/runs. A bad intake (4xx) surfaces as an error; a server/network failure falls back to the scripted demo run. */
 async function createRun(intake: IntakeInput): Promise<string> {
   try {
     const res = await fetch("/api/runs", {
@@ -50,9 +50,9 @@ async function createRun(intake: IntakeInput): Promise<string> {
       const j = (await res.json()) as { runId?: string; id?: string };
       const id = j.runId ?? j.id;
       if (id) return id;
-    } else if (res.status !== 404 && res.status !== 405) {
+    } else if (res.status >= 400 && res.status < 500) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(j.error ?? `Run failed (${res.status})`);
+      throw new Error(`Run failed: ${j.error ?? res.status}`);
     }
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("Run failed")) throw e;
