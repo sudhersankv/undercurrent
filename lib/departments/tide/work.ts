@@ -4,6 +4,7 @@ import { NoticedOut, StyleOut, noticedPrompt, stylePrompt } from "@/lib/llm/prom
 import type { DeptContext } from "../shared/types";
 import { tryLlm } from "./llm";
 import { slangIn } from "./reviewer";
+import { readX, type XMaterial } from "./x";
 
 /** SPEC §5.5 Steps A (read their work), B (what we noticed), B2 (voice match). */
 
@@ -12,8 +13,10 @@ export interface WorkMaterial {
   sourceUrls: string[];
   /** Candidate facts for the deterministic fallback, most specific first. */
   facts: Noticed[];
-  /** Things they wrote themselves (voice samples). */
+  /** Things they wrote themselves (voice samples). X posts first when they have an X handle. */
   writing: Array<{ text: string; sourceUrl: string }>;
+  /** Their X presence (posts + reply target), null without a handle. */
+  x: XMaterial | null;
 }
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -27,12 +30,26 @@ const isUrl = (u: string) => {
 };
 
 /** Step A (deterministic): README ≤8 KB, last 10 commits, open issues, topics, languages + their evidence. */
-export async function readWork(ctx: DeptContext, lead: Lead, brief: LeadBrief | undefined, evidence: Evidence[]): Promise<WorkMaterial> {
+export async function readWork(ctx: DeptContext, lead: Lead, brief: LeadBrief | undefined, evidence: Evidence[], opts: { pain?: string } = {}): Promise<WorkMaterial> {
   const parts: string[] = [];
   const urls = new Set<string>();
   const facts: Noticed[] = [];
   const writing: WorkMaterial["writing"] = [];
   const handle = lead.handles.github?.toLowerCase();
+
+  // X first: developers live there. Their posts are the primary voice corpus + reply targets.
+  const x = await readX(ctx, lead, evidence, opts.pain ?? brief?.howWeFit ?? "").catch(() => null);
+  if (x) {
+    if (x.replyTo) {
+      urls.add(x.replyTo.url);
+      facts.push({ detail: clip(`@${x.handle} on X: "${x.replyTo.quote ?? x.replyTo.text}"`, 200), sourceUrl: x.replyTo.url, relevanceToUs: clip(opts.pain ? `They posted the pain: ${opts.pain}` : "They posted about the problem we solve", 160) });
+    }
+    for (const p of x.posts.slice(0, 8)) {
+      urls.add(p.url);
+      parts.push(`X post by @${x.handle}${p.createdAt ? ` (${p.createdAt.slice(0, 10)})` : ""}: ${p.text}`);
+      writing.push({ text: clip(p.text, 280), sourceUrl: p.url });
+    }
+  }
 
   if (lead.primaryRepo) {
     const [owner, repo] = lead.primaryRepo.split("/");
@@ -85,13 +102,22 @@ export async function readWork(ctx: DeptContext, lead: Lead, brief: LeadBrief | 
   }
 
   // Voice corpus from retrieval (kind: voice).
-  const voice = await ctx.retrieval.query(`${lead.displayName} ${lead.handles.github ?? ""}`, 12, { runId: ctx.runId, kind: "voice", leadId: lead.id }).catch(() => []);
+  const voice = await ctx.retrieval.query(`${lead.displayName} ${lead.handles.github ?? ""} ${x?.handle ?? ""}`.trim(), 12, { runId: ctx.runId, kind: "voice", leadId: lead.id }).catch(() => []);
   for (const h of voice) {
     const url = h.metadata.url;
     writing.push({ text: clip(h.text, 280), sourceUrl: url && isUrl(url) ? url : [...urls][0] ?? "https://github.com" });
   }
 
-  return { text: parts.join("\n\n"), sourceUrls: [...urls].filter(isUrl), facts: facts.filter((f) => isUrl(f.sourceUrl)), writing };
+  const seenText = new Set<string>();
+  const dedupedWriting = writing.filter((w) => {
+    const k = w.text.toLowerCase().replace(/\s+/g, " ").trim();
+    if (seenText.has(k)) return false;
+    seenText.add(k);
+    return true;
+  });
+  const seenFact = new Set<string>();
+  const dedupedFacts = facts.filter((f) => isUrl(f.sourceUrl) && !seenFact.has(f.sourceUrl) && seenFact.add(f.sourceUrl));
+  return { text: parts.join("\n\n"), sourceUrls: [...urls].filter(isUrl), facts: dedupedFacts, writing: dedupedWriting, x };
 }
 
 /** Step B (MODEL_SMART): 2-4 specific Noticed items; falls back to the deterministic facts. */

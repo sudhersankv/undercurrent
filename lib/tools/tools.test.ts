@@ -7,7 +7,8 @@ import { hunter } from "./hunter";
 import { resetLimiter } from "./ratelimit";
 import { tavily } from "./tavily";
 
-const live = (key?: string) => (key ? Boolean(process.env[key]) : process.env.LIVE_TESTS === "1");
+// Live tests run only with LIVE_TESTS=1 (and the key, when one is needed). Default run is hermetic.
+const live = (key?: string) => process.env.LIVE_TESTS === "1" && (!key || Boolean(process.env[key]));
 
 afterEach(() => {
   vi.unstubAllEnvs();

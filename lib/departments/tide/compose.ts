@@ -6,6 +6,7 @@ import type { DeptContext } from "../shared/types";
 import { tryLlm } from "./llm";
 import { review, type ReviewOpts } from "./reviewer";
 import { saveDraft } from "./store";
+import { xIntentUrl } from "@/lib/tools/x";
 
 /** SPEC §5.5 Steps C (draft), D (review, 1 regeneration), E (queue as pending_review). */
 
@@ -22,6 +23,18 @@ export interface ComposeArgs {
   instruction?: string;
   referral?: { referrerName: string; fromLeadName: string; role?: string };
   followupOf?: string;
+  /** x_reply: the post of theirs we answer. */
+  replyTo?: { url: string; text: string; quote?: string } | null;
+}
+
+const isX = (c: DraftChannel) => c === "x_reply" || c === "x_dm" || c === "x_post";
+
+/** Hard cap for X channels so the intent link always opens a valid composer (≤280). */
+export function clipChars(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max - 1);
+  const sp = cut.lastIndexOf(" ");
+  return `${(sp > max * 0.6 ? cut.slice(0, sp) : cut).trimEnd()}…`;
 }
 
 const clipWords = (s: string, n: number) => {
@@ -39,7 +52,17 @@ export function fallbackDraft(a: ComposeArgs): { subject: string | null; body: s
   const name = shortName(a.lead);
   const product = a.company.oneLiner.replace(/\.$/, "");
   const lines: string[] = [];
-  if (a.channel === "followup_email") {
+  const theirs = (a.replyTo?.quote || a.replyTo?.text || "").replace(/\s+/g, " ").replace(/^"|"$/g, "").trim();
+  const target = a.lead.primaryRepo ? ` on ${name}` : "";
+  if (a.channel === "x_reply") {
+    lines.push(theirs ? `"${clipWords(theirs, 18)}"` : clipWords(n.detail, 18));
+    lines.push(`that's the wall ${a.company.name} is built for: ${clipWords(product.toLowerCase(), 12)}, no server, no extra hop.`);
+    lines.push(`happy to send credits if you want to try it${target}.`);
+  } else if (a.channel === "x_dm") {
+    lines.push(theirs ? `saw your post: "${clipWords(theirs, 16)}"` : `saw ${name}. ${clipWords(n.detail, 16)}`);
+    lines.push(`${a.company.name} does ${clipWords(product.toLowerCase(), 12)}, runs offline, nothing to host.`);
+    lines.push("if you try it and hit anything weird, i'd like to hear.");
+  } else if (a.channel === "followup_email") {
     lines.push(`one more thing on ${name}: ${clipWords(n.detail, 18)}`);
     lines.push(`${a.company.name} handles that in-process, so there's nothing extra to run.`);
     lines.push("no worries if it's not a fit.");
@@ -48,7 +71,7 @@ export function fallbackDraft(a: ComposeArgs): { subject: string | null; body: s
     lines.push(`saw ${name}. ${clipWords(n.detail, 22)}`);
     lines.push(clipWords(n.relevanceToUs, 20));
     lines.push(`${a.company.name}: ${clipWords(product, 22)}`);
-    if (a.creditUsd && (a.channel === "email" || a.channel === "x_dm")) {
+    if (a.creditUsd && a.channel === "email") {
       lines.push(`dropped $${a.creditUsd} in credits on your account, no strings.`);
       lines.push(DISCLOSURE_LINE);
     }
@@ -56,7 +79,7 @@ export function fallbackDraft(a: ComposeArgs): { subject: string | null; body: s
   }
   let body = lines.join("\n");
   const lim = CHANNEL_LIMITS[a.channel];
-  if (lim.chars && body.length > lim.chars) body = body.slice(0, lim.chars - 1) + "…";
+  if (lim.chars && body.length > lim.chars) body = clipChars(body, lim.chars);
   if (a.style?.casing === "lowercase") body = body.replace(/(^|\n)([A-Z])(?=[a-z])/g, (_m, p: string, c: string) => p + c.toLowerCase());
   const subject = lim.subjectWords ? (a.referral ? `${a.referral.referrerName} said to ping you` : `${name} + ${a.company.name}`).split(/\s+/).slice(0, 7).join(" ") : null;
   return { subject, body };
@@ -87,6 +110,7 @@ export async function composeDraft(ctx: DeptContext, a: ComposeArgs, opts: Revie
     runId: ctx.runId,
   });
   const id = opts.draftId ?? `draft-${ulid()}`;
+  const replyToUrl = a.channel === "x_reply" && a.replyTo?.url ? a.replyTo.url : undefined;
   const now = () => new Date().toISOString();
   const history: Draft["history"] = [...(opts.history ?? []), { actor: "agent:tide", action: a.instruction ? "regenerated" : "drafted", at: now(), note: a.instruction }];
 
@@ -102,18 +126,23 @@ export async function composeDraft(ctx: DeptContext, a: ComposeArgs, opts: Revie
     rev = rev2;
   }
 
+  const lim = CHANNEL_LIMITS[a.channel];
+  const body = isX(a.channel) && lim.chars ? clipChars(g.body, lim.chars) : g.body;
   const draft: Draft = {
     id,
     leadId: a.lead.id,
     channel: a.channel,
     subject: g.subject ? g.subject.slice(0, 60) : null,
-    body: g.body,
+    body,
     noticed: a.noticed,
     creditOffer,
     review: rev,
     status: "pending_review",
     history: [...history, { actor: "agent:tide", action: "queued", at: now() }],
     threadId: null,
+    // Never posted for them: a human opens the intent link and clicks Post.
+    ...(a.channel === "x_reply" || a.channel === "x_post" ? { xIntentUrl: xIntentUrl(body, replyToUrl) } : {}),
+    ...(replyToUrl ? { replyToUrl } : {}),
   };
   await saveDraft(ctx.runId, draft);
   ctx.emit({ dept: "tide", type: "tide.draft_created", level: "result", message: `Draft for ${a.lead.displayName} (${a.channel}), specificity ${rev.specificity}`, payload: { draft } });

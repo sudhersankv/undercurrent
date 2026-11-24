@@ -148,7 +148,7 @@ describe("retrieval", () => {
   });
 });
 
-describe.skipIf(!hasMossCreds())("moss live", () => {
+describe.skipIf(process.env.LIVE_TESTS !== "1" || !hasMossCreds())("moss live", () => {
   it("adds and queries the shared index with run filters", async () => {
     const m = new MossRetrieval();
     const run = `test-${Date.now()}`;

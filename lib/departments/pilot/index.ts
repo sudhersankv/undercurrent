@@ -6,12 +6,13 @@ import type { EdgeInput, GraphNode } from "@/lib/graph/types";
 import { FitSignalsBatch, fitSignalsPrompt, type CandidateSummary } from "@/lib/llm/prompts/pilot";
 import { activityRecency, authority, fitScore, reachability, tier, type FitSignals } from "@/lib/scoring/pilot";
 import type { ChatContext, Department, DeptContext } from "../shared/types";
-import { companyNodeId, domainPersonId, ghPersonId, hnPersonId, leadIdFor, repoNodeId, techNodeId } from "../sounding/ids";
+import { companyNodeId, domainPersonId, ghPersonId, hnPersonId, leadIdFor, repoNodeId, techNodeId, xPersonId } from "../sounding/ids";
 import { buildBrief } from "./brief";
 import { extractCandidates, rankCandidates, type Candidate } from "./candidates";
 import { enrichCandidate, foldLinked, type Enriched } from "./enrich";
 import { sharedTechLookalikes } from "./lookalike";
 import { getPilotState, setPilotState, type LeadDetail } from "./store";
+import { X_RESOLVE_TOP, hasXPainPost, resolveX } from "./x";
 
 export { getPilotState, leadEmailStatus } from "./store";
 export { generateSegmentReport, buildSegmentReport } from "./report";
@@ -34,17 +35,19 @@ export function pilotSegments(segments: SegmentHypothesis[]): SegmentHypothesis[
 export function personIdFor(runId: string, c: Candidate): string {
   if (c.key.startsWith("gh:") && c.github) return ghPersonId(runId, c.github);
   if (c.key.startsWith("hn:") && c.hn) return hnPersonId(runId, c.hn);
+  if (c.key.startsWith("x:") && c.x) return xPersonId(runId, c.x);
   return domainPersonId(runId, c.domain ?? c.key);
 }
 
 /** Deterministic part of the fit signals; the LLM fills mechanismMatch + painExplicit. */
 export function baseSignals(e: Enriched, now = new Date()): Omit<FitSignals, "mechanismMatch" | "painExplicit"> & { painFallback: number; matchFallback: number } {
   const pain = e.evidence.filter((x) => x.stance === "supports" && (x.type === "pain" || x.type === "competitor_frustration"));
+  const xPain = Boolean(e.xPainPost);
   return {
     recency: activityRecency(e.lastActive, now),
-    reachability: reachability(e.emailStatus),
+    reachability: reachability(e.emailStatus, { handle: Boolean(e.twitter), painPost: xPain }),
     authority: authority(e.role),
-    painFallback: pain.length ? Math.max(...pain.map((x) => x.strength)) : 0.2,
+    painFallback: xPain ? 1 : pain.length ? Math.max(...pain.map((x) => x.strength)) : 0.2,
     matchFallback: e.kind === "project" ? 0.6 : e.kind === "company" ? 0.5 : 0.35,
   };
 }
@@ -105,6 +108,7 @@ export function toLead(runId: string, segment: SegmentHypothesis, e: Enriched, f
     tier: tier(fit),
     stage: "discovered",
     isDemoRecipient: false,
+    ...(e.xProfile ? { xProfile: e.xProfile } : {}),
   };
 }
 
@@ -179,6 +183,17 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
     }
     return p.then((e) => ({ ...e, evidence: c.evidence, role: c.role, kind: c.kind }) as Enriched);
   };
+  // X resolution: one search per top lead per run (cached by candidate key).
+  const xCache = new Map<string, Promise<Awaited<ReturnType<typeof resolveX>>>>();
+  const resolveXFor = (e: Enriched, search: boolean) => {
+    const k = `${e.key}|${search}`;
+    let p = xCache.get(k);
+    if (!p) {
+      p = enrichLimit(() => resolveX(ctx, e, { search }));
+      xCache.set(k, p);
+    }
+    return p;
+  };
 
   const best = new Map<string, Scored>(); // lead id → best segment match
   for (const segment of segs) {
@@ -197,6 +212,22 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
     const enriched = foldLinked(
       enrichedAll.filter((e): e is Enriched => !!e).sort((a, b) => Number(b.key.startsWith("gh:")) - Number(a.key.startsWith("gh:"))),
     );
+    // X handles: GitHub twitter_username, X evidence authors, one site:x.com search for the top leads.
+    const xs = await Promise.all(enriched.map((e, i) => resolveXFor(e, i < X_RESOLVE_TOP).catch(() => null)));
+    enriched.forEach((e, i) => {
+      const r = xs[i];
+      if (!r?.handle) return;
+      e.twitter = r.handle;
+      e.xProfile = r.profile;
+      e.xPainPost = hasXPainPost(e, r.handle);
+      ctx.emit({
+        dept: "pilot",
+        type: "pilot.x_resolved",
+        level: "thinking",
+        message: `${e.displayName} is @${r.handle} on X${e.xPainPost ? " (posted the pain)" : ""}`,
+        payload: { segmentId: segment.id, key: e.key, leadId: leadIdFor(ctx.runId, e.key), handle: r.handle, xProfile: r.profile, painPost: e.xPainPost },
+      });
+    });
     for (const e of enriched) {
       ctx.emit({
         dept: "pilot",
@@ -214,7 +245,7 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
       const l = llmSignals.get(e.key);
       const signals: FitSignals = {
         mechanismMatch: l?.mechanismMatch ?? base.matchFallback,
-        painExplicit: l?.painExplicit ?? base.painFallback,
+        painExplicit: e.xPainPost ? 1 : (l?.painExplicit ?? base.painFallback),
         recency: base.recency,
         reachability: base.reachability,
         authority: base.authority,
@@ -327,7 +358,7 @@ export function findLead(leads: Lead[], message: string): Lead | undefined {
   let best: Lead | undefined;
   let bestScore = 0;
   for (const l of leads) {
-    const score = [...words(`${l.displayName} ${l.primaryRepo ?? ""} ${l.handles.github ?? ""} ${l.handles.hn ?? ""}`)].filter((w) => m.has(w)).length;
+    const score = [...words(`${l.displayName} ${l.primaryRepo ?? ""} ${l.handles.github ?? ""} ${l.handles.hn ?? ""} ${l.handles.x ?? ""}`)].filter((w) => m.has(w)).length;
     if (score > bestScore) {
       best = l;
       bestScore = score;
@@ -336,7 +367,8 @@ export function findLead(leads: Lead[], message: string): Lead | undefined {
   return best;
 }
 
-const leadUrl = (l: Lead) => (l.primaryRepo ? `https://github.com/${l.primaryRepo}` : l.handles.github ? `https://github.com/${l.handles.github}` : l.company?.domain ? `https://${l.company.domain}` : null);
+const leadUrl = (l: Lead) =>
+  l.primaryRepo ? `https://github.com/${l.primaryRepo}` : l.handles.github ? `https://github.com/${l.handles.github}` : l.company?.domain ? `https://${l.company.domain}` : (l.xProfile?.url ?? null);
 
 async function findMoreLike(ctx: DeptContext, lead: Lead, leads: Lead[]): Promise<ChatReply> {
   ctx.emit({ dept: "pilot", type: "pilot.chat_action", level: "action", message: `Finding projects like ${lead.displayName}`, payload: { action: "find_more_like", leadId: lead.id } });
@@ -383,7 +415,7 @@ async function findMoreLike(ctx: DeptContext, lead: Lead, leads: Lead[]): Promis
 function explainLead(ctx: DeptContext, lead: Lead, brief: LeadBrief | undefined): ChatReply {
   const d = getPilotState(ctx.runId)?.details[lead.id];
   const sig = d
-    ? `Mechanism match ${d.signals.mechanismMatch.toFixed(2)}, pain stated ${d.signals.painExplicit.toFixed(2)}, recency ${d.signals.recency.toFixed(2)}, reachability ${d.signals.reachability.toFixed(2)} (email ${d.emailStatus}), authority ${d.signals.authority.toFixed(2)}.`
+    ? `Mechanism match ${d.signals.mechanismMatch.toFixed(2)}, pain stated ${d.signals.painExplicit.toFixed(2)}, recency ${d.signals.recency.toFixed(2)}, reachability ${d.signals.reachability.toFixed(2)} (email ${d.emailStatus}${lead.handles.x ? `, X @${lead.handles.x}` : ""}), authority ${d.signals.authority.toFixed(2)}.`
     : "";
   return {
     dept: "pilot",

@@ -34,12 +34,15 @@ export function leadUniqueTokens(lead: Pick<Lead, "primaryRepo" | "displayName" 
     for (const part of (name ?? "").split(/[-_.]/)) if (part.length >= 5) add(part);
   }
   add(lead.handles.github);
+  add(lead.handles.x?.replace(/^@/, ""));
   if (lead.displayName && !/\s/.test(lead.displayName.trim())) add(lead.displayName);
   for (const n of noticed) {
     const m = /\/(?:issues|pull|discussions)\/(\d+)/.exec(n.sourceUrl);
     if (m) out.add(`#${m[1]}`);
     for (const h of n.detail.match(/#\d+/g) ?? []) out.add(h);
     for (const b of n.detail.match(/`([^`]+)`/g) ?? []) add(b.replace(/`/g, ""));
+    // numbers with units they stated ("~5k notes", "20 minutes", "320ms") are lead-specific too
+    for (const u of n.detail.match(/\d+(?:\.\d+)?\s?(?:k|ms|s|mb|gb|minutes|min|notes|docs)\b/gi) ?? []) out.add(u.toLowerCase());
     // file names, flags, camelCase / snake_case identifiers, version tags
     for (const w of n.detail.match(/(?:--?[a-z][\w-]+|[\w-]+\.(?:ts|js|py|rs|go|md|json|toml|yaml|tsx|wasm)|[a-z]+[A-Z]\w*|\w+_\w+|v\d+\.\d+(?:\.\d+)?)/g) ?? []) add(w);
   }

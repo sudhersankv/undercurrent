@@ -1,5 +1,6 @@
 import type { Evidence } from "@/lib/contracts";
 import type { LeadRole } from "@/lib/scoring/pilot";
+import { parseXUrl } from "@/lib/tools/x";
 import { domainOf, parseGithubUrl } from "../sounding/ids";
 
 // SPEC §5.4 step A: deterministic candidate extraction + merge. Pure (tested).
@@ -7,12 +8,14 @@ import { domainOf, parseGithubUrl } from "../sounding/ids";
 export type CandidateKind = "project" | "person" | "company";
 
 export interface Candidate {
-  /** Merge key: "gh:<login>" | "hn:<handle>" | "dom:<domain>". */
+  /** Merge key: "gh:<login>" | "hn:<handle>" | "x:<handle>" | "dom:<domain>". */
   key: string;
   kind: CandidateKind;
   role: LeadRole;
   github?: string;
   hn?: string;
+  /** X handle (no "@"). */
+  x?: string;
   domain?: string;
   /** "owner/name" for project leads. */
   repo: string | null;
@@ -97,6 +100,11 @@ export function extractCandidates(evidence: Evidence[]): Candidate[] {
         }
         break;
       }
+      case "x_post": {
+        const handle = e.author ?? parseXUrl(e.url)?.handle;
+        if (handle) out.push({ key: `x:${handle.toLowerCase()}`, kind: "person", role: "contributor", x: handle, repo: null, evidence: [e] });
+        break;
+      }
       case "reddit":
         break;
     }
@@ -127,6 +135,7 @@ export function mergeTwo(a: Candidate, b: Candidate): Candidate {
     role: ROLE_RANK[b.role] > ROLE_RANK[a.role] ? b.role : a.role,
     github: a.github ?? b.github,
     hn: a.hn ?? b.hn,
+    x: a.x ?? b.x,
     domain: a.domain ?? b.domain,
     repo: a.repo ?? b.repo,
     evidence: [...a.evidence, ...b.evidence.filter((e) => !urls.has(e.url))],

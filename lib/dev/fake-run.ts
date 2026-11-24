@@ -18,6 +18,7 @@ import {
   lichenReply,
   lichenSegments,
   lichenStyle,
+  lichenXDrafts,
   segId,
 } from "./lichen";
 
@@ -181,6 +182,10 @@ export function buildFakeRunScript(runId: string): Step[] {
   for (const d of drafts) {
     if (d.review.failures.length) add(300, { dept: "tide", type: "tide.review_failed", level: "warning", message: `Reviewer: ${d.review.failures[0].check} check failed, regenerating`, payload: { draftId: d.id, check: d.review.failures[0].check, reason: d.review.failures[0].reason } });
     add(400, { dept: "tide", type: "tide.draft_created", level: "result", message: `Draft for ${leads.find((l) => l.id === d.leadId)?.displayName} (specificity ${d.review.specificity})`, payload: { draft: d } });
+    add(150, { dept: "tide", type: "tide.queued", level: "action", message: "Queued for review", payload: { draftId: d.id, leadId: d.leadId } });
+  }
+  for (const d of lichenXDrafts(runId)) {
+    add(400, { dept: "tide", type: "tide.draft_created", level: "result", message: `Draft for semlocal (${d.channel}), specificity ${d.review.specificity}`, payload: { draft: d } });
     add(150, { dept: "tide", type: "tide.queued", level: "action", message: "Queued for review", payload: { draftId: d.id, leadId: d.leadId } });
   }
   add(300, { dept: "tide", type: "tide.campaign_ready", level: "result", message: "X campaign brief ready: Local-first", payload: { campaign: lichenCampaign(runId) } });

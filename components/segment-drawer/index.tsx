@@ -24,6 +24,7 @@ const SOURCE_ICON: Record<Evidence["source"], React.ComponentType<{ className?: 
   reddit: MessagesSquare,
   web: Globe,
   job_post: Briefcase,
+  x_post: MessageSquare,
 };
 
 const SOURCE_LABEL: Record<Evidence["source"], string> = {
@@ -34,6 +35,7 @@ const SOURCE_LABEL: Record<Evidence["source"], string> = {
   reddit: "Reddit",
   web: "Web",
   job_post: "Job post",
+  x_post: "X post",
 };
 
 const ALIASED = ["moss.dev", "usemoss.dev", "portal.usemoss.dev"];

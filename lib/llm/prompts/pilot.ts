@@ -77,7 +77,7 @@ export function briefPrompt(i: {
       "whyNow (≤200 chars or null): the trigger (recent issue, recent commit, job post). Null if no dated trigger.",
       "evidence: 2-5 bullets (≤160 chars each), each with a URL copied EXACTLY from the evidence list. Never invent URLs.",
       "risks: up to 3 reasons they might not care (≤140 chars each).",
-      "suggestedChannels: subset of email, linkedin, x_dm, x_reply, credit_gift, using only channels listed as available.",
+      "suggestedChannels: subset of email, linkedin, x_dm, x_reply, credit_gift, using only channels listed as available. Developers live on X: when x_reply / x_dm are available, list them first.",
       "No hype, no em-dashes.",
     ].join("\n"),
     user: [

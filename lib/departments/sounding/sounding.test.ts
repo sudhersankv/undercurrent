@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Evidence, RawEvidence } from "@/lib/contracts";
 import { setCallStructuredOverride, type CallStructuredFn } from "@/lib/llm/callStructured";
 import { JudgeBatch, QueryPlan } from "@/lib/llm/prompts/sounding";
-import { engagement, evidenceStrength, recency, strengthBreakdown, verdict } from "@/lib/scoring/sounding";
+import { SOURCE_WEIGHT, engagement, evidenceStrength, recency, strengthBreakdown, verdict } from "@/lib/scoring/sounding";
 import type { GhIssue, GhRepo, HnHit, Tools } from "@/lib/tools/types";
 import { quoteIsValid, toEvidence } from "./judge";
 import { findSegment, isEligible, sounding } from "./index";
@@ -69,6 +69,11 @@ describe("§9.4 evidence strength", () => {
       items: [ev({ source: "github_issue" }), ev({ source: "hn_comment" }), ev({ source: "job_post" }), ev({ source: "web", stance: "contradicts" })],
       expected: f(2.7) - 0.5 * f(0.5),
     },
+    {
+      name: "x_post weighs 0.8 (like HN)",
+      items: [ev({ source: "x_post", strength: 0.5 })],
+      expected: f(0.5 * 0.8) * (0.6 + 0.4 / 3),
+    },
     { name: "only contradictions clamp to 0", items: [ev({ stance: "contradicts" }), ev({ stance: "contradicts", source: "hn_comment" })], expected: 0 },
     { name: "neutral items ignored", items: [ev({ stance: "neutral" }), ev({ stance: "neutral", source: "hn_story" })], expected: 0 },
   ];
@@ -77,6 +82,12 @@ describe("§9.4 evidence strength", () => {
       expect(evidenceStrength(r.items, NOW)).toBeCloseTo(r.expected, 10);
     });
   }
+
+  it("source weights (§9.4)", () => {
+    expect(SOURCE_WEIGHT.x_post).toBe(0.8);
+    expect(SOURCE_WEIGHT.github_issue).toBe(1);
+    expect(SOURCE_WEIGHT.web).toBe(0.5);
+  });
 
   it("hard-coded spot checks", () => {
     expect(evidenceStrength([ev({})], NOW)).toBeCloseTo(0.288544, 5);

@@ -43,5 +43,9 @@ export const Draft = z.object({
   history: z.array(z.object({ actor: Actor, action: z.string(), at: z.string(), note: z.string().optional() })),
   /** AgentMail thread id. SPEC named it gmailThreadId; AMENDMENTS replaced Gmail with AgentMail. */
   threadId: z.string().nullable(),
+  /** x_reply / x_post (and x_dm when known): prefilled X web-intent link. Human opens it and posts; never automated. */
+  xIntentUrl: z.string().url().optional(),
+  /** x_reply: the X post we reply to (https://x.com/<handle>/status/<id>). */
+  replyToUrl: z.string().url().optional(),
 });
 export type Draft = z.infer<typeof Draft>;
