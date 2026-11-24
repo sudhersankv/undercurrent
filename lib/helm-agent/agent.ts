@@ -53,7 +53,7 @@ const MAX_HISTORY = 10;
 const MAX_STEPS = 8;
 
 function systemPrompt(actor: HelmActor, runId: string | null): string {
-  const surface = actor.includes(":telegram:") ? "Telegram (plain text, short lines, no markdown tables)" : actor.startsWith("agent:mcp:") ? "an MCP client (another AI agent acting for its human)" : "chat";
+  const surface = actor.includes(":telegram:") ? "Telegram (plain text only: no markdown, no ** or #, short lines)" : actor.startsWith("agent:mcp:") ? "an MCP client (another AI agent acting for its human)" : "chat";
   return [
     "You are Helm, the command surface of Undercurrent: a GTM department for dev-tool companies.",
     "Six departments do the work: Sonar understands the company, Swarm imagines markets with persona simulations, Sounding proves markets with real evidence (VERIFIED/PROMISING/HYPE/KILLED), Pilot finds real people and accounts, Tide drafts outreach (X first, then email), Wake tracks replies and recalibrates.",
@@ -115,7 +115,9 @@ export async function handle(input: HandleInput): Promise<HandleResult> {
       console.warn("[helm-agent] model failed, using intent parser:", err instanceof Error ? err.message : err);
       text = await offline(message, actor, actions, citations);
     }
-    st.history.set(actor, [...history, { role: "user" as const, content: message }, { role: "assistant" as const, content: text }].slice(-MAX_HISTORY));
+    // Keep a note of the tool calls with the reply, so the next turn doesn't doubt what was done.
+    const note = actions.length ? `\n\n(Tools called this turn: ${actions.map((a) => `${a.tool} ${a.ok ? "ok" : "failed"}: ${a.summary.slice(0, 120)}`).join("; ")})` : "";
+    st.history.set(actor, [...history, { role: "user" as const, content: message }, { role: "assistant" as const, content: text + note }].slice(-MAX_HISTORY));
   } else {
     text = await offline(message, actor, actions, citations);
   }

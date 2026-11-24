@@ -15,7 +15,7 @@ const first = (process.env.MCP_TOKENS ?? "").split(",")[0]?.trim() ?? "";
 const token = first.includes(":") ? first.slice(first.indexOf(":") + 1) : first;
 if (!token) throw new Error("Set MCP_TOKENS=name:token in .env");
 
-const text = (r: { content?: unknown }) => ((r.content as Array<{ type: string; text?: string }>) ?? []).map((c) => c.text ?? "").join("\n");
+const text = (r: unknown) => (((r as { content?: Array<{ type: string; text?: string }> }).content) ?? []).map((c) => c.text ?? "").join("\n");
 
 async function main() {
   const transport = new StreamableHTTPClientTransport(new URL(url), { requestInit: { headers: { Authorization: `Bearer ${token}` } } });
