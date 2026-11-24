@@ -94,6 +94,10 @@ export async function getRun(runId: string): Promise<RunRecord | null> {
 /** JSON view for GET /api/runs/:id. */
 export async function getRunSnapshot(runId: string) {
   await ensureBooted();
+  if (runId === "showcase") {
+    const { ensureShowcase } = await import("@/lib/demo/showcase");
+    await ensureShowcase().catch((e) => console.warn("[showcase] hydrate failed:", e instanceof Error ? e.message : e));
+  }
   const rec = await getRun(runId);
   if (!rec) return null;
   return { runId, state: rec.state, createdAt: rec.createdAt, error: rec.error, replayed: rec.replayed, lastSeq: bus.lastSeq(runId), ...rec.data };
@@ -123,6 +127,8 @@ export interface StartRunOptions {
   replay?: { minMs?: number; maxMs?: number; budgetMs?: number };
   /** Context overrides for department calls (tests). */
   ctx?: Partial<DeptContext>;
+  /** Replay this recording instead of looking one up by company (showcase). */
+  recording?: Recording<RunData>;
 }
 
 /** POST /api/runs. Returns immediately; the pipeline runs in-process. `done` resolves when it settles at a gate. */
@@ -140,7 +146,7 @@ export async function startRun(intake: IntakeInput, displayAlias?: DisplayAlias 
   const done = (async () => {
     try {
       if (mode === "replay") {
-        const recording = await loadRecording<RunData>(companySlug(fullIntake));
+        const recording = opts.recording ?? (await loadRecording<RunData>(companySlug(fullIntake)));
         if (recording) return await replayPipeline(rec, recording, opts);
         bus.emit(runId, { dept: "helm", type: "run.created", level: "action", message: `Run started for ${rec.data.companyName ?? fullIntake.url ?? "your notes"}`, payload: { intake: fullIntake, companyName: rec.data.companyName } });
         warn(runId, "No recording found. Running live.");
@@ -364,6 +370,34 @@ export async function approveLead(runId: string, leadId: string): Promise<TideOu
   } catch (err) {
     rec.tideLeads.delete(leadId);
     warn(runId, `Tide failed for ${lead.displayName}: ${err instanceof Error ? err.message : err}`.slice(0, 200));
+    throw err;
+  }
+}
+
+/**
+ * Approve several leads at once: one Tide batch, so each segment gets one campaign brief.
+ * Leads Tide already ran for are skipped. Resolves with Tide's output (null when nothing was new).
+ */
+export async function approveLeads(runId: string, leadIds: string[]): Promise<TideOutput | null> {
+  const rec = await getRun(runId);
+  if (!rec) throw new Error(`unknown run ${runId}`);
+  const batch: Lead[] = [];
+  for (const leadId of leadIds) {
+    const lead = rec.data.leads.find((l) => l.id === leadId);
+    if (!lead) throw new Error(`unknown lead ${leadId}`);
+    const approved: Lead = lead.stage === "discovered" ? { ...lead, stage: "approved" } : lead;
+    if (approved !== lead) await saveLead(approved);
+    if (rec.tideLeads.has(leadId)) continue;
+    rec.tideLeads.add(leadId);
+    batch.push(approved);
+  }
+  if (!batch.length) return null;
+  handoff(runId, "pilot", "tide", `${batch.length} lead${batch.length === 1 ? "" : "s"} approved. Drafting outreach.`);
+  try {
+    return await runTide(rec, batch);
+  } catch (err) {
+    for (const l of batch) rec.tideLeads.delete(l.id);
+    warn(runId, `Tide failed: ${err instanceof Error ? err.message : err}`.slice(0, 200));
     throw err;
   }
 }

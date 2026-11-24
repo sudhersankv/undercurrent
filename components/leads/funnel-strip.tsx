@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import type { LeadStage } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
 import { STAGES, type LeadRow } from "./model";
@@ -20,9 +21,9 @@ function reached(stage: LeadStage): number {
   return STAGES.indexOf(stage);
 }
 
-const OPACITY = [1, 0.66, 0.44, 0.3, 0.2, 0.13];
+const OPACITY = [1, 0.62, 0.4, 0.26, 0.18, 0.12];
 
-/** Conversion per stage, stacked by tier or segment. */
+/** Conversion per stage, stacked by tier or segment. One lime chip marks the step into the furthest stage reached. */
 export function FunnelStrip({ rows }: { rows: LeadRow[] }) {
   const [by, setBy] = useState<"tier" | "segment">("tier");
 
@@ -38,16 +39,18 @@ export function FunnelStrip({ rows }: { rows: LeadRow[] }) {
   }, [rows, by]);
 
   const top = cells[0]?.total || 0;
+  let deepest = -1;
+  cells.forEach((c, i) => i > 0 && c.total > 0 && (deepest = i));
 
   return (
-    <section aria-label="Funnel" className="rounded-card border border-hairline bg-paper p-4">
+    <section aria-label="Funnel" className="rounded-card border border-hairline bg-paper px-5 pb-5 pt-4">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
           <h2 className="text-[15px] font-semibold text-strong">Funnel</h2>
           {groups.map((g, i) => (
-            <span key={g} className="inline-flex items-center gap-1.5 text-[12px] text-muted">
-              <span className="size-2 rounded-full bg-forest" style={{ opacity: OPACITY[i % OPACITY.length] }} />
-              <span className="max-w-[160px] truncate">{g}</span>
+            <span key={g} className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-muted" title={g}>
+              <span className="size-2 shrink-0 rounded-full bg-forest" style={{ opacity: OPACITY[i % OPACITY.length] }} />
+              <span className="max-w-[150px] truncate">{g}</span>
             </span>
           ))}
         </div>
@@ -60,8 +63,8 @@ export function FunnelStrip({ rows }: { rows: LeadRow[] }) {
               aria-checked={by === k}
               onClick={() => setBy(k)}
               className={cn(
-                "h-7 rounded-pill px-3 text-[13px] font-semibold capitalize transition-colors",
-                by === k ? "bg-lime text-forest" : "text-charcoal hover:bg-paper",
+                "h-7 cursor-pointer rounded-pill px-3 text-[13px] font-semibold capitalize transition-colors duration-150",
+                by === k ? "bg-paper text-strong shadow-[0_0_0_1px_rgba(14,15,12,0.08)]" : "text-charcoal hover:text-strong",
               )}
             >
               {k}
@@ -69,29 +72,40 @@ export function FunnelStrip({ rows }: { rows: LeadRow[] }) {
           ))}
         </div>
       </div>
-      <ol className="grid grid-cols-3 gap-y-4 md:grid-cols-6">
+      <ol className="flex items-stretch">
         {cells.map((c, i) => {
           const prev = i === 0 ? null : cells[i - 1].total;
           const conv = prev ? Math.round((c.total / prev) * 100) : null;
+          const hot = i === deepest;
           return (
-            <li
-              key={c.stage}
-              className={cn(
-                "min-w-0 border-hairline pr-3",
-                i === 0 ? "pl-0" : i % 3 === 0 ? "pl-0 md:border-l md:pl-4" : "border-l pl-4",
-              )}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[12px] font-semibold text-muted">{c.label}</span>
-                {conv === null ? null : <span className="tabular text-[12px] font-medium text-charcoal">{conv}%</span>}
-              </div>
-              <div className="tabular mt-1.5 text-[30px] font-bold leading-none tracking-[-0.02em] text-strong">{c.total}</div>
-              <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-raised" style={{ width: top ? `${Math.max(6, (c.total / top) * 100)}%` : "6%" }}>
-                {c.parts.map((n, gi) =>
-                  n ? <span key={groups[gi]} title={`${groups[gi]}: ${n}`} className="h-full bg-forest" style={{ flexGrow: n, opacity: OPACITY[gi % OPACITY.length] }} /> : null,
-                )}
-              </div>
-            </li>
+            <Fragment key={c.stage}>
+              {i > 0 ? (
+                <li aria-hidden className="relative flex w-[72px] shrink-0 flex-col items-center pt-[26px]">
+                  <span className="absolute inset-x-1 top-[38px] h-px bg-hairline" />
+                  <span
+                    title={conv === null ? "No leads in the previous stage" : `${conv}% of ${cells[i - 1].label.toLowerCase()} moved on`}
+                    className={cn(
+                      "tabular relative inline-flex h-6 items-center gap-0.5 rounded-pill pl-2 pr-1 text-[11.5px] font-semibold",
+                      hot ? "bg-lime text-forest" : "bg-raised text-charcoal",
+                    )}
+                  >
+                    {conv === null ? "–" : `${conv}%`}
+                    <ChevronRight className="size-3" strokeWidth={2.5} />
+                  </span>
+                </li>
+              ) : null}
+              <li className="min-w-0 flex-1" aria-label={`${c.label}: ${c.total}`}>
+                <span className={cn("block truncate text-[12px] font-semibold", c.total ? "text-muted" : "text-pebble")}>{c.label}</span>
+                <span className={cn("tabular mt-1 block text-[34px] font-bold leading-none tracking-[-0.03em]", c.total ? "text-strong" : "text-pebble")}>{c.total}</span>
+                <span className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-recessed">
+                  <span className="flex h-full overflow-hidden rounded-full transition-[width] duration-500 ease-out-soft" style={{ width: top ? `${(c.total / top) * 100}%` : "0%" }}>
+                    {c.parts.map((n, gi) =>
+                      n ? <span key={groups[gi]} title={`${groups[gi]}: ${n}`} className="h-full bg-forest" style={{ flexGrow: n, opacity: OPACITY[gi % OPACITY.length] }} /> : null,
+                    )}
+                  </span>
+                </span>
+              </li>
+            </Fragment>
           );
         })}
       </ol>

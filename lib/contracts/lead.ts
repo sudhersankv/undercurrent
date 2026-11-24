@@ -19,7 +19,8 @@ export const Lead = z.object({
   handles: z.object({ github: z.string().optional(), x: z.string().optional(), hn: z.string().optional(), linkedin: z.string().url().optional() }),
   company: z.object({ name: z.string(), domain: z.string().optional() }).nullable(),
   email: z
-    .object({ address: z.string().email(), source: z.enum(["github_public", "hunter"]), score: z.number().optional(), verified: z.boolean() })
+    // Masked addresses ("j•••@acme.dev") come from the public showcase fixture; never deliverable (send lock).
+    .object({ address: z.union([z.string().email(), z.string().regex(/^[^@\s]•••@[^@\s]+\.[^@\s]+$/)]), masked: z.boolean().optional(), source: z.enum(["github_public", "hunter"]), score: z.number().optional(), verified: z.boolean() })
     .nullable(),
   primaryRepo: z.string().nullable(), // "owner/name"
   fitScore: z.number().min(0).max(100),

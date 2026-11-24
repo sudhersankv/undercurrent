@@ -1,16 +1,28 @@
-import type { RunEvent } from "@/lib/contracts";
+import type { RunEvent, RunState } from "@/lib/contracts";
 import type { LocalItem } from "./run-context";
 
-/** SPEC §8 feed rendering: handoff cards, collapsed thinking, highlighted results, right-aligned human lines. */
+/** SPEC §8 feed rendering: stage groups, handoff cards, collapsed thinking, highlighted results, right-aligned human lines. */
 export type FeedItem =
-  | { kind: "handoff" | "result" | "action" | "warning" | "human" | "persona" | "chat"; key: string; e: RunEvent }
+  | { kind: "handoff" | "result" | "action" | "warning" | "human" | "persona" | "chat" | "end"; key: string; e: RunEvent }
   | { kind: "thinking"; key: string; events: RunEvent[] }
-  | { kind: "local"; key: string; item: LocalItem };
+  | { kind: "local"; key: string; item: LocalItem }
+  | { kind: "stage"; key: string; state: RunState; at: string; count: number };
 
-/** Telemetry and state ticks live in the header/footer, not the feed. */
-const HIDDEN = new Set(["llm.usage", "retrieval.stats", "run.state_changed", "run.created"]);
+/** Telemetry ticks live in the header/footer, not the feed. State changes become stage headers. */
+const HIDDEN = new Set(["llm.usage", "retrieval.stats", "run.created"]);
+const END = new Set(["run.fake_done", "run.done"]);
 
 export const isPersona = (e: RunEvent) => e.type === "swarm.persona_reacted";
+
+/** Items that matter at a glance ("Key moments" filter). */
+export function isKeyMoment(it: FeedItem): boolean {
+  if (it.kind === "stage" || it.kind === "handoff" || it.kind === "human" || it.kind === "chat" || it.kind === "local" || it.kind === "warning" || it.kind === "end") return true;
+  if (it.kind === "result") {
+    const t = it.e.type;
+    return t === "sounding.verdict" || t === "sonar.profile_ready" || t === "swarm.reliability" || t === "wake.classified" || t === "wake.referral_created" || t === "tide.sent" || t === "wake.calibration_updated";
+  }
+  return false;
+}
 
 /**
  * @param shownPersonas persona events allowed through so far (UI throttle ≤5/s); others are skipped, not queued,
@@ -19,6 +31,7 @@ export const isPersona = (e: RunEvent) => e.type === "swarm.persona_reacted";
 export function buildFeed(events: RunEvent[], local: LocalItem[], shownPersonas: ReadonlySet<number>): FeedItem[] {
   const out: FeedItem[] = [];
   let thinking: RunEvent[] = [];
+  let lastStage: RunState | null = null;
   const flush = () => {
     if (!thinking.length) return;
     out.push({ kind: "thinking", key: `t-${thinking[0].seq}`, events: thinking });
@@ -39,7 +52,20 @@ export function buildFeed(events: RunEvent[], local: LocalItem[], shownPersonas:
       pushLocal(e.seq);
       continue;
     }
-    if (isPersona(e)) {
+    if (e.type === "run.state_changed") {
+      const to = (e.payload as { to?: RunState }).to;
+      if (to && to !== "INTAKE" && to !== lastStage) {
+        flush();
+        out.push({ kind: "stage", key: `s-${e.seq}`, state: to, at: e.at, count: 0 });
+        lastStage = to;
+      }
+      pushLocal(e.seq);
+      continue;
+    }
+    if (END.has(e.type)) {
+      flush();
+      out.push({ kind: "end", key: `e-${e.seq}`, e });
+    } else if (isPersona(e)) {
       if (shownPersonas.has(e.seq)) {
         flush();
         out.push({ kind: "persona", key: `e-${e.seq}`, e });
@@ -57,5 +83,12 @@ export function buildFeed(events: RunEvent[], local: LocalItem[], shownPersonas:
     pushLocal(e.seq);
   }
   flush();
+
+  // stage headers show how many items they hold
+  let head: Extract<FeedItem, { kind: "stage" }> | null = null;
+  for (const it of out) {
+    if (it.kind === "stage") head = it;
+    else if (head && it.kind !== "local") head.count += it.kind === "thinking" ? it.events.length : 1;
+  }
   return out;
 }

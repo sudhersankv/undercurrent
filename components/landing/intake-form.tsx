@@ -101,6 +101,9 @@ export function IntakeForm() {
     setBusy(true);
     try {
       const runId = await createRun(intake);
+      try {
+        localStorage.setItem("uc:liveRunId", runId);
+      } catch {}
       router.push(`/runs/${runId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't start a run");

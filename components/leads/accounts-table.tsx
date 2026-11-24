@@ -6,7 +6,18 @@ import type { RunStore } from "@/lib/client/run-store";
 import { accountRows, SIZE_BANDS, SIZE_LABEL, type SizeBand } from "@/lib/client/gtm";
 import { cn } from "@/lib/utils";
 import { Pill } from "@/components/ui";
-import { Avatar, FitBar } from "./parts";
+import { Avatar, FitRing } from "./parts";
+import { Building2 } from "lucide-react";
+
+const HEAD: [string, string][] = [
+  ["Account", "w-[22%]"],
+  ["Size", "w-[88px]"],
+  ["Industry", "hidden w-[120px] @min-[900px]:table-cell"],
+  ["Segment", "w-[150px]"],
+  ["Why it fits", ""],
+  ["Fit", "w-[64px]"],
+  ["Contacts", "w-[150px]"],
+];
 
 /** Accounts: companies that fit, with size filter and linked people. Click a contact to open their brief. */
 export function AccountsTable({ store, selectedId, onSelect }: { store: RunStore; selectedId: string | null; onSelect: (leadId: string) => void }) {
@@ -42,12 +53,12 @@ export function AccountsTable({ store, selectedId, onSelect }: { store: RunStore
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-card border border-hairline bg-paper">
-        <table className="w-full min-w-[960px] border-collapse text-[13px]">
+      <div className="@container rounded-card border border-hairline bg-paper">
+        <table className="w-full table-fixed border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-hairline text-left">
-              {["Account", "Size", "Industry", "Segment", "Why it fits", "Fit", "Contacts"].map((h) => (
-                <th key={h} className="h-10 whitespace-nowrap px-3 text-[12px] font-semibold text-muted first:pl-4 last:pr-4">
+              {HEAD.map(([h, w]) => (
+                <th key={h} className={cn("h-10 whitespace-nowrap px-3 text-[12px] font-semibold text-muted first:pl-4 last:pr-4", w)}>
                   {h}
                 </th>
               ))}
@@ -87,15 +98,15 @@ export function AccountsTable({ store, selectedId, onSelect }: { store: RunStore
                 <td className="whitespace-nowrap px-3 py-3" title={r.sizeSource ?? undefined}>
                   {r.sizeBand ? SIZE_LABEL[r.sizeBand] : <span className="text-pebble">–</span>}
                 </td>
-                <td className="px-3 py-3">{r.industry ?? <span className="text-pebble">–</span>}</td>
+                <td className="hidden px-3 py-3 @min-[900px]:table-cell">{r.industry ?? <span className="text-pebble">–</span>}</td>
                 <td className="px-3 py-3">
-                  <Pill tone="neutral" className="max-w-[180px]" title={r.segmentName}>
+                  <Pill tone="neutral" className="max-w-full" title={r.segmentName}>
                     <span className="truncate">{r.segmentName}</span>
                   </Pill>
                 </td>
-                <td className="max-w-[320px] px-3 py-3 text-[13px] leading-relaxed">{r.why ?? <span className="text-muted">Brief pending</span>}</td>
+                <td className="px-3 py-3 text-[13px] leading-relaxed">{r.why ?? <span className="text-muted">Brief pending</span>}</td>
                 <td className="px-3 py-3">
-                  <FitBar score={r.fitScore} />
+                  <FitRing score={r.fitScore} size={32} />
                 </td>
                 <td className="py-3 pl-3 pr-4">
                   {r.contacts.length ? (
@@ -126,8 +137,13 @@ export function AccountsTable({ store, selectedId, onSelect }: { store: RunStore
             ))}
             {!rows.length ? (
               <tr>
-                <td colSpan={7} className="h-28 px-3 text-center text-muted">
-                  {all.length ? "No accounts in this size band." : "No accounts yet. Pilot fills this after Sounding."}
+                <td colSpan={7} className="px-3 py-10 text-center">
+                  <span className="inline-flex flex-col items-center gap-3 text-[14px] text-body">
+                    <span className="inline-flex size-10 items-center justify-center rounded-full bg-raised text-forest">
+                      <Building2 className="size-4" />
+                    </span>
+                    {all.length ? "No accounts in this size band." : "No accounts yet. Pilot fills this after Sounding."}
+                  </span>
                 </td>
               </tr>
             ) : null}

@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/components/brand/logo";
+import { motion, useReducedMotion } from "framer-motion";
+import { TriangleAlert } from "lucide-react";
+import { Logo, LogoMark } from "@/components/brand/logo";
+import { LiveRunChip, RunSwitcher } from "@/components/demo/run-switcher";
 import { reviewQueueCount } from "@/lib/client/run-store";
 import { cn } from "@/lib/utils";
-import { useRun } from "./run-context";
+import { HealthMeters } from "./health-meters";
+import { LoopStepper } from "./loop-strip";
+import { isRunOver, useRun } from "./run-context";
+import { StatusPill } from "./status-pill";
 
 const TABS = [
   { href: "", label: "Workspace" },
@@ -18,17 +24,16 @@ const TABS = [
   { href: "/chart", label: "Chart" },
 ] as const;
 
-function Stat({ label, value, tone = "lichen", title }: { label: string; value: string; tone?: "lichen" | "muted" | "warn"; title?: string }) {
+function Count({ n, on, strong, label }: { n: number; on: boolean; strong?: boolean; label: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-2 rounded-pill border px-3 text-[13px]",
-        tone === "warn" ? "border-danger/40 bg-danger/5" : "border-hairline-strong bg-paper",
+        "relative inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill px-1.5 text-[11px] font-semibold leading-none tabular transition-colors",
+        strong ? (on ? "bg-forest text-lime" : "bg-forest text-paper") : on ? "bg-paper/70 text-forest" : "bg-paper text-forest",
       )}
-      title={title}
+      aria-label={label}
     >
-      <span className="font-medium text-muted">{label}</span>
-      <span className={cn("font-semibold tabular", tone === "lichen" && "text-forest", tone === "muted" && "text-pebble", tone === "warn" && "text-danger")}>{value}</span>
+      {n}
     </span>
   );
 }
@@ -36,39 +41,37 @@ function Stat({ label, value, tone = "lichen", title }: { label: string; value: 
 export function MissionHeader() {
   const { runId, store, status } = useRun();
   const pathname = usePathname();
+  const reduce = useReducedMotion();
   const base = `/runs/${runId}`;
   const queue = reviewQueueCount(store);
   const replies = store.replies.length;
   const company = store.profile?.name ?? (store.events[0]?.payload as { companyName?: string } | undefined)?.companyName ?? null;
+  const over = isRunOver(store);
   const rel = store.reliability;
-  const cal = store.calibration;
 
   return (
     <>
-      <header className="border-b border-hairline bg-paper">
-        <div className="flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 md:px-6 2xl:flex-nowrap 2xl:py-0">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" className="shrink-0 transition-opacity hover:opacity-80">
-              <Logo size={19} />
-            </Link>
-            <span className="h-5 w-px shrink-0 bg-hairline-strong" aria-hidden />
-            <span className="truncate text-[15px] font-semibold text-strong">{company ?? "New run"}</span>
-            <span className="hidden h-6 shrink-0 items-center rounded-pill bg-raised px-2.5 font-mono text-[11px] font-medium text-charcoal sm:inline-flex">
-              {store.state ?? "INTAKE"}
-            </span>
-            {status !== "live" ? (
-              <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-pill border border-hairline-strong px-2.5 text-[12px] font-medium text-muted" role="status">
-                <span className="size-1.5 animate-pulse rounded-full bg-pebble" aria-hidden />
-                {status === "connecting" ? "Connecting" : "Reconnecting"}
-              </span>
-            ) : null}
-          </div>
+      <header className="relative z-30 border-b border-hairline bg-paper">
+        {/* row 1: brand · run · status ........ live chip · health */}
+        <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+          <Link href="/" aria-label="Undercurrent home" className="-ml-1 flex h-9 shrink-0 items-center rounded-pill px-1 transition-opacity hover:opacity-75">
+            <Logo size={17} className="hidden md:inline-flex" />
+            <LogoMark className="h-[18px] text-forest md:hidden" />
+          </Link>
+          <span className="h-5 w-px shrink-0 bg-hairline-strong" aria-hidden />
+          <RunSwitcher runId={runId} companyName={company} state={store.state} over={over} />
+          <StatusPill state={store.state} over={over} stream={status} reviewHref={`${base}/review`} />
 
-          <nav
-            aria-label="Run views"
-            className="order-3 -mx-1 w-full overflow-x-auto px-1 [scrollbar-width:none] 2xl:order-none 2xl:mx-0 2xl:w-auto 2xl:px-0"
-          >
-            <div className="inline-flex gap-0.5 rounded-pill bg-raised p-1">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <LiveRunChip runId={runId} />
+            <HealthMeters reliability={rel} calibration={store.calibration} />
+          </div>
+        </div>
+
+        {/* row 2: segmented nav ........ department stepper */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-2.5 md:px-6">
+          <nav aria-label="Run views" className="-mx-1 max-w-full overflow-x-auto px-1 [scrollbar-width:none]">
+            <div className="relative inline-flex gap-0.5 rounded-pill bg-raised p-1">
               {TABS.map((t) => {
                 const href = `${base}${t.href}`;
                 const on = t.href === "" ? pathname === base : pathname.startsWith(href);
@@ -78,49 +81,33 @@ export function MissionHeader() {
                     href={href}
                     aria-current={on ? "page" : undefined}
                     className={cn(
-                      "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill px-3 text-sm font-semibold transition-colors",
-                      on ? "bg-lime text-forest" : "text-charcoal hover:bg-paper hover:text-strong",
+                      "relative inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill px-2.5 text-[13px] font-semibold transition-colors duration-150 min-[1400px]:px-3",
+                      on ? "text-forest" : "text-charcoal hover:bg-paper/70 hover:text-strong",
                     )}
                   >
-                    {t.label}
-                    {t.label === "Outreach" && queue > 0 ? (
-                      <span
-                        className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-forest px-1.5 text-[11px] font-semibold leading-none text-paper tabular"
-                        aria-label={`${queue} waiting`}
-                      >
-                        {queue}
-                      </span>
+                    {on ? (
+                      <motion.span
+                        layoutId="run-nav-active"
+                        aria-hidden
+                        className="absolute inset-0 rounded-pill bg-lime"
+                        transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 40 }}
+                      />
                     ) : null}
-                    {t.label === "Inbox" && replies > 0 ? (
-                      <span
-                        className={cn(
-                          "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-pill px-1.5 text-[11px] font-semibold leading-none tabular",
-                          on ? "bg-paper/70 text-forest" : "bg-linen text-forest",
-                        )}
-                        aria-label={`${replies} replies`}
-                      >
-                        {replies}
-                      </span>
-                    ) : null}
+                    <span className="relative">{t.label}</span>
+                    {t.label === "Outreach" && queue > 0 ? <Count n={queue} on={on} strong label={`${queue} waiting`} /> : null}
+                    {t.label === "Inbox" && replies > 0 ? <Count n={replies} on={on} label={`${replies} replies`} /> : null}
                   </Link>
                 );
               })}
             </div>
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <Stat
-              label="Reliability"
-              value={rel ? rel.value.toFixed(2) : "--"}
-              tone={!rel ? "muted" : rel.warning ? "warn" : "lichen"}
-              title={rel ? `Swarm reliability. Control segments averaged ${rel.controlMean.toFixed(2)}` : "Swarm reliability"}
-            />
-            <Stat label="Calibration" value={cal ? cal.globalError.toFixed(2) : "--"} tone={cal ? "lichen" : "muted"} title="Calibration error" />
-          </div>
+          <LoopStepper className="ml-auto max-w-full overflow-x-auto [scrollbar-width:none] lg:overflow-visible" />
         </div>
       </header>
       {rel?.warning ? (
-        <div role="status" className="border-b border-danger/20 bg-danger/5 px-4 py-2 text-[13px] font-medium text-danger md:px-6">
+        <div role="status" className="flex items-center gap-2 border-b border-danger/20 bg-danger/5 px-4 py-2 text-[13px] font-medium text-danger md:px-6">
+          <TriangleAlert className="size-4" aria-hidden />
           Swarm agrees with everything. Trust evidence only.
         </div>
       ) : null}

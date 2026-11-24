@@ -1,3 +1,4 @@
+import { ensureShowcaseFor } from "@/lib/demo/showcase";
 import { bus } from "@/lib/events";
 import { getRunSnapshot } from "@/lib/orchestrator";
 import { listOutcomes } from "@/lib/departments/wake/store";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ runId: string }> }) {
   const { runId } = await ctx.params;
+  await ensureShowcaseFor(runId);
   const [snap, outcomes, events] = await Promise.all([
     getRunSnapshot(runId).catch(() => null),
     listOutcomes(runId).catch(() => []),

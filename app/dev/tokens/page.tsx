@@ -1,5 +1,8 @@
 import { ArrowRight, ArrowUp, Check } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, DeptGlyph, DeptLabel, Eyebrow, Pill, StatCounter, VERDICT_COLORS, VerdictChip } from "@/components/ui";
+import { Button, Card, CardHeader, CardTitle, DeptChip, DeptGlyph, DeptLabel, DEPT_LABELS, Eyebrow, Pill, StatCounter, VERDICT_COLORS, VerdictChip } from "@/components/ui";
+import { HealthMeters } from "@/components/mission/health-meters";
+import { StatusPill } from "@/components/mission/status-pill";
+import { Avatar, FitRing, Sparkline } from "@/components/workspace/bits";
 import type { DeptId, EventDept, Verdict } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
@@ -274,7 +277,7 @@ export default function TokensPage() {
                 </label>
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-strong">Chat with Helm</span>
-                  <div className="flex items-center gap-2 rounded-card border border-hairline-strong bg-paper py-1 pl-4 pr-1">
+                  <div className="flex items-center gap-2 rounded-pill border border-hairline-strong bg-paper py-1 pl-4 pr-1">
                     <span className="inline-flex h-6 items-center rounded-pill bg-linen px-2 text-[12px] font-semibold text-forest">@Sounding</span>
                     <span className="flex-1 text-[15px] text-pebble">why is this Hype?</span>
                     <Button variant="cta" size="icon" aria-label="Send">
@@ -348,25 +351,81 @@ export default function TokensPage() {
         <Section title="Product" note="Patterns from the run shell.">
           <div id="product" className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
-              <Label>Step indicator · done forest, active lime, pending fog</Label>
-              <ol className="flex items-center overflow-x-auto rounded-card border border-hairline p-4">
+              <Label>Loop stepper · done forest + count, active expands to a lime pill, pending fog</Label>
+              <ol className="flex w-fit items-center rounded-card border border-hairline p-3">
                 {STEPS.map(({ d, state }, i) => (
-                  <li key={d} className={cn("flex items-center", i < STEPS.length - 1 ? "min-w-0 flex-1" : "shrink-0")}>
-                    <span className="flex shrink-0 items-center gap-2.5">
-                      <span
-                        className={cn(
-                          "flex size-10 items-center justify-center rounded-full",
-                          state === "active" ? "bg-lime text-forest ring-4 ring-linen" : state === "done" ? "bg-forest text-lime" : "bg-raised text-muted",
-                        )}
-                      >
-                        <DeptGlyph dept={d} size={18} />
+                  <li key={d} className="flex items-center">
+                    {i > 0 ? <span className={cn("mx-1 h-[2px] w-5 rounded-full", state !== "pending" ? "bg-forest/50" : "bg-hairline")} /> : null}
+                    <span className={cn("flex h-8 items-center gap-1.5 rounded-pill", state === "active" ? "bg-lime pl-1 pr-3 text-forest" : state === "done" ? "pr-2" : "")}>
+                      <span className={cn("flex size-6 items-center justify-center rounded-full", state === "pending" ? "bg-raised text-muted" : "bg-forest text-lime")}>
+                        <DeptGlyph dept={d} size={12} />
                       </span>
-                      <span className={cn("text-[13px] font-semibold", state === "pending" ? "text-muted" : "text-strong")}>{d[0].toUpperCase() + d.slice(1)}</span>
+                      {state === "active" ? (
+                        <span className="text-[13px] font-semibold">
+                          {DEPT_LABELS[d]} <span className="text-forest/70 tabular">12</span>
+                        </span>
+                      ) : state === "done" ? (
+                        <span className="text-[12px] font-semibold text-strong tabular">{i === 0 ? 5 : 33}</span>
+                      ) : null}
                     </span>
-                    {i < STEPS.length - 1 ? <span className={cn("mx-3 h-px min-w-4 flex-1", state === "done" ? "bg-forest/40" : "bg-hairline-strong")} /> : null}
                   </li>
                 ))}
               </ol>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label>Run status pill · working, waiting (links to the queue), done</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusPill state="SOUNDING_R1" over={false} stream="live" />
+                <StatusPill state="OUTREACH_REVIEW" over={false} stream="live" reviewHref="#product" />
+                <StatusPill state="DONE" over stream="live" />
+                <StatusPill state={null} over={false} stream="connecting" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label>Health meters · hover for the explanation card</Label>
+              <div className="w-fit">
+                <HealthMeters reliability={{ value: 0.7, controlMean: 0.11, warning: false }} calibration={{ globalError: 0.36, perSegment: { a: { n: 1 } } }} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label>Handoff · the key moment in the activity timeline</Label>
+              <div className="max-w-md rounded-card bg-linen px-3.5 py-3">
+                <div className="flex items-center gap-1.5">
+                  <DeptChip dept="sounding" />
+                  <ArrowRight className="size-3.5 text-forest" aria-hidden />
+                  <DeptChip dept="pilot" />
+                  <span className="ml-auto text-[11px] font-medium text-muted">2m ago</span>
+                </div>
+                <p className="mt-2 text-[14px] leading-snug text-strong">Local-first app builders verified (6 evidence, 3 sources). Handing off.</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label>Fit ring · sparkline · avatar</Label>
+              <div className="flex flex-wrap items-center gap-6">
+                <FitRing value={84} />
+                <FitRing value={61} />
+                <FitRing value={38} />
+                <span className="rounded-card bg-recessed p-3">
+                  <Sparkline values={[0, 0, 1, 2, 2, 4, 5, 5, 7]} width={120} height={28} />
+                </span>
+                <Avatar name="Smart Connections" />
+                <Avatar name="Priya (search infra)" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label>Toast / nudge · pill with a round icon (Wise)</Label>
+              <div className="flex w-fit items-center gap-3 rounded-pill border border-hairline bg-paper py-2 pl-2 pr-2 shadow-lift">
+                <span className="flex size-11 items-center justify-center rounded-full bg-lime text-forest">
+                  <DeptGlyph dept="pilot" size={18} />
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[15px] font-semibold text-strong">Live run found 18 people</span>
+                  <span className="text-[12px] text-muted">Acme · Briefs to review</span>
+                </span>
+                <Button variant="forest" size="md" className="ml-4">
+                  View
+                </Button>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <Label>Icon chips · departments</Label>

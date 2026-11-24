@@ -1,3 +1,4 @@
+import { ensureShowcaseFor } from "@/lib/demo/showcase";
 import { runEventStream } from "@/lib/events";
 
 export const runtime = "nodejs";
@@ -9,5 +10,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ runId: string }
   const url = new URL(req.url);
   const raw = req.headers.get("last-event-id") ?? url.searchParams.get("since") ?? "0";
   const afterSeq = Number.parseInt(raw, 10) || 0;
+  await ensureShowcaseFor(runId);
   return runEventStream(runId, afterSeq, req.signal);
 }

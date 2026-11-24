@@ -116,3 +116,53 @@ export function DeptLabel({ dept, className, children }: { dept: EventDept; clas
 }
 
 export const DEPT_LABELS = LABELS;
+
+const CHIP_SIZE = { xs: "size-5", sm: "size-6", md: "size-8", lg: "size-10" } as const;
+const GLYPH_SIZE = { xs: 11, sm: 13, md: 15, lg: 18 } as const;
+const CHIP_TONE = {
+  fog: "bg-raised text-forest",
+  linen: "bg-linen text-forest",
+  forest: "bg-forest text-lime",
+  lime: "bg-lime text-forest",
+  paper: "bg-paper text-forest",
+} as const;
+
+/** Round icon chip for a department (Wise icon chip). */
+export function DeptIcon({
+  dept,
+  size = "sm",
+  tone = "fog",
+  className,
+}: {
+  dept: EventDept;
+  size?: keyof typeof CHIP_SIZE;
+  tone?: keyof typeof CHIP_TONE;
+  className?: string;
+}) {
+  return (
+    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full", CHIP_SIZE[size], CHIP_TONE[tone], className)}>
+      <DeptGlyph dept={dept} size={GLYPH_SIZE[size]} aria-hidden />
+      <span className="sr-only">{LABELS[dept]}</span>
+    </span>
+  );
+}
+
+/** Department name pill with its glyph, e.g. in handoffs ("Sounding → Pilot"). */
+export function DeptChip({ dept, className, tone = "paper" }: { dept: EventDept; className?: string; tone?: "paper" | "fog" | "linen" }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-pill pl-1 pr-2.5 text-[12px] font-semibold text-strong",
+        tone === "paper" && "bg-paper",
+        tone === "fog" && "bg-raised",
+        tone === "linen" && "bg-linen",
+        className,
+      )}
+    >
+      <span className="inline-flex size-4 items-center justify-center rounded-full bg-forest text-lime">
+        <DeptGlyph dept={dept} size={10} aria-hidden />
+      </span>
+      {LABELS[dept]}
+    </span>
+  );
+}

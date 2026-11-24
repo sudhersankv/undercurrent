@@ -108,12 +108,21 @@ export function useLeads(store: RunStore) {
 
   const skipLead = useCallback((id: string) => setSkipped((s) => ({ ...s, [id]: true })), []);
 
-  return { rows, moveLead, skipLead, notice, clearNotice: () => setNotice(null) };
+  const clearNotice = useCallback(() => setNotice(null), []);
+
+  return { rows, moveLead, skipLead, notice, clearNotice };
+}
+
+/** The Sounding evidence record behind a brief link, when there is one (for its title). */
+export function evidenceFor(store: RunStore, url: string) {
+  for (const list of Object.values(store.evidence)) for (const e of list) if (e.url === url) return e;
+  return null;
 }
 
 export function timeAgo(iso: string | null, now = Date.now()): string {
   if (!iso) return "–";
   const s = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
+  if (s < 10) return "just now";
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.round(s / 60)}m ago`;
   if (s < 86400) return `${Math.round(s / 3600)}h ago`;

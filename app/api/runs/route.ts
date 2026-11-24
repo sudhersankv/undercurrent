@@ -1,8 +1,17 @@
 import { DisplayAlias, IntakeInput } from "@/lib/contracts";
+import { listRuns } from "@/lib/demo/showcase";
 import { startRun } from "@/lib/orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/runs → { runs: Array<{ runId, companyName, state, createdAt, showcase }> }
+ * The 20 most recent runs (memory + Postgres), newest first, with the showcase run pinned first.
+ */
+export async function GET() {
+  return Response.json({ runs: await listRuns(20) });
+}
 
 /**
  * POST /api/runs → { runId } immediately; the pipeline runs in-process (stream: /api/runs/:id/stream).

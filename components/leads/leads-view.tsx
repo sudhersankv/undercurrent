@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRun } from "@/components/mission/run-context";
 import { Eyebrow } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,8 @@ import { isAccount } from "@/lib/client/gtm";
 import { useLeads } from "./model";
 import { LeadGrid } from "./lead-grid";
 import { FunnelStrip } from "./funnel-strip";
-import { BriefPanel } from "./brief-panel";
+import { BriefDrawer } from "./brief-panel";
+import { ActionToast } from "./parts";
 import { AccountsTable } from "./accounts-table";
 
 type View = "people" | "accounts";
@@ -25,6 +25,7 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
   const [flash, setFlash] = useState<string | null>(null);
   const selected = useMemo(() => allRows.find((r) => r.lead.id === selectedId) ?? null, [allRows, selectedId]);
 
+  const closeBrief = useCallback(() => setSelectedId(null), []);
   const message = flash ?? notice;
   useEffect(() => {
     if (!message) return;
@@ -73,12 +74,8 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
             </span>
           </h1>
         </div>
+        <ActionToast message={message} />
         <div className="flex items-center gap-3">
-          {message && (
-            <span role="status" className="rounded-pill bg-linen px-3 py-1 text-[13px] font-medium text-forest">
-              {message}
-            </span>
-          )}
           <div role="radiogroup" aria-label="View" className="flex rounded-pill bg-raised p-1">
             {(["people", "accounts"] as const).map((v) => (
               <button
@@ -98,33 +95,25 @@ export function LeadsView({ runId, initialView = "people" }: { runId: string; in
 
       {view === "people" ? <FunnelStrip rows={rows} /> : null}
 
-      <div className={cn("grid items-start gap-4", selected && "lg:grid-cols-[minmax(0,1fr)_420px]")}>
-        <div className="min-w-0">
-          {view === "people" ? (
-            <LeadGrid rows={rows} store={store} selectedId={selectedId} onSelect={setSelectedId} />
-          ) : (
-            <AccountsTable store={store} selectedId={selectedId} onSelect={setSelectedId} />
-          )}
-        </div>
-        <AnimatePresence mode="wait">
-          {selected && (
-            <div className="lg:sticky lg:top-4">
-              <BriefPanel
-                key={selected.lead.id}
-                row={selected}
-                store={store}
-                onClose={() => setSelectedId(null)}
-                onApprove={() => moveLead(selected.lead, "approved", "brief approved")}
-                onSkip={() => {
-                  skipLead(selected.lead.id);
-                  nextUnreviewed(selected.lead.id);
-                }}
-                onFindSimilar={() => findSimilar(selected.lead.displayName)}
-              />
-            </div>
-          )}
-        </AnimatePresence>
+      <div className="min-w-0">
+        {view === "people" ? (
+          <LeadGrid rows={rows} store={store} selectedId={selectedId} onSelect={setSelectedId} onApprove={(l) => moveLead(l, "approved", "approved from list")} />
+        ) : (
+          <AccountsTable store={store} selectedId={selectedId} onSelect={setSelectedId} />
+        )}
       </div>
+      <BriefDrawer
+        row={selected}
+        store={store}
+        onClose={closeBrief}
+        onApprove={() => selected && moveLead(selected.lead, "approved", "brief approved")}
+        onSkip={() => {
+          if (!selected) return;
+          skipLead(selected.lead.id);
+          nextUnreviewed(selected.lead.id);
+        }}
+        onFindSimilar={() => selected && findSimilar(selected.lead.displayName)}
+      />
     </div>
   );
 }
