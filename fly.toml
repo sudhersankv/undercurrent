@@ -1,0 +1,28 @@
+# Exactly ONE machine: run state, EventBus and the AgentMail listener live in process memory.
+app = "undercurrent-hwb"
+primary_region = "iad"            # next to Neon AI Gateway regions (us-east)
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  DEMO_SAFE_MODE = "true"
+  MODEL_SMART = "claude-sonnet-5-5"
+  MODEL_FAST = "claude-haiku-5-5"
+  REPLAY_MODE = "off"
+  FOLLOWUP_DELAY_MINUTES = "3"
+  SWARM_PERSONAS_PER_SEGMENT = "3"
+  SWARM_MAX_CONCURRENCY = "12"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off"      # NEVER auto-stop: in-process pipeline, Wake listener, SSE
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
