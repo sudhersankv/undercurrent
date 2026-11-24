@@ -2,70 +2,91 @@
 @import "tw-animate-css";
 
 /*
- * Undercurrent design tokens (AMENDMENTS UI): "abyssal terminal", forest + lichen.
- * No shadows: depth comes from surface steps (recessed < canvas < raised < raised-hover).
- * Use as Tailwind utilities: bg-canvas, bg-raised, text-strong, text-body, text-muted, border-hairline,
- * text-lichen, bg-verdict-verified, rounded-card, rounded-control, font-mono, etc.
+ * Undercurrent design tokens: Wise-style "deep moss with lime voltage". See DESIGN.md.
+ * Light canvas, Forest Ink for text and dark sections, Lime Voltage only for primary fills and active states.
+ * Semantic names (canvas/raised/strong/body/muted/lichen/hairline) are kept so existing utilities keep working:
+ *   - text-lichen / border-lichen = Forest Ink (readable on white). Never put lime text on a light surface.
+ *   - bg-lime = Lime Voltage fill (primary CTA, active tab). Text on lime is text-forest.
+ *   - bg-forest = inverted dark section; on it use text-paper (body) and text-lime (emphasis).
  */
 @theme {
-  /* surfaces */
-  --color-canvas: #0c1f16;
-  --color-recessed: #08170f;
-  --color-raised: #143322;
-  --color-raised-hover: #1c4430;
+  /* Wise palette */
+  --color-forest: #163300;
+  --color-lime: #9fe870;
+  --color-spruce: #054d28;
+  --color-linen: #e2f6d5;
+  --color-signal-blue: #0b4c72;
+  --color-alarm-red: #cb272f;
+  --color-obsidian: #0e0f0c;
+  --color-charcoal: #454745;
+  --color-slate: #6a6c6a;
+  --color-pebble: #868685;
+  --color-fog: #e8ebe6;
+  --color-paper: #ffffff;
 
-  /* text */
-  --color-strong: #f4faf5;
-  --color-body: #b3c4b8;
-  --color-muted: #6f7f74;
+  /* surfaces (semantic) */
+  --color-canvas: #ffffff;
+  --color-recessed: #f2f4f0;
+  --color-raised: #e8ebe6;
+  --color-raised-hover: #e2f6d5;
 
-  /* accents */
-  --color-lichen: #d8f5a2;
-  --color-cta-from: #2e7d4f;
-  --color-cta-via: #cff5d6;
-  --color-cta-to: #f1e6ff;
-  --color-hairline: rgba(244, 250, 245, 0.08);
-  --color-hairline-strong: rgba(244, 250, 245, 0.16);
-  --color-danger: #d9a08f;
+  /* text (semantic) */
+  --color-strong: #0e0f0c;
+  --color-body: #454745;
+  --color-muted: #6a6c6a;
 
-  /* verdicts (map + verdict chips only) */
-  --color-verdict-verified: #d8f5a2;
-  --color-verdict-promising: #e9ddb0;
-  --color-verdict-hype: #d9a08f;
-  --color-verdict-killed: #3a4a40;
-  --color-verdict-pending: #6f7f74;
+  /* accents (semantic) */
+  --color-lichen: #163300;
+  --color-hairline: rgba(14, 15, 12, 0.12);
+  --color-hairline-strong: rgba(14, 15, 12, 0.28);
+  --color-danger: #cb272f;
+
+  /* verdicts: fills for map nodes, dots and chip backgrounds. Chip text stays forest/charcoal. */
+  --color-verdict-verified: #9fe870;
+  --color-verdict-promising: #ffd300;
+  --color-verdict-hype: #f2a295;
+  --color-verdict-killed: #c9cdc5;
+  --color-verdict-pending: #868685;
 
   /* radii */
-  --radius-card: 16px;
-  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-control: 10px;
+  --radius-large: 28px;
+  --radius-pill: 9999px;
+
+  /* elevation: flat by default; these only for floating layers (popovers, drawers, dialogs) */
+  --shadow-hairline: rgba(14, 15, 12, 0.12) 0px 0px 0px 1px;
+  --shadow-float: rgba(0, 0, 0, 0.08) 0px 6px 20px 0px;
+  --shadow-lift: rgba(0, 0, 0, 0.15) 0px 10px 32px 0px, rgba(0, 0, 0, 0.04) 0px 40px 40px 0px;
 
   /* type */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
-  --tracking-eyebrow: 0.12em;
-  --tracking-tightest: -0.035em;
+  --tracking-eyebrow: 0.06em;
+  --tracking-tightest: -0.03em;
 
   /* motion */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* shadcn semantic aliases (so generated components pick up the palette) */
+  /* shadcn semantic aliases */
   --color-background: var(--color-canvas);
   --color-foreground: var(--color-strong);
-  --color-card: var(--color-raised);
+  --color-card: var(--color-paper);
   --color-card-foreground: var(--color-strong);
-  --color-popover: var(--color-raised);
+  --color-popover: var(--color-paper);
   --color-popover-foreground: var(--color-strong);
-  --color-primary: var(--color-lichen);
-  --color-primary-foreground: var(--color-recessed);
+  --color-primary: var(--color-lime);
+  --color-primary-foreground: var(--color-forest);
   --color-secondary: var(--color-raised);
   --color-secondary-foreground: var(--color-strong);
   --color-muted-foreground: var(--color-muted);
-  --color-accent: var(--color-raised-hover);
-  --color-accent-foreground: var(--color-strong);
+  --color-accent: var(--color-linen);
+  --color-accent-foreground: var(--color-forest);
   --color-destructive: var(--color-danger);
   --color-border: var(--color-hairline);
-  --color-input: var(--color-hairline-strong);
-  --color-ring: var(--color-lichen);
+  --color-input: var(--color-pebble);
+  --color-ring: var(--color-forest);
 }
 
 @layer base {
@@ -73,14 +94,16 @@
     border-color: var(--color-hairline);
   }
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
   body {
     background: var(--color-canvas);
     color: var(--color-body);
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.5;
+    letter-spacing: -0.006em;
+    font-feature-settings: "calt";
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
   }
@@ -89,30 +112,57 @@
   h3,
   h4 {
     color: var(--color-strong);
-    font-weight: 500;
-    letter-spacing: var(--tracking-tightest);
-    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
   }
   ::selection {
-    background: var(--color-lichen);
-    color: var(--color-recessed);
+    background: var(--color-lime);
+    color: var(--color-forest);
   }
   :focus-visible {
-    outline: 1px solid var(--color-lichen);
+    outline: 2px solid var(--color-forest);
     outline-offset: 2px;
   }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-pebble);
+  }
+}
+
+/* Display headline: heavy, wide, tight. Hero and section openers only. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 112%;
+  font-variation-settings: "wdth" 112;
+  letter-spacing: -0.03em;
+  line-height: 0.88;
+  text-transform: uppercase;
+  color: var(--color-obsidian);
 }
 
 @utility eyebrow {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
   color: var(--color-muted);
 }
 
+/* Legacy name: the primary fill is flat lime now (no gradients). */
 @utility bg-cta {
-  background-image: linear-gradient(100deg, var(--color-cta-from) 0%, var(--color-cta-via) 55%, var(--color-cta-to) 100%);
+  background-color: var(--color-lime);
+  color: var(--color-forest);
+}
+
+/* Underlined text link: the secondary action next to a filled pill. */
+@utility link-underline {
+  color: var(--color-forest);
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
 }
 
 @utility tabular {

@@ -3,22 +3,29 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-/** Buttons: `cta` = gradient primary (one per screen), `raised` = default, `ghost` = quiet. Labels ≤3 words. */
+/**
+ * Pill buttons (Wise). `cta` = lime fill, one per section. `forest` = dark fill (use on lime/linen bands).
+ * `outline` = white + forest border (secondary). `raised` = fog fill (quiet toolbar). `ghost` = text only.
+ * `link` = underlined forest text, the secondary action beside a cta. Never two filled buttons side by side.
+ * Labels: 3 words or fewer.
+ */
 export const buttonVariants = cva(
-  "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-pill font-semibold tracking-[-0.006em] transition-[background-color,color,border-color,transform] duration-150 ease-out-soft active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        cta: "bg-cta text-recessed hover:brightness-105 active:brightness-95",
-        raised: "bg-raised text-strong hover:bg-raised-hover border border-hairline",
-        ghost: "text-body hover:bg-raised hover:text-strong",
-        outline: "border border-hairline-strong text-strong hover:bg-raised",
+        cta: "bg-lime text-forest hover:bg-[#8fdb5e]",
+        forest: "bg-forest text-lime hover:bg-spruce",
+        raised: "bg-raised text-forest hover:bg-linen",
+        ghost: "text-forest hover:bg-raised",
+        outline: "border border-forest bg-paper text-forest hover:bg-linen",
+        link: "h-auto rounded-none px-0 text-forest underline decoration-[1.5px] underline-offset-4 hover:decoration-2 active:scale-100",
       },
       size: {
-        sm: "h-7 px-2.5 text-xs",
-        md: "h-8 px-3 text-[13px]",
-        lg: "h-11 px-5 text-sm",
-        icon: "size-8",
+        sm: "h-8 px-3.5 text-[13px]",
+        md: "h-9 px-4 text-sm",
+        lg: "h-12 px-6 text-base",
+        icon: "size-9",
       },
     },
     defaultVariants: { variant: "raised", size: "md" },
