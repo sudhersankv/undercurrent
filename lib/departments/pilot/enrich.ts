@@ -35,6 +35,17 @@ export interface Enriched extends Candidate {
   xProfile?: XProfile | null;
   /** Lead authored an X post stating the pain. */
   xPainPost?: boolean;
+  /** GitHub account type ("User" | "Organization") and display name. */
+  ghType?: string;
+  ghName?: string | null;
+  location?: string | null;
+  /** Accounts / contacts (lib/departments/pilot/accounts.ts). */
+  leadKind?: "person" | "account";
+  account?: Lead["account"];
+  linkedinUrl?: string;
+  website?: string;
+  contactRole?: string | null;
+  currentApproach?: string | null;
 }
 
 const latest = (...ds: Array<string | null | undefined>) =>
@@ -168,6 +179,10 @@ export async function enrichCandidate(ctx: DeptContext, c0: Candidate): Promise<
     hunter,
     readme,
     followers: user?.followers ?? null,
+    ...(user?.type ? { ghType: user.type } : {}),
+    ghName: user?.name ?? null,
+    location: user?.location ?? null,
+    ...(domain ? { website: `https://${domain}` } : {}),
   };
 }
 

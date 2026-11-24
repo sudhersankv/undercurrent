@@ -30,6 +30,7 @@ async function liveExa(opts: TavilySearchOpts): Promise<TavilyResponse> {
     query: opts.query,
     numResults: opts.maxResults,
     type: "auto",
+    ...(opts.category ? { category: opts.category } : {}),
     ...(opts.includeDomains?.length ? { includeDomains: opts.includeDomains } : {}),
     ...(range ? { startPublishedDate: new Date(Date.now() - range * 86_400_000).toISOString() } : {}),
     contents: { text: { maxCharacters: opts.includeRawContent ? RAW_CAP : 1500 } },

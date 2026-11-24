@@ -5,7 +5,7 @@ import { MemoryGraph } from "@/lib/graph";
 import { setCallStructuredOverride, type CallStructuredOpts } from "@/lib/llm";
 import { MemoryRetrieval, type RetrievalFilter } from "@/lib/retrieval";
 import { createDeptContext } from "../shared/context";
-import { PersonasDraft, ReactionDraft, Round1Draft, SegmentsDraft, swarm } from "./index";
+import { PersonasDraft, ReactionDraft, Round1Draft, SegmentsDraft, specificPain, swarm } from "./index";
 
 const cap = (i: number) => LICHEN_PROFILE.capabilities[i % LICHEN_PROFILE.capabilities.length].id;
 const seg = (name: string, domain: string, origin: "stated" | "explore", i: number) => ({
@@ -195,7 +195,7 @@ describe("Swarm", () => {
     const base = fakeLlm(calls);
     setCallStructuredOverride((async (o: CallStructuredOpts<unknown>) => {
       const r = await base(o);
-      return (o.schema as unknown) === ReactionDraft ? { ...r, wouldTry: 0.9, wouldPay: 0.9, painSolved: "yes" } : r;
+      return (o.schema as unknown) === ReactionDraft ? { ...r, wouldTry: 0.9, wouldPay: 0.9, painSolved: "yes, it would speed up my payroll batch" } : r;
     }) as never);
     const { ctx, events } = harness("SWARM3");
     const out = await swarm.run(ctx, { profile: LICHEN_PROFILE, round: 1 });
@@ -236,5 +236,12 @@ describe("Swarm", () => {
     expect(r.actions[0]).toEqual({ name: "explain_segment", args: { segmentId: segId } });
     const r2 = await swarm.chat(ctx, "go deeper on games");
     expect(r2.actions[0]).toEqual({ name: "run_round", args: { focusSegmentIds: [segId] } });
+  });
+});
+
+describe("§9.1 gate input", () => {
+  it("specific painSolved passes through; vague answers count as null", () => {
+    expect(specificPain("drops the Pinecone call from my turn loop, ~150 ms per turn")).toMatch(/Pinecone/);
+    for (const v of [null, "", "none", "N/A", "Not relevant to my work", "nothing really", "yes"]) expect(specificPain(v)).toBeNull();
   });
 });

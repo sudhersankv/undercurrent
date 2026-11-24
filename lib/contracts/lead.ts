@@ -28,6 +28,23 @@ export const Lead = z.object({
   isDemoRecipient: z.boolean(),
   /** X (Twitter) presence. Read via web search only; we never post or DM through the X API. */
   xProfile: XProfile.optional(),
+  /** Additive: a person (default when absent) or a company account. */
+  kind: z.enum(["person", "account"]).optional(),
+  /** Set when kind === "account". contactIds are lead ids of people at this account. */
+  account: z
+    .object({
+      name: z.string(),
+      domain: z.string().optional(),
+      sizeBand: z.enum(["solo", "startup", "smb", "enterprise"]),
+      sizeSource: z.string().optional(),
+      industry: z.string().optional(),
+      contactIds: z.array(z.string()).optional(),
+    })
+    .optional(),
+  /** Public LinkedIn page, only ever copied from a search result (never guessed). */
+  linkedinUrl: z.string().url().optional(),
+  website: z.string().url().optional(),
+  location: z.string().optional(),
 });
 export type Lead = z.infer<typeof Lead>;
 

@@ -7,6 +7,14 @@ import type { TavilyResult, Tools } from "./types";
 
 export const X_DOMAINS = ["x.com", "twitter.com"];
 
+/**
+ * Exa no longer indexes x.com directly (includeDomains x.com returns nothing; the "tweet" category was
+ * removed), but it indexes public read-only X mirrors. A mirror URL /<handle>/status/<id> IS the X post
+ * <id>, so we map it to its canonical https://x.com URL (never guessed: handle and id come from the hit).
+ */
+export const X_MIRRORS = ["xitter.cf", "nitter.cf", "nitter.net", "xcancel.com", "nitter.poast.org", "nitter.privacydev.net", "tweetlook.com", "twstalker.com"];
+const X_HOSTS = new Set(["x.com", "twitter.com", ...X_MIRRORS]);
+
 const RESERVED = new Set(["i", "intent", "search", "home", "explore", "hashtag", "share", "settings", "messages", "notifications", "login", "signup", "tos", "privacy", "compose", "web"]);
 
 export interface XRef {
@@ -19,7 +27,7 @@ export function parseXUrl(url: string): XRef | null {
   try {
     const u = new URL(url);
     const host = u.hostname.toLowerCase().replace(/^(www\.|mobile\.)/, "");
-    if (host !== "x.com" && host !== "twitter.com") return null;
+    if (!X_HOSTS.has(host)) return null;
     const [handle, kind, id] = u.pathname.split("/").filter(Boolean);
     if (!handle || RESERVED.has(handle.toLowerCase()) || !/^[A-Za-z0-9_]{1,15}$/.test(handle)) return null;
     const statusId = (kind === "status" || kind === "statuses") && id && /^\d+$/.test(id) ? id : null;
@@ -71,8 +79,22 @@ export interface XPost {
 
 /** Search X through the web-search wrapper (Exa when EXA_API_KEY is set). Only status URLs are kept. */
 export async function searchX(tools: Pick<Tools, "tavily">, query: string, maxResults = 8, timeRange?: "day" | "week" | "month" | "year"): Promise<{ posts: XPost[]; profiles: Array<{ handle: string; url: string; text: string }>; fixture: boolean }> {
-  const res = await tools.tavily.search({ query, maxResults, includeDomains: X_DOMAINS, ...(timeRange ? { timeRange } : {}) });
+  const res = await tools.tavily.search({ query, maxResults, includeDomains: [...X_DOMAINS, ...X_MIRRORS], ...(timeRange ? { timeRange } : {}) });
   return { ...splitX(res.results), fixture: Boolean(res.fixture) };
+}
+
+/** Mirror pages render posts as `Name (@handle): "text"`; keep just the post text. */
+export function stripMirrorPrefix(s: string, handle: string): string {
+  const t = s.replace(/^#\s.*\n+/, "").trim();
+  const head = `(@${handle}):`;
+  const i = t.toLowerCase().indexOf(head.toLowerCase());
+  if (i < 0 || i > 80 || t.slice(0, i).includes("\n")) return t;
+  return t
+    .slice(i + head.length)
+    .trim()
+    .replace(/^"/, "")
+    .replace(/"$/, "")
+    .trim();
 }
 
 export function splitX(results: TavilyResult[]): { posts: XPost[]; profiles: Array<{ handle: string; url: string; text: string }> } {
@@ -85,7 +107,7 @@ export function splitX(results: TavilyResult[]): { posts: XPost[]; profiles: Arr
     const url = canonicalXUrl(r.url);
     if (seen.has(url.toLowerCase())) continue;
     seen.add(url.toLowerCase());
-    const text = (r.content || r.rawContent || r.title || "").trim();
+    const text = stripMirrorPrefix(r.content || r.rawContent || r.title || "", ref.handle);
     if (ref.statusId) posts.push({ url, handle: ref.handle, statusId: ref.statusId, title: r.title, text, ...(r.publishedDate ? { createdAt: r.publishedDate } : {}) });
     else profiles.push({ handle: ref.handle, url, text });
   }

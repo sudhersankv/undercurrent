@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { tavily } from "./tavily";
-import { canonicalXUrl, normalizeHandle, parseXUrl, searchX, xIntentUrl } from "./x";
+import { canonicalXUrl, normalizeHandle, parseXUrl, searchX, stripMirrorPrefix, xIntentUrl } from "./x";
 
 describe("X helpers (read-only, no API writes)", () => {
   it("parses x.com / twitter.com URLs", () => {
@@ -11,6 +11,11 @@ describe("X helpers (read-only, no API writes)", () => {
     expect(parseXUrl("https://x.com/intent/post?text=hi")).toBeNull();
     expect(parseXUrl("https://github.com/foo")).toBeNull();
     expect(canonicalXUrl("https://twitter.com/Foo/status/9?s=20#x")).toBe("https://x.com/Foo/status/9");
+    // public X mirrors (what Exa indexes) map to the same post on x.com
+    expect(canonicalXUrl("https://xitter.cf/kwindla/status/2050275646774108632")).toBe("https://x.com/kwindla/status/2050275646774108632");
+    expect(parseXUrl("https://nitter.cf/Vapi_AI")).toEqual({ handle: "Vapi_AI", statusId: null });
+    expect(stripMirrorPrefix('kwindla (@kwindla): "Local native-audio voice agent running"', "kwindla")).toBe("Local native-audio voice agent running");
+    expect(stripMirrorPrefix("plain text", "a")).toBe("plain text");
   });
 
   it("normalizes handles", () => {

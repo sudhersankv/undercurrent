@@ -5,9 +5,11 @@ import { alias, getRunAlias, setRunAlias } from "@/lib/llm/alias";
 import { sonarChatSystem, sonarChatUser, sonarProfileSystem, sonarProfileUser, type SonarSource } from "@/lib/llm/prompts/sonar";
 import type { RetrievalDoc } from "@/lib/retrieval/types";
 import type { ChatContext, DeptContext, Department } from "../shared/types";
+import { buildTargetBrief } from "./brief";
 import { ProfileDraft, finalizeProfile, normUrl, notesOnlyProfile, splitSentences } from "./profile";
 
 export { finalizeProfile, notesOnlyProfile, ProfileDraft } from "./profile";
+export { briefSearchTerms, buildTargetBrief, companyBriefText, deriveBrief, ensureBrief } from "./brief";
 
 /** Graph node ids shared with other departments (Swarm links REACTED → Product). */
 export const companyNodeId = (runId: string) => `${runId}-company`;
@@ -218,7 +220,7 @@ export async function runSonar(ctx: DeptContext, input: SonarInput): Promise<Son
         sources,
       }),
       schema: ProfileDraft,
-      maxTokens: 4000,
+      maxTokens: 8000,
       temperature: 0,
       runId: ctx.runId,
       dept: "sonar",
@@ -244,12 +246,22 @@ export async function runSonar(ctx: DeptContext, input: SonarInput): Promise<Son
     ctx.emit({ dept: "sonar", type: "sonar.competitor_found", level: "result", message: `Competitor: ${c.name} (${c.kind})`, payload: { competitor: c, nodeIds: [c.id] } });
   }
 
-  // Dev-voice corpus for Swarm grounding.
-  try {
-    await seedCorpus(ctx, phrasesFrom(profile, draftPhrases), emit);
-  } catch (e) {
-    emit({ type: "sonar.corpus_seeded", level: "warning", message: "Corpus seeding failed", payload: { count: 0, error: errMsg(e) } });
-  }
+  // Dev-voice corpus for Swarm grounding, in parallel with the target-company brief.
+  const [brief] = await Promise.all([
+    profile.brief ? Promise.resolve(profile.brief) : buildTargetBrief(ctx, profile),
+    seedCorpus(ctx, phrasesFrom(profile, draftPhrases), emit).catch((e) => {
+      emit({ type: "sonar.corpus_seeded", level: "warning", message: "Corpus seeding failed", payload: { count: 0, error: errMsg(e) } });
+      return 0;
+    }),
+  ]);
+  profile = { ...profile, brief };
+  lastProfiles.set(ctx.runId, profile);
+  emit({
+    type: "sonar.brief_ready",
+    level: "thinking",
+    message: `Brief: ${brief.capabilities.length} capabilities, ${brief.vsCompetitors.length} head-to-heads`,
+    payload: { vs: brief.vsCompetitors.map((c) => c.name), statedIcp: brief.statedIcp },
+  });
 
   ctx.emit({
     dept: "sonar",

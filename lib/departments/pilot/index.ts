@@ -6,8 +6,22 @@ import type { EdgeInput, GraphNode } from "@/lib/graph/types";
 import { FitSignalsBatch, fitSignalsPrompt, type CandidateSummary } from "@/lib/llm/prompts/pilot";
 import { activityRecency, authority, fitScore, reachability, tier, type FitSignals } from "@/lib/scoring/pilot";
 import type { ChatContext, Department, DeptContext } from "../shared/types";
+import { companyBriefText, ensureBrief } from "../sonar/brief";
 import { companyNodeId, domainPersonId, ghPersonId, hnPersonId, leadIdFor, repoNodeId, techNodeId, xPersonId } from "../sounding/ids";
-import { buildBrief } from "./brief";
+import {
+  findContacts,
+  qualifyAccounts,
+  resolveAccountX,
+  resolveLinkedin,
+  resolvePersonX,
+  roleRank,
+  searchCompanies,
+  seedAccountsFromLeads,
+  type AccountCand,
+  type Contact,
+  type QualifiedAccount,
+} from "./accounts";
+import { buildBrief, deterministicLeadBrief } from "./brief";
 import { extractCandidates, rankCandidates, type Candidate } from "./candidates";
 import { enrichCandidate, foldLinked, type Enriched } from "./enrich";
 import { sharedTechLookalikes } from "./lookalike";
@@ -17,22 +31,38 @@ import { X_RESOLVE_TOP, hasXPainPost, resolveX } from "./x";
 export { getPilotState, leadEmailStatus } from "./store";
 export { generateSegmentReport, buildSegmentReport } from "./report";
 
-// SPEC §5.4 Undercurrent Pilot: candidates → enrich → fit signals + §9.6 score → briefs. Leads are projects.
+// SPEC §5.4 Undercurrent Pilot: candidates → enrich → fit signals + §9.6 score → accounts + contacts → briefs.
+// Leads are projects / people (from evidence) and company ACCOUNTS (GitHub orgs, job posts, company
+// search, employers) with their public contacts. Fast model for extraction, smart model for briefs only.
 
-const MAX_ENRICH_PER_SEGMENT = 20;
-const MAX_LEADS_PER_SEGMENT = 15;
-const BRIEFS_VERIFIED = 10;
-const BRIEFS_PROMISING = 3;
+const MAX_ENRICH_PER_SEGMENT = 16;
+const MAX_LEADS_PER_SEGMENT = 12;
+const ACCOUNTS_PER_SEGMENT = 5;
+const MAX_ACCOUNTS = 14;
+const CONTACT_ACCOUNTS = 10; // accounts we look up contacts for
+const LINKEDIN_PEOPLE = 10; // people leads we resolve LinkedIn for
+const LLM_BRIEFS = 10; // smart-model briefs (top leads); the rest get a deterministic brief
 const SIGNAL_BATCH = 8;
+const MAX_SEGMENTS = () => Math.max(1, Number(process.env.PILOT_MAX_SEGMENTS ?? 5) || 5);
 
 const isControl = (s: SegmentHypothesis) => s.origin === "control_negative";
 
+/**
+ * Segments Pilot works: the stated ICP always (Undercurrent is an end-to-end GTM tool; Swarm is the
+ * discovery add-on), plus VERIFIED and PROMISING ones. Never controls. Stated first, then by evidence.
+ */
 export function pilotSegments(segments: SegmentHypothesis[]): SegmentHypothesis[] {
   const includePromising = process.env.PILOT_INCLUDE_PROMISING !== "false";
-  return segments.filter((s) => !isControl(s) && (s.verdict === "VERIFIED" || (includePromising && s.verdict === "PROMISING")));
+  const ok = (s: SegmentHypothesis) => !isControl(s) && (s.origin === "stated" || s.verdict === "VERIFIED" || (includePromising && s.verdict === "PROMISING"));
+  const rank = (s: SegmentHypothesis) => (s.verdict === "VERIFIED" ? 0 : s.origin === "stated" ? 1 : 2);
+  return segments
+    .filter(ok)
+    .sort((a, b) => rank(a) - rank(b) || (b.evidenceStrength ?? 0) - (a.evidenceStrength ?? 0))
+    .slice(0, MAX_SEGMENTS());
 }
 
 export function personIdFor(runId: string, c: Candidate): string {
+  if (c.key.startsWith("acct:")) return companyNodeId(runId, c.domain ?? c.key.slice(5));
   if (c.key.startsWith("gh:") && c.github) return ghPersonId(runId, c.github);
   if (c.key.startsWith("hn:") && c.hn) return hnPersonId(runId, c.hn);
   if (c.key.startsWith("x:") && c.x) return xPersonId(runId, c.x);
@@ -52,7 +82,7 @@ export function baseSignals(e: Enriched, now = new Date()): Omit<FitSignals, "me
   };
 }
 
-async function fitSignals(ctx: DeptContext, segment: SegmentHypothesis, capability: string | null, list: Enriched[]): Promise<Map<string, { mechanismMatch: number; painExplicit: number; why: string }>> {
+async function fitSignals(ctx: DeptContext, segment: SegmentHypothesis, capability: string | null, list: Enriched[], brief: string): Promise<Map<string, { mechanismMatch: number; painExplicit: number; why: string }>> {
   const out = new Map<string, { mechanismMatch: number; painExplicit: number; why: string }>();
   const chunks: Enriched[][] = [];
   for (let i = 0; i < list.length; i += SIGNAL_BATCH) chunks.push(list.slice(i, i + SIGNAL_BATCH));
@@ -67,14 +97,14 @@ async function fitSignals(ctx: DeptContext, segment: SegmentHypothesis, capabili
         evidence: c.evidence.slice(0, 3).map((e) => ({ type: e.type, source: e.source, quote: e.quote })),
       }));
       try {
-        const p = fitSignalsPrompt({ segment, capability, candidates });
+        const p = fitSignalsPrompt({ segment, capability, candidates, brief });
         const res = await ctx.llm.callStructured({
           model: "fast",
           system: p.system,
           user: p.user,
           schema: FitSignalsBatch,
           temperature: 0,
-          maxTokens: 1200,
+          maxTokens: 5000,
           runId: ctx.runId,
           dept: "pilot",
           abortSignal: ctx.signal,
@@ -90,6 +120,7 @@ async function fitSignals(ctx: DeptContext, segment: SegmentHypothesis, capabili
 }
 
 export function toLead(runId: string, segment: SegmentHypothesis, e: Enriched, fit: number): Lead {
+  const linkedin = e.linkedinUrl;
   return {
     id: leadIdFor(runId, e.key),
     runId,
@@ -100,6 +131,7 @@ export function toLead(runId: string, segment: SegmentHypothesis, e: Enriched, f
       ...(e.github ? { github: e.github } : {}),
       ...(e.twitter ? { x: e.twitter } : {}),
       ...(e.hn ? { hn: e.hn } : {}),
+      ...(linkedin ? { linkedin } : {}),
     },
     company: e.company,
     email: e.email,
@@ -109,16 +141,29 @@ export function toLead(runId: string, segment: SegmentHypothesis, e: Enriched, f
     stage: "discovered",
     isDemoRecipient: false,
     ...(e.xProfile ? { xProfile: e.xProfile } : {}),
+    kind: e.leadKind ?? "person",
+    ...(e.account ? { account: e.account } : {}),
+    ...(linkedin ? { linkedinUrl: linkedin } : {}),
+    ...(e.website ? { website: e.website } : {}),
+    ...(e.location ? { location: e.location } : {}),
   };
 }
 
 function graphFor(runId: string, lead: Lead, e: Enriched): { nodes: GraphNode[]; edges: EdgeInput[] } {
+  if (lead.kind === "account") {
+    const nodes: GraphNode[] = [
+      { runId, id: lead.personId, label: "Company", props: { name: lead.displayName, domain: lead.company?.domain ?? null, isClient: false, sizeBand: lead.account?.sizeBand ?? null, industry: lead.account?.industry ?? null, leadId: lead.id } },
+    ];
+    const edges: EdgeInput[] = [{ runId, type: "MATCHED_TO", from: lead.personId, to: lead.segmentId, props: { fitScore: lead.fitScore, tier: lead.tier } }];
+    for (const ev of e.evidence) edges.push({ runId, type: "EVIDENCE_OF", from: ev.id, to: lead.personId, props: {} });
+    return { nodes, edges };
+  }
   const nodes: GraphNode[] = [
     {
       runId,
       id: lead.personId,
       label: "Person",
-      props: { displayName: lead.displayName, githubLogin: e.github ?? null, xHandle: e.twitter ?? null, hnHandle: e.hn ?? null, kind: e.kind, leadId: lead.id },
+      props: { displayName: lead.displayName, githubLogin: e.github ?? null, xHandle: e.twitter ?? null, hnHandle: e.hn ?? null, linkedinUrl: e.linkedinUrl ?? null, kind: e.kind, leadId: lead.id },
     },
   ];
   const edges: EdgeInput[] = [{ runId, type: "MATCHED_TO", from: lead.personId, to: lead.segmentId, props: { fitScore: lead.fitScore, tier: lead.tier } }];
@@ -169,13 +214,88 @@ interface Scored {
   detail: LeadDetail;
 }
 
+const latest = (ds: Array<string | null | undefined>) =>
+  ds.filter((d): d is string => !!d && !Number.isNaN(Date.parse(d))).sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+
+/** Account → Enriched (so graph, retrieval, briefs and toLead treat it like any lead). */
+export function accountEnriched(runId: string, a: QualifiedAccount, contacts: Contact[], x: { handle: string; profile: Lead["xProfile"] } | null): Enriched {
+  return {
+    key: a.key,
+    kind: "company",
+    role: "owner",
+    repo: null,
+    evidence: a.evidence,
+    ...(a.domain ? { domain: a.domain } : {}),
+    ...(a.github ? { github: a.github } : {}),
+    displayName: a.name,
+    description: [a.industry, a.why, a.currentApproach ? `Likely uses today: ${a.currentApproach}` : null].filter(Boolean).join(". "),
+    languages: [],
+    stars: null,
+    lastActive: latest(a.evidence.map((e) => e.createdAt)),
+    projectUrl: a.sourceUrl,
+    twitter: x?.handle ?? null,
+    company: { name: a.name, ...(a.domain ? { domain: a.domain } : {}) },
+    email: null,
+    emailStatus: "none",
+    hunter: null,
+    readme: a.text,
+    followers: null,
+    xProfile: x?.profile ?? null,
+    leadKind: "account",
+    account: {
+      name: a.name,
+      ...(a.domain ? { domain: a.domain } : {}),
+      sizeBand: a.sizeBand,
+      ...(a.sizeSource ? { sizeSource: a.sizeSource } : {}),
+      ...(a.industry ? { industry: a.industry } : {}),
+      contactIds: contacts.map((c) => leadIdFor(runId, c.key)),
+    },
+    ...(a.domain ? { website: `https://${a.domain}` } : {}),
+    ...(a.location ? { location: a.location } : {}),
+    currentApproach: a.currentApproach,
+  };
+}
+
+/** Contact (public LinkedIn page) → Enriched person lead at an account. */
+export function contactEnriched(c: Contact, a: QualifiedAccount): Enriched {
+  return {
+    key: c.key,
+    kind: "person",
+    role: roleRank(c.role) >= 2.5 ? "owner" : "contributor",
+    repo: null,
+    evidence: a.evidence,
+    ...(a.domain ? { domain: a.domain } : {}),
+    displayName: c.name,
+    description: [c.role, `at ${a.name}`, a.industry].filter(Boolean).join(" "),
+    languages: [],
+    stars: null,
+    lastActive: latest(a.evidence.map((e) => e.createdAt)),
+    projectUrl: c.linkedinUrl,
+    twitter: c.x ?? null,
+    company: c.company,
+    email: null,
+    emailStatus: "none",
+    hunter: null,
+    readme: c.text,
+    followers: null,
+    xProfile: c.xProfile ?? null,
+    leadKind: "person",
+    linkedinUrl: c.linkedinUrl,
+    ...(a.domain ? { website: `https://${a.domain}` } : {}),
+    contactRole: c.role,
+    currentApproach: a.currentApproach,
+  };
+}
+
 async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
   const now = new Date();
   const segs = pilotSegments(input.segments);
-  const enrichLimit = pLimit(4);
+  const brief = companyBriefText(input.profile);
+  const enrichLimit = pLimit(8);
+  const searchLimit = pLimit(6);
   const enrichCache = new Map<string, Promise<Enriched>>();
   const enrich = (c: Candidate) => {
-    // cache per candidate key + evidence set (same project across segments enriches once)
+    // cache per candidate key (same project across segments enriches once)
     let p = enrichCache.get(c.key);
     if (!p) {
       p = enrichLimit(() => enrichCandidate(ctx, c));
@@ -189,79 +309,198 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
     const k = `${e.key}|${search}`;
     let p = xCache.get(k);
     if (!p) {
-      p = enrichLimit(() => resolveX(ctx, e, { search }));
+      p = searchLimit(() => resolveX(ctx, e, { search }));
       xCache.set(k, p);
     }
     return p;
   };
 
-  const best = new Map<string, Scored>(); // lead id → best segment match
-  for (const segment of segs) {
-    const segEv = input.evidence.filter((e) => e.segmentId === segment.id);
-    const cands = rankCandidates(extractCandidates(segEv)).slice(0, MAX_ENRICH_PER_SEGMENT);
-    for (const c of cands) {
-      ctx.emit({
-        dept: "pilot",
-        type: "pilot.candidate_found",
-        level: "thinking",
-        message: `${segment.name}: ${c.repo ?? c.github ?? c.hn ?? c.domain} (${c.kind})`,
-        payload: { segmentId: segment.id, key: c.key, kind: c.kind, repo: c.repo, evidenceUrls: c.evidence.map((e) => e.url) },
-      });
-    }
-    const enrichedAll = await Promise.all(cands.map((c) => enrich(c).catch(() => null)));
-    const enriched = foldLinked(
-      enrichedAll.filter((e): e is Enriched => !!e).sort((a, b) => Number(b.key.startsWith("gh:")) - Number(a.key.startsWith("gh:"))),
-    );
-    // X handles: GitHub twitter_username, X evidence authors, one site:x.com search for the top leads.
-    const xs = await Promise.all(enriched.map((e, i) => resolveXFor(e, i < X_RESOLVE_TOP).catch(() => null)));
-    enriched.forEach((e, i) => {
-      const r = xs[i];
-      if (!r?.handle) return;
-      e.twitter = r.handle;
-      e.xProfile = r.profile;
-      e.xPainPost = hasXPainPost(e, r.handle);
-      ctx.emit({
-        dept: "pilot",
-        type: "pilot.x_resolved",
-        level: "thinking",
-        message: `${e.displayName} is @${r.handle} on X${e.xPainPost ? " (posted the pain)" : ""}`,
-        payload: { segmentId: segment.id, key: e.key, leadId: leadIdFor(ctx.runId, e.key), handle: r.handle, xProfile: r.profile, painPost: e.xPainPost },
-      });
-    });
-    for (const e of enriched) {
-      ctx.emit({
-        dept: "pilot",
-        type: "pilot.enriched",
-        level: "thinking",
-        message: `Enriched ${e.displayName}: email ${e.emailStatus}${e.hunter ? `, Hunter ${e.hunter.testData ? "test data" : `${e.hunter.emailsFound} found`}` : ""}`,
-        payload: { segmentId: segment.id, key: e.key, leadId: leadIdFor(ctx.runId, e.key), emailStatus: e.emailStatus, hunter: e.hunter, projectUrl: e.projectUrl, languages: e.languages },
-      });
-    }
+  ctx.emit({ dept: "pilot", type: "pilot.started", level: "action", message: `Finding accounts and people for ${segs.length} segment${segs.length === 1 ? "" : "s"}`, payload: { segmentIds: segs.map((s) => s.id) } });
 
-    const capability = input.profile.capabilities.find((c) => c.id === segment.mechanism.capabilityId)?.statement ?? null;
-    const llmSignals = await fitSignals(ctx, segment, capability, enriched);
-    const scored: Scored[] = enriched.map((e) => {
-      const base = baseSignals(e, now);
-      const l = llmSignals.get(e.key);
-      const signals: FitSignals = {
-        mechanismMatch: l?.mechanismMatch ?? base.matchFallback,
-        painExplicit: e.xPainPost ? 1 : (l?.painExplicit ?? base.painFallback),
-        recency: base.recency,
-        reachability: base.reachability,
-        authority: base.authority,
-      };
-      const fit = fitScore(signals);
-      const lead = toLead(ctx.runId, segment, e, fit);
-      return {
-        lead,
-        enriched: e,
-        segment,
-        detail: { signals, emailStatus: e.emailStatus, hunter: e.hunter, kind: e.kind, description: e.description, languages: e.languages, projectUrl: e.projectUrl, why: l?.why ?? null },
-      };
+  // ---- per segment: people / projects from evidence, plus account candidates ----
+  const perSegment = await Promise.all(
+    segs.map(async (segment) => {
+      const segEv = input.evidence.filter((e) => e.segmentId === segment.id);
+      const cands = rankCandidates(extractCandidates(segEv)).slice(0, MAX_ENRICH_PER_SEGMENT);
+      for (const c of cands) {
+        ctx.emit({
+          dept: "pilot",
+          type: "pilot.candidate_found",
+          level: "thinking",
+          message: `${segment.name}: ${c.repo ?? c.github ?? c.hn ?? c.x ?? c.domain} (${c.kind})`,
+          payload: { segmentId: segment.id, key: c.key, kind: c.kind, repo: c.repo, evidenceUrls: c.evidence.map((e) => e.url) },
+        });
+      }
+      const [enrichedAll, companyHits] = await Promise.all([
+        Promise.all(cands.map((c) => enrich(c).catch(() => null))),
+        searchLimit(() => searchCompanies(ctx, segment)),
+      ]);
+      const enriched = foldLinked(
+        enrichedAll.filter((e): e is Enriched => !!e).sort((a, b) => Number(b.key.startsWith("gh:")) - Number(a.key.startsWith("gh:"))),
+      );
+      // X handles: GitHub twitter_username, X evidence authors, one site:x.com search for the top leads.
+      const xs = await Promise.all(enriched.map((e, i) => resolveXFor(e, i < X_RESOLVE_TOP).catch(() => null)));
+      enriched.forEach((e, i) => {
+        const r = xs[i];
+        if (!r?.handle) return;
+        e.twitter = r.handle;
+        e.xProfile = r.profile;
+        e.xPainPost = hasXPainPost(e, r.handle);
+        ctx.emit({
+          dept: "pilot",
+          type: "pilot.x_resolved",
+          level: "thinking",
+          message: `${e.displayName} is @${r.handle} on X${e.xPainPost ? " (posted the pain)" : ""}`,
+          payload: { segmentId: segment.id, key: e.key, leadId: leadIdFor(ctx.runId, e.key), handle: r.handle, xProfile: r.profile, painPost: e.xPainPost },
+        });
+      });
+      for (const e of enriched) {
+        ctx.emit({
+          dept: "pilot",
+          type: "pilot.enriched",
+          level: "thinking",
+          message: `Enriched ${e.displayName}: email ${e.emailStatus}${e.hunter ? `, Hunter ${e.hunter.testData ? "test data" : `${e.hunter.emailsFound} found`}` : ""}`,
+          payload: { segmentId: segment.id, key: e.key, leadId: leadIdFor(ctx.runId, e.key), emailStatus: e.emailStatus, hunter: e.hunter, projectUrl: e.projectUrl, languages: e.languages },
+        });
+      }
+
+      const capability = input.profile.capabilities.find((c) => c.id === segment.mechanism.capabilityId)?.statement ?? null;
+      // People / projects get fit signals; company-kind candidates become accounts instead.
+      const people = enriched.filter((e) => e.kind !== "company");
+      const seeded: AccountCand[] = seedAccountsFromLeads(enriched);
+      const accCands = dedupeAccounts([...seeded, ...companyHits]).slice(0, 20);
+      const [llmSignals, accounts] = await Promise.all([
+        fitSignals(ctx, segment, capability, people, brief),
+        accCands.length ? qualifyAccounts(ctx, segment, input.profile.name, brief, accCands) : Promise.resolve([] as QualifiedAccount[]),
+      ]);
+      const scored: Scored[] = people.map((e) => {
+        const base = baseSignals(e, now);
+        const l = llmSignals.get(e.key);
+        const signals: FitSignals = {
+          mechanismMatch: l?.mechanismMatch ?? base.matchFallback,
+          painExplicit: e.xPainPost ? 1 : (l?.painExplicit ?? base.painFallback),
+          recency: base.recency,
+          reachability: base.reachability,
+          authority: base.authority,
+        };
+        const fit = fitScore(signals);
+        return {
+          lead: toLead(ctx.runId, segment, e, fit),
+          enriched: e,
+          segment,
+          detail: { signals, emailStatus: e.emailStatus, hunter: e.hunter, kind: e.kind, description: e.description, languages: e.languages, projectUrl: e.projectUrl, why: l?.why ?? null },
+        };
+      });
+      const topAccounts = accounts
+        .filter((a) => a.fit >= 0.4)
+        .sort((a, b) => b.fit + Math.min(0.2, 0.05 * b.evidence.length) - (a.fit + Math.min(0.2, 0.05 * a.evidence.length)))
+        .slice(0, ACCOUNTS_PER_SEGMENT);
+      for (const a of topAccounts) {
+        ctx.emit({
+          dept: "pilot",
+          type: "pilot.account_found",
+          level: "thinking",
+          message: `${a.name} (${a.sizeBand}, ${a.industry}) for ${segment.name.slice(0, 60)}`,
+          payload: { segmentId: segment.id, key: a.key, name: a.name, domain: a.domain, sizeBand: a.sizeBand, sizeSource: a.sizeSource, fit: a.fit, source: a.source, url: a.sourceUrl },
+        });
+      }
+      return { segment, scored: scored.sort((a, b) => b.lead.fitScore - a.lead.fitScore).slice(0, MAX_LEADS_PER_SEGMENT), accounts: topAccounts };
+    }),
+  );
+
+  // ---- accounts across segments: dedupe, then contacts + X ----
+  const accBest = new Map<string, { a: QualifiedAccount; segment: SegmentHypothesis }>();
+  for (const r of perSegment)
+    for (const a of r.accounts) {
+      const prev = accBest.get(a.key);
+      if (!prev || a.fit > prev.a.fit) accBest.set(a.key, { a, segment: r.segment });
+    }
+  const accList = [...accBest.values()].sort((x, y) => y.a.fit - x.a.fit).slice(0, MAX_ACCOUNTS);
+  const accResolved = await Promise.all(
+    accList.map(async ({ a, segment }, i) => {
+      const [contacts, x] = await Promise.all([
+        i < CONTACT_ACCOUNTS ? searchLimit(() => findContacts(ctx, a)) : Promise.resolve([] as Contact[]),
+        searchLimit(() => resolveAccountX(ctx, a)),
+      ]);
+      // Contacts' X handles (search results only; must name the person and the company).
+      await Promise.all(
+        contacts.map(async (c) => {
+          const r = await searchLimit(() => resolvePersonX(ctx, { name: c.name, company: a.name }));
+          if (r) {
+            c.x = r.handle;
+            c.xProfile = r.profile;
+          }
+        }),
+      );
+      for (const c of contacts) {
+        ctx.emit({
+          dept: "pilot",
+          type: "pilot.contact_found",
+          level: "thinking",
+          message: `${c.name}${c.role ? `, ${c.role}` : ""} at ${a.name}`,
+          payload: { segmentId: segment.id, accountKey: a.key, linkedinUrl: c.linkedinUrl, x: c.x ?? null },
+        });
+      }
+      return { a, segment, contacts, x };
+    }),
+  );
+
+  // ---- people leads: LinkedIn (search results only, name must match) ----
+  const best = new Map<string, Scored>(); // lead id → best segment match
+  const keep = (s: Scored) => {
+    const prev = best.get(s.lead.id);
+    if (!prev || s.lead.fitScore > prev.lead.fitScore) best.set(s.lead.id, s);
+  };
+  for (const r of perSegment) for (const s of r.scored) keep(s);
+  const peopleForLi = [...best.values()]
+    .filter((s) => s.enriched.kind !== "company" && (s.enriched.ghName ?? "").trim().split(/\s+/).length >= 2)
+    .sort((a, b) => b.lead.fitScore - a.lead.fitScore)
+    .slice(0, LINKEDIN_PEOPLE);
+  await Promise.all(
+    peopleForLi.map(async (s) => {
+      const url = await searchLimit(() => resolveLinkedin(ctx, { name: s.enriched.ghName!, company: s.enriched.company?.name ?? null, hint: s.enriched.github ?? null }));
+      if (!url) return;
+      s.enriched.linkedinUrl = url;
+      s.lead = toLead(ctx.runId, s.segment, s.enriched, s.lead.fitScore);
+      ctx.emit({ dept: "pilot", type: "pilot.linkedin_resolved", level: "thinking", message: `${s.lead.displayName}: LinkedIn found`, payload: { leadId: s.lead.id, linkedinUrl: url } });
+    }),
+  );
+
+  // ---- accounts + contacts → scored leads ----
+  for (const { a, segment, contacts, x } of accResolved) {
+    const pain = a.evidence.filter((e) => e.stance === "supports").map((e) => e.strength);
+    const painExplicit = pain.length ? Math.max(...pain) : a.currentApproach ? 0.4 : 0.25;
+    const ae = accountEnriched(ctx.runId, a, contacts, x);
+    const aSignals: FitSignals = {
+      mechanismMatch: a.fit,
+      painExplicit,
+      recency: ae.lastActive ? activityRecency(ae.lastActive, now) : 0.5,
+      reachability: contacts.length ? 0.6 : x ? 0.4 : 0.3,
+      authority: 1,
+    };
+    const aFit = fitScore(aSignals);
+    keep({
+      lead: toLead(ctx.runId, segment, ae, aFit),
+      enriched: ae,
+      segment,
+      detail: { signals: aSignals, emailStatus: "none", hunter: null, kind: "company", description: ae.description, languages: [], projectUrl: ae.projectUrl, why: a.why },
     });
-    for (const s of scored.sort((a, b) => b.lead.fitScore - a.lead.fitScore).slice(0, MAX_LEADS_PER_SEGMENT)) {
-      const prev = best.get(s.lead.id);
-      if (!prev || s.lead.fitScore > prev.lead.fitScore) best.set(s.lead.id, s);
+    for (const c of contacts) {
+      const ce = contactEnriched(c, a);
+      const cSignals: FitSignals = {
+        mechanismMatch: a.fit,
+        painExplicit,
+        recency: aSignals.recency,
+        reachability: c.x ? 0.6 : 0.5,
+        authority: roleRank(c.role) >= 2.5 ? 1 : 0.6,
+      };
+      const cFit = fitScore(cSignals);
+      keep({
+        lead: toLead(ctx.runId, segment, ce, cFit),
+        enriched: ce,
+        segment,
+        detail: { signals: cSignals, emailStatus: "none", hunter: null, kind: "person", description: ce.description, languages: [], projectUrl: c.linkedinUrl, why: `${c.role ?? "Contact"} at ${a.name}` },
+      });
     }
   }
 
@@ -277,7 +516,7 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
       dept: "pilot",
       type: "pilot.lead_scored",
       level: "result",
-      message: `${s.lead.displayName}: tier ${s.lead.tier} (fit ${s.lead.fitScore}) for ${s.segment.name}`,
+      message: `${s.lead.kind === "account" ? "Account " : ""}${s.lead.displayName}: tier ${s.lead.tier} (fit ${s.lead.fitScore}) for ${s.segment.name}`,
       payload: { lead: s.lead, nodeIds: [s.lead.personId, s.lead.segmentId] },
     });
   }
@@ -297,24 +536,17 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
     )
     .catch(() => undefined);
 
-  // Briefs: top 10 per VERIFIED segment, top 3 per PROMISING (MODEL_SMART)
-  const briefTargets: Scored[] = [];
-  for (const segment of segs) {
-    const n = segment.verdict === "VERIFIED" ? BRIEFS_VERIFIED : BRIEFS_PROMISING;
-    briefTargets.push(...all.filter((s) => s.segment.id === segment.id).slice(0, n));
-  }
+  // Briefs: smart model for the top leads (accounts guaranteed a share), deterministic for the rest.
+  const accountsFirst = all.filter((s) => s.lead.kind === "account").slice(0, Math.ceil(LLM_BRIEFS / 3));
+  const smartTargets = new Set([...accountsFirst, ...all.filter((s) => s.lead.kind !== "account")].slice(0, LLM_BRIEFS).map((s) => s.lead.id));
+  const targetBrief = ensureBrief(input.profile);
   const briefs = (
     await Promise.all(
-      briefTargets.map(async (s) => {
-        const brief = await buildBrief(ctx, {
-          profile: input.profile,
-          segment: s.segment,
-          lead: s.lead,
-          enriched: s.enriched,
-          segmentEvidence: input.evidence.filter((e) => e.segmentId === s.segment.id),
-        }).catch(() => null);
-        if (brief) ctx.emit({ dept: "pilot", type: "pilot.brief_ready", level: "result", message: `Brief ready: ${s.lead.displayName}`, payload: { leadId: s.lead.id, brief } });
-        return brief;
+      all.map(async (s) => {
+        const args = { profile: input.profile, segment: s.segment, lead: s.lead, enriched: s.enriched, segmentEvidence: input.evidence.filter((e) => e.segmentId === s.segment.id), brief };
+        const b = smartTargets.has(s.lead.id) ? await buildBrief(ctx, args).catch(() => null) : deterministicLeadBrief({ ...args, target: targetBrief });
+        if (b) ctx.emit({ dept: "pilot", type: "pilot.brief_ready", level: "result", message: `Brief ready: ${s.lead.displayName}`, payload: { leadId: s.lead.id, brief: b } });
+        return b;
       }),
     )
   ).filter((b): b is LeadBrief => !!b);
@@ -332,16 +564,37 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
 
   if (leads.length) {
     const a = leads.filter((l) => l.tier === "A").length;
+    const accounts = leads.filter((l) => l.kind === "account").length;
     ctx.emit({
       dept: "pilot",
       type: "helm.handoff",
       level: "handoff",
       toDept: "tide",
-      message: `${leads.length} projects scored (${a} tier A), ${briefs.length} briefs ready. Handing off.`,
-      payload: { from: "pilot", to: "tide", summary: `${leads.length} leads, ${briefs.length} briefs` },
+      message: `${leads.length} leads (${accounts} accounts, ${a} tier A), ${briefs.length} briefs ready. Handing off.`,
+      payload: { from: "pilot", to: "tide", summary: `${leads.length} leads, ${accounts} accounts, ${briefs.length} briefs` },
     });
   }
   return { leads, briefs };
+}
+
+/** Same account seen from several sources: keep the first, merge evidence and text. */
+function dedupeAccounts(list: AccountCand[]): AccountCand[] {
+  const out = new Map<string, AccountCand>();
+  const byName = new Map<string, string>();
+  for (const a of list) {
+    const nameKey = a.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const k = out.has(a.key) ? a.key : (byName.get(nameKey) ?? a.key);
+    const prev = out.get(k);
+    if (prev) {
+      prev.evidence = [...prev.evidence, ...a.evidence.filter((e) => !prev.evidence.some((x) => x.url === e.url))];
+      if (!prev.domain && a.domain) prev.domain = a.domain;
+      if (prev.text.length < 300) prev.text = `${prev.text}\n${a.text}`.slice(0, 1200);
+      continue;
+    }
+    out.set(k, { ...a, evidence: [...a.evidence] });
+    if (nameKey.length >= 3) byName.set(nameKey, k);
+  }
+  return [...out.values()];
 }
 
 // ---------------- chat (SPEC §5.8: find_more_like, explain_lead) ----------------
