@@ -132,7 +132,7 @@ export function accountRows(store: RunStore): AccountRow[] {
   const seg = (id: string) => store.segments[id]?.name ?? "Unknown segment";
 
   for (const l of leads.filter((x) => x.kind === "account")) {
-    const a = l.account ?? { name: l.company?.name ?? l.displayName, domain: l.company?.domain };
+    const a: LeadAccount = l.account ?? { name: l.company?.name ?? l.displayName, domain: l.company?.domain };
     const key = keyOf(a.name, a.domain);
     byKey.set(key, {
       id: l.id,
