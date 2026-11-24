@@ -5,6 +5,28 @@ import type { Lead } from "@/lib/contracts";
 import { DeptGlyph, Pill } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { actorBadge } from "./model";
+import { compact, xFollowers, XGlyph, xHandle, xProfileUrl } from "@/components/review/x";
+
+/** X handle (link) + follower count; developers live there, so it gets its own column. */
+export function XHandleCell({ lead }: { lead: Lead }) {
+  const h = xHandle(lead);
+  if (!h) return <span className="text-muted">–</span>;
+  const f = xFollowers(lead);
+  return (
+    <a
+      href={xProfileUrl(lead) ?? `https://x.com/${h}`}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex max-w-[180px] items-center gap-1.5 font-mono text-[12px] text-strong hover:text-lichen"
+      title={f != null ? `@${h} · ${f.toLocaleString()} followers` : `@${h}`}
+    >
+      <XGlyph size={11} className="text-muted" />
+      <span className="truncate">@{h}</span>
+      {f != null ? <span className="text-[11px] text-muted">{compact(f)}</span> : null}
+    </a>
+  );
+}
 
 export function ActorBadge({ actor, className }: { actor: string | undefined; className?: string }) {
   const b = actorBadge(actor);
@@ -89,7 +111,7 @@ export function Handles({ handles }: { handles: Lead["handles"] }) {
           title={`${k}: ${v}`}
           className="inline-flex h-5 min-w-5 items-center justify-center rounded-control border border-hairline px-1 font-mono text-[10.5px] text-body hover:border-hairline-strong hover:text-strong"
         >
-          {HANDLE_TAG[k] ?? k}
+          {k === "x" ? <XGlyph size={10} /> : (HANDLE_TAG[k] ?? k)}
         </a>
       ))}
     </span>
