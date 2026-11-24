@@ -15,6 +15,8 @@ export interface TavilySearchOpts {
   timeRange?: "day" | "week" | "month" | "year";
   includeDomains?: string[];
   includeRawContent?: false | "markdown" | "text";
+  /** Exa only (ignored by Tavily): "company" | "people" | "tweet" | "github" ... */
+  category?: string;
 }
 export interface TavilyResult {
   title: string;
@@ -67,6 +69,8 @@ export interface GhUser {
   followers: number;
   publicRepos: number;
   bio: string | null;
+  /** "User" | "Organization" (GitHub account type). */
+  type?: string;
 }
 export interface GhCommit {
   sha: string;
@@ -141,7 +145,8 @@ export interface FetchedPage extends ToolFlags {
   markdown: string; // ≤15 KB
   ok: boolean;
 }
-export type FetchPageFn = (url: string) => Promise<FetchedPage>;
+/** null = page missing / unreachable in live mode (skip it). */
+export type FetchPageFn = (url: string) => Promise<FetchedPage | null>;
 
 // ---- Email (AgentMail, ticket #10) ----
 export class SafeModeBlocked extends Error {

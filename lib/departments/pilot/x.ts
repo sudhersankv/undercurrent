@@ -6,7 +6,7 @@ import type { Enriched } from "./enrich";
 // X handle resolution (read-only, via web search). Sources: GitHub twitter_username, X evidence
 // authors, plus one `"<name or login>" site:x.com` search for top leads.
 
-export const X_RESOLVE_TOP = 5;
+export const X_RESOLVE_TOP = 8;
 
 /** X posts this lead authored among the evidence. */
 export function authoredXPosts(e: Pick<Enriched, "evidence">, handle: string | null): Evidence[] {
@@ -79,7 +79,7 @@ export async function resolveX(ctx: DeptContext, e: Enriched, opts: { search: bo
   const who = e.kind === "company" ? null : handle ?? (e.github || (e.displayName && !e.displayName.startsWith("@") ? e.displayName : null));
   if (opts.search && who) {
     try {
-      const q = handle ? `"@${handle}" site:x.com` : `"${who}" site:x.com`;
+      const q = handle ? `@${handle}` : `"${who}"`;
       const res = await searchX(ctx.tools, q, 8);
       searched = true;
       if (!handle) handle = pickHandle({ github: e.github, name: e.displayName, repo: e.repo }, res);

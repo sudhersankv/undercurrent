@@ -62,7 +62,7 @@ describe("tools: fixtures (no keys)", () => {
     vi.stubEnv("TOOLS_MODE", "fixture");
     const p = await fetchPage("https://www.moss.dev/");
     expect(p).toMatchObject({ ok: true, fixture: true });
-    expect(p.markdown).toMatch(/WASM/);
+    expect(p!.markdown).toMatch(/WASM/);
     const unknown = await fetchPage("https://unknown.example/");
     expect(unknown).toMatchObject({ ok: false, fixture: true });
   });
@@ -72,6 +72,18 @@ describe("tools: fixtures (no keys)", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const p = await fetchPage("https://usemoss.dev/pricing");
     expect(p).toMatchObject({ ok: true, fixture: true, title: "Pricing | Moss" });
+  });
+
+  it("fetchPage live: a 404 returns null (never a fixture); no network serves a fixture", async () => {
+    vi.stubEnv("TOOLS_MODE", "live");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("not found", { status: 404 })));
+    expect(await fetchPage("https://www.moss.dev/about")).toBeNull();
+    const dns = Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND" } });
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(dns)));
+    expect(await fetchPage("https://usemoss.dev/pricing")).toMatchObject({ fixture: true });
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("socket hang up"))));
+    expect(await fetchPage("https://www.moss.dev/customers")).toBeNull();
   });
 });
 
@@ -144,8 +156,8 @@ describe("tools: live smoke (skipped without keys)", () => {
   });
   it.skipIf(!live())("fetchPage (LIVE_TESTS=1)", async () => {
     const p = await fetchPage("https://example.com/");
-    expect(p.ok).toBe(true);
-    expect(p.fixture).toBeFalsy();
-    expect(p.markdown).toMatch(/Example Domain/);
+    expect(p?.ok).toBe(true);
+    expect(p?.fixture).toBeFalsy();
+    expect(p?.markdown).toMatch(/Example Domain/);
   });
 });

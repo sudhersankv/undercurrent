@@ -2,6 +2,7 @@ import { RawEvidence, type CompanyProfile, type PersonaReaction, type Persona, t
 import { QueryPlan, queryPlanPrompt, type QuerySource } from "@/lib/llm/prompts/sounding";
 import { canonicalXUrl, parseXUrl, searchX } from "@/lib/tools/x";
 import type { DeptContext } from "../shared/types";
+import { briefSearchTerms, companyBriefText } from "../sonar/brief";
 
 // SPEC §5.3 steps A (query planning) + B (collect, normalize, dedupe).
 
@@ -74,12 +75,14 @@ export async function planQueries(
   i: { profile: CompanyProfile; segment: SegmentHypothesis; searchPhrases: string[]; n: number },
 ): Promise<PlannedQuery[]> {
   try {
-    const p = queryPlanPrompt(i);
+    const terms = briefSearchTerms(i.profile);
+    const p = queryPlanPrompt({ ...i, brief: companyBriefText(i.profile), complaints: terms.complaints, capabilityPhrases: terms.phrases });
     const plan = await ctx.llm.callStructured({
       model: "fast",
       system: p.system,
       user: p.user,
       schema: QueryPlan,
+      maxTokens: 4000, // the fast model spends output tokens on reasoning; 600 truncates the plan
       temperature: 0,
       runId: ctx.runId,
       dept: "sounding",
@@ -87,7 +90,7 @@ export async function planQueries(
       abortSignal: ctx.signal,
       cacheKey: `sounding.plan:${i.segment.id}:${i.n}`,
     });
-    const qs = dedupeQueries(plan.queries);
+    const qs = dedupeQueries(plan.queries).filter((q) => !mentionsCompany(q.query, i.profile));
     if (qs.length >= Math.min(3, i.n)) return ensureXQueries(qs.slice(0, i.n), xQueriesFor(i.segment, i.searchPhrases));
   } catch (err) {
     ctx.emit({
@@ -99,6 +102,12 @@ export async function planQueries(
     });
   }
   return fallbackPlan(i.segment, i.searchPhrases, i.n);
+}
+
+/** Queries never search for the target company itself. */
+function mentionsCompany(q: string, profile: CompanyProfile): boolean {
+  const n = profile.name.trim().toLowerCase();
+  return n.length > 2 && q.toLowerCase().includes(n);
 }
 
 function valid(r: Partial<RawEvidence> & { text: string }): RawEvidence | null {
@@ -163,7 +172,7 @@ export async function runQuery(ctx: DeptContext, q: PlannedQuery): Promise<RawEv
       break;
     }
     case "x": {
-      const res = await searchX(t, q.query, 6, "year");
+      const res = await searchX(t, q.query, 6); // no date filter: X mirror hits often lack a published date
       for (const post of res.posts)
         out.push(
           valid({

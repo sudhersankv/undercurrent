@@ -146,6 +146,7 @@ export const getUser = defineTool("github.getUser", {
       followers: number;
       public_repos: number;
       bio: string | null;
+      type?: string;
     }>(`/users/${q(login)}`);
     if (!u) return null;
     return {
@@ -160,6 +161,7 @@ export const getUser = defineTool("github.getUser", {
       followers: u.followers,
       publicRepos: u.public_repos,
       bio: u.bio,
+      ...(u.type ? { type: u.type } : {}),
     };
   },
   fixture(login: string): GhUser {

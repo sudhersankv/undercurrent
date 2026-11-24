@@ -250,6 +250,14 @@ async function runSounding(rec: RunRecord, ctx: DeptContext, segments: SegmentHy
   return out;
 }
 
+/** Auto Round 2 only starts if Round 1 finished within this many seconds (keeps a live run under ~4 min). */
+const ROUND2_DEADLINE_S = () => Number(process.env.ROUND2_DEADLINE_S ?? 120);
+
+/** Pilot targets: stated ICP segments + VERIFIED + PROMISING, never controls. */
+export function pilotTargets(segments: SegmentHypothesis[]): SegmentHypothesis[] {
+  return segments.filter((s) => !isControl(s) && (s.origin === "stated" || s.verdict === "VERIFIED" || s.verdict === "PROMISING"));
+}
+
 function verdictLine(d: RunData): string {
   const v = d.segments.filter((s) => s.verdict === "VERIFIED" && !isControl(s));
   if (v.length === 1) {
@@ -258,14 +266,15 @@ function verdictLine(d: RunData): string {
     return `${s.name} VERIFIED (strength ${(s.evidenceStrength ?? 0).toFixed(2)}, ${n} evidence). Handing off.`;
   }
   if (v.length) return `${v.length} segments VERIFIED. Handing off.`;
-  const p = d.segments.filter((s) => s.verdict === "PROMISING").length;
-  return `Nothing VERIFIED. ${p} PROMISING segments go to Pilot.`;
+  const p = d.segments.filter((s) => s.verdict === "PROMISING" && !isControl(s)).length;
+  return `Nothing VERIFIED. Stated ICP and ${p} PROMISING segment${p === 1 ? "" : "s"} go to Pilot.`;
 }
 
 async function pipeline(rec: RunRecord, overrides?: Partial<DeptContext>) {
   const ctx = ctxFor(rec, overrides);
   const d = rec.data;
   const { runId } = rec;
+  const startedAt = Date.now();
 
   // Sonar
   emitState(rec, "SONAR");
@@ -282,9 +291,12 @@ async function pipeline(rec: RunRecord, overrides?: Partial<DeptContext>) {
   emitState(rec, "SOUNDING_R1");
   await runSounding(rec, ctx, r1.out.segments);
 
-  // Swarm R2 (auto when any UCB ≥ 0.5) → Sounding R2
+  // Swarm R2 (auto when any UCB ≥ 0.5 and the run's time budget allows) → Sounding R2
   const targets = explorationTargets(d);
-  if (targets.length) {
+  const elapsedS = (Date.now() - startedAt) / 1000;
+  if (targets.length && elapsedS > ROUND2_DEADLINE_S()) {
+    note(runId, `Round 2 skipped to keep the run fast (${Math.round(elapsedS)}s in). Run it from the map.`);
+  } else if (targets.length) {
     handoff(runId, "sounding", "swarm", `${targets[0].name} looks strong. Explore neighbors.`);
     emitState(rec, "SWARM_R2");
     const r2 = await runSwarm(rec, ctx, 2, targets.map((s) => s.id));
@@ -300,8 +312,8 @@ async function pipeline(rec: RunRecord, overrides?: Partial<DeptContext>) {
   // Pilot
   handoff(runId, "sounding", "pilot", verdictLine(d));
   emitState(rec, "PILOT");
-  let targetsForPilot = d.segments.filter((s) => s.verdict === "VERIFIED" && !isControl(s));
-  if (!targetsForPilot.length) targetsForPilot = d.segments.filter((s) => s.verdict === "PROMISING" && !isControl(s));
+  // Stated ICP always (end-to-end GTM; Swarm is the discovery add-on), plus VERIFIED + PROMISING.
+  const targetsForPilot = pilotTargets(d.segments);
   const segIds = new Set(targetsForPilot.map((s) => s.id));
   const pilotOut = await departments.pilot.run(ctx, { profile: d.profile, segments: targetsForPilot, evidence: d.evidence.filter((e) => segIds.has(e.segmentId)) });
   checkAbort(rec);

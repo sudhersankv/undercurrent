@@ -14,7 +14,6 @@ import {
 import { lichenPersonas, lichenSegments } from "@/lib/dev/lichen";
 import {
   neighborSegmentsUser,
-  neutralBrief,
   personasSystem,
   personasUser,
   reactionSystem,
@@ -27,7 +26,7 @@ import {
 } from "@/lib/llm/prompts/swarm";
 import type { RetrievalKind } from "@/lib/retrieval/types";
 import { calibrate, personaScore, pickExplorationTargets, simInterest, swarmReliability } from "@/lib/scoring/swarm";
-import { getSonarProfile, productNodeId } from "../sonar";
+import { briefSearchTerms, companyBriefText, getSonarProfile, productNodeId } from "../sonar";
 import type { ChatContext, DeptContext, Department } from "../shared/types";
 
 // ---------------- schemas the LLM fills (ids/round/scores are ours) ----------------
@@ -91,6 +90,8 @@ function remember(runId: string, out: { segments: SegmentHypothesis[]; personas:
 
 const PERSONAS_PER_SEGMENT = () => Math.max(1, Math.min(6, Number(process.env.SWARM_PERSONAS_PER_SEGMENT ?? 3) || 3));
 const DEDUPE_THRESHOLD = 0.9;
+/** Round-1 segment generation model. Default fast: the smart model took ~70-100 s for this one call; set SWARM_SEGMENT_MODEL=smart to restore. */
+const SEGMENT_MODEL = (): "smart" | "fast" => (process.env.SWARM_SEGMENT_MODEL === "smart" ? "smart" : "fast");
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 160);
 
 function normDomain(d: string): string {
@@ -178,20 +179,24 @@ function exploreDomainCount(segs: SegmentHypothesis[]): number {
 
 async function round1Segments(ctx: DeptContext, profile: CompanyProfile): Promise<{ segments: SegmentHypothesis[]; controls: SegmentHypothesis[] }> {
   const statedIcp = profile.statedTargetUsers.map((t) => t.description);
-  let user = round1SegmentsUser({ profile, statedIcp });
+  const brief = companyBriefText(profile);
+  let user = round1SegmentsUser({ profile, statedIcp, brief });
   let best: { segments: SegmentHypothesis[]; controls: SegmentHypothesis[] } | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const d = await ctx.llm.callStructured({
-      model: "smart",
-      system: segmentsSystem(),
-      user,
-      schema: Round1Draft,
-      maxTokens: 3000,
-      temperature: 0.7,
-      runId: ctx.runId,
-      dept: "swarm",
-      abortSignal: ctx.signal,
-    });
+    const call = (model: "smart" | "fast") =>
+      ctx.llm.callStructured({
+        model,
+        system: segmentsSystem(),
+        user,
+        schema: Round1Draft,
+        maxTokens: 8000,
+        temperature: 0.7,
+        runId: ctx.runId,
+        dept: "swarm",
+        abortSignal: ctx.signal,
+      });
+    // Fast model first; if it fails, the smart model before the sample-data fallback.
+    const d = await call(SEGMENT_MODEL()).catch((e) => (SEGMENT_MODEL() === "fast" && !ctx.signal.aborted ? call("smart") : Promise.reject(e)));
     const segments = d.segments
       .map((s) => toSegment(ctx.runId, profile, s, 1, s.origin === "stated" ? "stated" : "explore", null))
       .filter((s): s is SegmentHypothesis => s !== null);
@@ -203,7 +208,7 @@ async function round1Segments(ctx: DeptContext, profile: CompanyProfile): Promis
     if (!best || segments.length > best.segments.length) best = cand;
     const domains = exploreDomainCount(segments);
     if (segments.length >= 8 && domains >= 4 && controls.length === 2) return cand;
-    user = `${round1SegmentsUser({ profile, statedIcp })}\n\nYour previous answer had ${segments.length} valid segments, ${domains} explore domains and ${controls.length} controls. Every segment needs a valid capabilityId from the brief and a concrete pain. Fix it.`;
+    user = `${round1SegmentsUser({ profile, statedIcp, brief })}\n\nYour previous answer had ${segments.length} valid segments, ${domains} explore domains and ${controls.length} controls. Every segment needs a valid capabilityId from the brief and a concrete pain. Fix it.`;
   }
   return best!;
 }
@@ -213,9 +218,9 @@ async function neighborSegments(ctx: DeptContext, profile: CompanyProfile, round
   const d = await ctx.llm.callStructured({
     model: "smart",
     system: segmentsSystem(),
-    user: neighborSegmentsUser({ profile, parents, existingNames: existing.map((s) => s.name), count: Math.min(6, Math.max(4, parents.length * 2)) }),
+    user: neighborSegmentsUser({ profile, brief: companyBriefText(profile), parents, existingNames: existing.map((s) => s.name), count: Math.min(6, Math.max(4, parents.length * 2)) }),
     schema: SegmentsDraft,
-    maxTokens: 2500,
+    maxTokens: 6000,
     temperature: 0.7,
     runId: ctx.runId,
     dept: "swarm",
@@ -242,15 +247,17 @@ export interface SimOpts {
   groundKinds: RetrievalKind[];
 }
 
-async function genPersonas(ctx: DeptContext, s: SegmentHypothesis, skeptic: boolean): Promise<Persona[]> {
+async function genPersonas(ctx: DeptContext, s: SegmentHypothesis, skeptic: boolean, profile: CompanyProfile): Promise<Persona[]> {
   const count = PERSONAS_PER_SEGMENT() + (skeptic ? 1 : 0);
+  const incumbents = briefSearchTerms(profile).incumbents;
+  const capability = profile.capabilities.find((c) => c.id === s.mechanism.capabilityId)?.statement ?? null;
   try {
     const d = await ctx.llm.callStructured({
       model: "fast",
       system: personasSystem(),
-      user: personasUser({ segment: s, count, skeptics: skeptic ? 1 : 0 }),
+      user: personasUser({ segment: s, count, skeptics: skeptic ? 1 : 0, incumbents, capability }),
       schema: PersonasDraft,
-      maxTokens: 1500,
+      maxTokens: 5000,
       temperature: 0.9,
       runId: ctx.runId,
       dept: "swarm",
@@ -270,6 +277,14 @@ async function genPersonas(ctx: DeptContext, s: SegmentHypothesis, skeptic: bool
   }
 }
 
+/** §9.1 gate input: a painSolved that names something concrete; "none" / "n/a" / one-word answers count as null. */
+export function specificPain(p: string | null | undefined): string | null {
+  const t = (p ?? "").trim();
+  if (t.length < 8) return null;
+  if (/^(none|n\/?a|null|nothing|no|not (applicable|relevant|really)|unclear|maybe|unknown)/i.test(t)) return null;
+  return t;
+}
+
 function normReaction(personaId: string, d: z.infer<typeof ReactionDraft>, s: SegmentHypothesis, p: Persona): PersonaReaction {
   const phrases = d.searchPhrases.map((x) => x.trim()).filter(Boolean).slice(0, 5);
   for (const extra of [s.mechanism.pain, ...p.dailyPains, s.name]) {
@@ -279,7 +294,7 @@ function normReaction(personaId: string, d: z.infer<typeof ReactionDraft>, s: Se
   }
   while (phrases.length < 3) phrases.push(`${s.domain} ${phrases.length}`);
   const line = d.oneLineReaction.trim();
-  return { ...d, personaId, searchPhrases: phrases, oneLineReaction: line.length > 140 ? `${line.slice(0, 139)}…` : line };
+  return { ...d, painSolved: specificPain(d.painSolved), personaId, searchPhrases: phrases, oneLineReaction: line.length > 140 ? `${line.slice(0, 139)}…` : line };
 }
 
 async function react(ctx: DeptContext, s: SegmentHypothesis, p: Persona, opts: SimOpts, brief: string): Promise<PersonaReaction | null> {
@@ -295,7 +310,7 @@ async function react(ctx: DeptContext, s: SegmentHypothesis, p: Persona, opts: S
       system: reactionSystem(),
       user: reactionUser({ brief, persona: p, snippets }),
       schema: ReactionDraft,
-      maxTokens: 800,
+      maxTokens: 4000,
       temperature: 0.9,
       runId: ctx.runId,
       dept: "swarm",
@@ -336,8 +351,9 @@ export function scoreSegment(s: SegmentHypothesis, personas: Persona[], reaction
 }
 
 async function simulate(ctx: DeptContext, segs: SegmentHypothesis[], opts: SimOpts): Promise<{ segments: SegmentHypothesis[]; personas: Persona[]; reactions: PersonaReaction[] }> {
-  const brief = neutralBrief(opts.profile);
-  const personasBySeg = await Promise.all(segs.map((s) => genPersonas(ctx, s, opts.skepticSegmentIds?.has(s.id) ?? false)));
+  // Personas see the target-company brief (head-to-head vs incumbents) without the name or stated ICP.
+  const brief = companyBriefText(opts.profile, { persona: true });
+  const personasBySeg = await Promise.all(segs.map((s) => genPersonas(ctx, s, opts.skepticSegmentIds?.has(s.id) ?? false, opts.profile)));
   const personas = personasBySeg.flat();
   const reactions = (
     await Promise.all(segs.flatMap((s, i) => personasBySeg[i].map((p) => react(ctx, s, p, opts, brief))))
@@ -524,9 +540,9 @@ export async function addUserSegment(ctx: DeptContext, profile: CompanyProfile, 
   const d = await ctx.llm.callStructured({
     model: "smart",
     system: segmentsSystem(),
-    user: userSegmentUser({ profile, description }),
+    user: userSegmentUser({ profile, description, brief: companyBriefText(profile) }),
     schema: SegmentsDraft,
-    maxTokens: 800,
+    maxTokens: 3000,
     runId: ctx.runId,
     dept: "swarm",
     abortSignal: ctx.signal,
@@ -553,7 +569,7 @@ export async function swarmChat(ctx: DeptContext, message: string, chat?: ChatCo
       system: swarmChatSystem(),
       user: swarmChatUser({ message, snapshot }),
       schema: ChatOut,
-      maxTokens: 600,
+      maxTokens: 2500,
       runId: ctx.runId,
       dept: "swarm",
       abortSignal: ctx.signal,

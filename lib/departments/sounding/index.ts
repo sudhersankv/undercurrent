@@ -9,25 +9,37 @@ import { writeSoundingGraph } from "./graph";
 import { JUDGE_BATCH, judgeBatch } from "./judge";
 import { heuristicJudge, sampleEvidenceFor } from "./offline";
 import { getSoundingState, mergeSoundingState } from "./store";
+import { companyBriefText } from "../sonar/brief";
 
 export { quoteIsValid, toEvidence } from "./judge";
 export { getSoundingState } from "./store";
 
 // SPEC §5.3 Undercurrent Sounding: plan → collect → Moss pre-filter → judge → score → verdict.
 
-const MIN_SIM = () => Number(process.env.SOUNDING_MIN_SIM ?? 0.35);
+/**
+ * Eligibility gate (SPEC §5.3 said simInterest ≥ 0.35). Default 0: every segment is sounded, because the
+ * swarm is a hypothesis generator and evidence decides. Set SOUNDING_MIN_SIM=0.35 to restore the gate.
+ */
+const MIN_SIM = () => Number(process.env.SOUNDING_MIN_SIM ?? 0);
 const BASE_QUERIES = 8;
 const PREFILTER_K = 24; // items sent to the judge per segment (3 batches)
-const SEGMENT_CONCURRENCY = 3;
+const SEGMENT_CONCURRENCY = () => Math.max(1, Number(process.env.SOUNDING_SEGMENT_CONCURRENCY ?? 6) || 6);
+const QUERY_CONCURRENCY = () => Math.max(1, Number(process.env.SOUNDING_QUERY_CONCURRENCY ?? 8) || 8);
 
 export const isControl = (s: SegmentHypothesis) => s.origin === "control_negative";
 const simOf = (s: SegmentHypothesis) => s.simInterestCalibrated ?? s.simInterest;
 
 /** Controls always go through; others need simInterest ≥ threshold (unscored → tested). */
 export function isEligible(s: SegmentHypothesis, min = MIN_SIM()): boolean {
-  if (isControl(s)) return true;
+  if (isControl(s) || s.origin === "stated") return true; // stated ICP is always tested
   const sim = simOf(s);
   return sim == null || sim >= min;
+}
+
+/** Sounding order: stated ICP first, then other segments by simInterest, controls last. */
+export function soundingOrder(segments: SegmentHypothesis[]): SegmentHypothesis[] {
+  const rank = (s: SegmentHypothesis) => (s.origin === "stated" ? 0 : isControl(s) ? 2 : 1);
+  return [...segments].sort((a, b) => rank(a) - rank(b) || (simOf(b) ?? 0) - (simOf(a) ?? 0));
 }
 
 export interface Verdicted {
@@ -133,8 +145,9 @@ export async function soundSegment(
   ctx.emit({ dept: "sounding", type: "sounding.started", level: "action", message: `Sounding ${segment.name}`, payload: { segmentId: segment.id } });
   const phrases = segmentSearchPhrases(segment, input.personas, input.reactions);
   const capability = input.profile.capabilities.find((c) => c.id === segment.mechanism.capabilityId)?.statement ?? null;
+  const brief = companyBriefText(input.profile);
 
-  // A: plan
+  // A: plan (company brief + incumbent complaints + persona search phrases + X)
   const queries = await planQueries(ctx, { profile: input.profile, segment, searchPhrases: phrases, n: opts.nQueries });
 
   // B: collect (p-limit 4 shared across the run), dedupe by URL
@@ -167,7 +180,7 @@ export async function soundSegment(
   await Promise.all(
     chunks.map(async (chunk) => {
       try {
-        const res = await judgeBatch(ctx, segment, capability, chunk);
+        const res = await judgeBatch(ctx, segment, capability, chunk, { brief, companyName: input.profile.name });
         dropped += res.droppedQuotes;
         for (const e of res.kept) {
           if (evidence.some((x) => x.url === e.url)) continue;
@@ -248,11 +261,12 @@ export async function soundSegment(
 }
 
 async function run(ctx: DeptContext, input: SoundingInput): Promise<SoundingOutput> {
-  const queryLimit = pLimit(4);
-  const segLimit = pLimit(SEGMENT_CONCURRENCY);
+  const queryLimit = pLimit(QUERY_CONCURRENCY());
+  const segLimit = pLimit(SEGMENT_CONCURRENCY());
   const nQueries = BASE_QUERIES + (input.extraQueries ?? 0);
+  const ordered = soundingOrder(input.segments);
   const results = await Promise.all(
-    input.segments.map((s) =>
+    ordered.map((s) =>
       segLimit(async () => {
         if (!isEligible(s)) {
           const skipped = { ...s, evidenceStrength: 0, verdict: verdictOf({ evidenceStrength: 0, simInterest: simOf(s) ?? 0, supportingCount: 0, distinctSources: 0 }) };

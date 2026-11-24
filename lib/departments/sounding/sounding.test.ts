@@ -5,7 +5,7 @@ import { JudgeBatch, QueryPlan } from "@/lib/llm/prompts/sounding";
 import { SOURCE_WEIGHT, engagement, evidenceStrength, recency, strengthBreakdown, verdict } from "@/lib/scoring/sounding";
 import type { GhIssue, GhRepo, HnHit, Tools } from "@/lib/tools/types";
 import { quoteIsValid, toEvidence } from "./judge";
-import { findSegment, isEligible, sounding } from "./index";
+import { findSegment, isEligible, sounding, soundingOrder } from "./index";
 import { clearSoundingState } from "./store";
 import { PROFILE, fakeCtx, seg } from "./test-helpers";
 
@@ -249,7 +249,8 @@ describe("sounding.run", () => {
 
     const ctrl = out.segments.find((s) => s.id === "ctrl")!;
     expect(ctrl.verdict).not.toBe("VERIFIED");
-    expect(out.segments.find((s) => s.id === "low")!.verdict).toBe("KILLED");
+    // No interest gate by default: the low-sim segment is sounded too and judged on evidence.
+    expect(ctx.events.some((e) => e.type === "sounding.started" && (e.payload as { segmentId: string }).segmentId === "low")).toBe(true);
     expect(ctx.events.some((e) => e.type === "sounding.control_leak")).toBe(false);
 
     // incremental evidence events with a running strength
@@ -296,8 +297,11 @@ describe("sounding.run", () => {
   });
 
   it("eligibility + segment lookup", () => {
-    expect(isEligible(seg("x", { simInterest: 0.35, simInterestCalibrated: 0.35 }))).toBe(true);
-    expect(isEligible(seg("x", { simInterest: 0.34, simInterestCalibrated: 0.34 }))).toBe(false);
+    expect(isEligible(seg("x", { simInterest: 0.01, simInterestCalibrated: 0.01 }))).toBe(true); // default: no gate
+    expect(isEligible(seg("x", { simInterest: 0.35, simInterestCalibrated: 0.35 }), 0.35)).toBe(true);
+    expect(isEligible(seg("x", { simInterest: 0.34, simInterestCalibrated: 0.34 }), 0.35)).toBe(false);
+    expect(isEligible(seg("x", { origin: "stated", simInterest: 0.05, simInterestCalibrated: 0.05 }), 0.35)).toBe(true);
+    expect(soundingOrder([seg("c", { origin: "control_negative" }), seg("e", { simInterest: 0.2 }), seg("s", { origin: "stated", simInterest: 0.1 })]).map((s) => s.id)).toEqual(["s", "e", "c"]);
     expect(isEligible(seg("x", { origin: "control_negative", simInterest: 0, simInterestCalibrated: 0 }))).toBe(true);
     expect(findSegment([seg("a", { name: "Game devs" }), seg("b", { name: "Legal review" })], "explain legal")?.id).toBe("b");
   });

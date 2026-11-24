@@ -7,6 +7,8 @@ import { evidenceId } from "./ids";
 // SPEC §5.3 step C: batched judge (8 items/call) + deterministic quote validation.
 
 export const JUDGE_BATCH = 8;
+/** Text per item shown to the judge (quotes are still validated against the full fetched text). */
+const JUDGE_TEXT_MAX = 900;
 const QUOTE_MAX_WORDS = 25;
 const QUOTE_MAX_CHARS = 220;
 
@@ -73,11 +75,14 @@ export async function judgeBatch(
   segment: SegmentHypothesis,
   capability: string | null,
   items: RawEvidence[],
+  opts: { brief?: string; companyName?: string } = {},
 ): Promise<{ kept: Evidence[]; droppedQuotes: number }> {
   const p = judgePrompt({
     segment,
     capability,
-    items: items.map((it, index) => ({ index, source: it.source, title: it.title, text: it.text, url: it.url })),
+    brief: opts.brief,
+    companyName: opts.companyName,
+    items: items.map((it, index) => ({ index, source: it.source, title: it.title, text: it.text.slice(0, JUDGE_TEXT_MAX), url: it.url })),
   });
   const out = await ctx.llm.callStructured({
     model: "fast",
@@ -85,12 +90,12 @@ export async function judgeBatch(
     user: p.user,
     schema: JudgeBatch,
     temperature: 0,
-    maxTokens: 1800,
+    maxTokens: 7000,
     runId: ctx.runId,
     dept: "sounding",
     applyAlias: false,
     abortSignal: ctx.signal,
-    cacheKey: `sounding.judge:${segment.id}:${items.map((i) => i.url).join("|").length}`,
+    cacheKey: `sounding.judge:${segment.id}:${items[0]?.url ?? ""}:${items.length}`,
   });
   const res = toEvidence(segment.id, items, out.judgments);
   // Alias display text only after validation (URLs untouched by alias()).

@@ -7,6 +7,7 @@ import type { FetchedPage } from "./types";
  * fetchPage(url) → markdown (SPEC §12): Node fetch (10 s timeout) + @mozilla/readability (jsdom)
  * + turndown, capped at 15 KB. No key needed; on failure (or TOOLS_MODE=fixture) serves a
  * recorded fixture, else a curated page for the Lichen demo, marked `{fixture: true}`.
+ * Live HTTP errors (404 etc.) return null instead.
  */
 const TIMEOUT_MS = 10_000;
 const CAP = 15 * KB;
@@ -68,13 +69,28 @@ export function fixturePage(url: string): FetchedPage {
 
 const replayed = withReplay("fetchPage", live, { fallbackToFixture: false });
 
-export async function fetchPage(url: string): Promise<FetchedPage> {
+/** Errors that mean "no network at all" (DNS / interface down), as opposed to "this page is missing". */
+export function isNoNetwork(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string }; message?: string } | null;
+  const code = e?.cause?.code ?? e?.code ?? "";
+  return /^(ENOTFOUND|EAI_AGAIN|ENETUNREACH|ENETDOWN|EHOSTUNREACH)$/.test(code) || /(ENOTFOUND|EAI_AGAIN|ENETUNREACH|ENETDOWN)/.test(e?.message ?? "");
+}
+
+/**
+ * Live: a 404 / non-2xx / timeout returns null (the caller skips the page). We never inject fixture
+ * content into a real profile. Fixtures only when TOOLS_MODE=fixture or there is no network at all.
+ */
+export async function fetchPage(url: string): Promise<FetchedPage | null> {
   const offline = async () => markFixture((await readFixture<FetchedPage>("fetchPage", [url])) ?? fixturePage(url));
   if (forceFixtures()) return offline();
   try {
     return await replayed(url);
   } catch (err) {
-    console.warn("[tools] fetchPage failed, serving fixture:", err instanceof Error ? err.message : err);
-    return offline();
+    if (isNoNetwork(err)) {
+      console.warn("[tools] fetchPage: no network, serving fixture:", err instanceof Error ? err.message : err);
+      return offline();
+    }
+    console.warn("[tools] fetchPage skipped:", err instanceof Error ? err.message : err);
+    return null;
   }
 }

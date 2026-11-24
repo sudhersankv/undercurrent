@@ -24,15 +24,16 @@ export const FitSignalsBatch = z.object({
 });
 export type FitSignalsBatch = z.infer<typeof FitSignalsBatch>;
 
-export function fitSignalsPrompt(i: { segment: SegmentHypothesis; capability: string | null; candidates: CandidateSummary[] }) {
+export function fitSignalsPrompt(i: { segment: SegmentHypothesis; capability: string | null; candidates: CandidateSummary[]; brief?: string }) {
   return {
     system: [
-      "You score how well real projects fit a market segment for a developer tool.",
+      "You score how well real projects fit a market segment for the target company described in the brief.",
       "mechanismMatch 0-1: does this project's product/stack match the segment mechanism (would the capability slot into what they build)?",
       "painExplicit 0-1: did they publicly state the pain themselves (issue, comment, post)? Explicit first-hand complaint ≈ 0.9, building a workaround ≈ 0.6, merely related ≈ 0.2.",
       "why: one short line. Return one entry per candidate key.",
     ].join("\n"),
     user: [
+      i.brief ? `TARGET COMPANY BRIEF:\n${i.brief}\n` : "",
       `Segment: ${i.segment.name}`,
       `Mechanism: ${i.segment.mechanism.pain}`,
       i.capability ? `Capability: ${i.capability}` : "",
@@ -66,14 +67,25 @@ export function briefPrompt(i: {
   profile: CompanyProfile;
   segment: SegmentHypothesis;
   capability: string | null;
-  lead: { name: string; kind: string; description: string; repo: string | null; languages: string[]; lastActive: string | null; channels: string[] };
+  lead: { name: string; kind: string; description: string; repo: string | null; languages: string[]; lastActive: string | null; channels: string[]; company?: string | null; role?: string | null };
   evidence: Evidence[];
+  /** Rendered target-company brief. */
+  brief?: string;
 }) {
+  const who =
+    i.lead.kind === "account"
+      ? "The lead is a COMPANY ACCOUNT; talk about the company and its product."
+      : i.lead.kind === "contact"
+        ? `The lead is a PERSON at ${i.lead.company ?? "a target account"}${i.lead.role ? ` (${i.lead.role})` : ""}; talk about what their team builds.`
+        : "The lead is a PROJECT (repo, plugin or product) or the developer behind it; talk about the work, not the person's private life.";
   return {
     system: [
-      `You write a short lead brief for ${i.profile.name} (${i.profile.oneLiner}). The lead is a PROJECT (repo, plugin or product); talk about the project, not the person.`,
-      "profile (≤300 chars): what the project is, what it builds, its stack.",
-      "howWeFit (≤240 chars): ONE sentence mapping the capability to their concrete pain.",
+      `You write a short, SPECIFIC lead brief for ${i.profile.name}'s sales team. ${who}`,
+      `Use the target-company brief: name ${i.profile.name}'s concrete capability and the incumbent or workaround the lead uses today.`,
+      "profile (≤300 chars): what they build, their stack, and what they use today for retrieval / search if the evidence or stack shows it.",
+      `howWeFit (≤240 chars): ONE sentence of the form "${i.profile.name} <does concrete thing> in your <their system>" that names their current tool or approach`,
+      `(say "likely" if inferred). Good: "${i.profile.name} removes the Pinecone hop in your Pipecat turn loop, keeping retrieval under 10 ms inside the 800 ms voice budget."`,
+      "Bad: \"Fast semantic search could help your app.\"",
       "whyNow (≤200 chars or null): the trigger (recent issue, recent commit, job post). Null if no dated trigger.",
       "evidence: 2-5 bullets (≤160 chars each), each with a URL copied EXACTLY from the evidence list. Never invent URLs.",
       "risks: up to 3 reasons they might not care (≤140 chars each).",
@@ -81,10 +93,11 @@ export function briefPrompt(i: {
       "No hype, no em-dashes.",
     ].join("\n"),
     user: [
+      i.brief ? `TARGET COMPANY BRIEF:\n${i.brief}\n` : "",
       `Segment: ${i.segment.name} (${i.segment.verdict}, evidence strength ${(i.segment.evidenceStrength ?? 0).toFixed(2)})`,
       `Mechanism: ${i.segment.mechanism.pain}`,
       i.capability ? `Capability: ${i.capability}` : "",
-      `Lead (${i.lead.kind}): ${i.lead.name}${i.lead.repo ? ` (${i.lead.repo})` : ""}`,
+      `Lead (${i.lead.kind}): ${i.lead.name}${i.lead.repo ? ` (${i.lead.repo})` : ""}${i.lead.company && i.lead.kind !== "account" ? ` at ${i.lead.company}` : ""}${i.lead.role ? `, ${i.lead.role}` : ""}`,
       i.lead.description ? `About: ${i.lead.description.slice(0, 600)}` : "",
       i.lead.languages.length ? `Stack: ${i.lead.languages.join(", ")}` : "",
       i.lead.lastActive ? `Last active: ${i.lead.lastActive}` : "",
@@ -94,6 +107,60 @@ export function briefPrompt(i: {
     ]
       .filter(Boolean)
       .join("\n"),
+  };
+}
+
+// ---------- accounts (company leads) ----------
+
+export interface AccountCandidateSummary {
+  key: string;
+  name: string;
+  domain: string | null;
+  source: string; // "github_org" | "job_post" | "web" | "exa_company" | "employer"
+  text: string;
+}
+
+export const SIZE_BANDS = ["solo", "startup", "smb", "enterprise"] as const;
+
+export const AccountsBatch = z.object({
+  accounts: z.array(
+    z.object({
+      key: z.string(),
+      name: z.string(),
+      isCompany: z.boolean(),
+      industry: z.string(),
+      sizeBand: z.enum(SIZE_BANDS),
+      sizeSource: z.string(),
+      fit: z.number().min(0).max(1),
+      currentApproach: z.string().nullable(),
+      why: z.string(),
+    }),
+  ),
+});
+export type AccountsBatch = z.infer<typeof AccountsBatch>;
+
+export function accountsPrompt(i: { companyName: string; brief: string; segment: SegmentHypothesis; candidates: AccountCandidateSummary[] }) {
+  return {
+    system: [
+      `You qualify company ACCOUNTS for ${i.companyName}'s sales team. Use only the text given for each candidate.`,
+      "isCompany: false for individuals, media sites, directories, listicles, docs sites, universities or the incumbents themselves.",
+      "name: the company's name as it brands itself (short).",
+      "industry: 2-4 words.",
+      "sizeBand: solo (1 person) | startup (2-50) | smb (51-1000) | enterprise (1000+). sizeSource: the phrase or signal you used",
+      "(e.g. 'YC W24, 12 employees', 'GitHub org with 3 repos', 'Fortune 500'); if you are guessing from product maturity say 'inferred from site'.",
+      `fit 0-1: how likely this company has the segment's pain that ${i.companyName} removes (builds the workload in the mechanism = high;`,
+      "adjacent = mid; unrelated or an incumbent vendor = 0).",
+      "currentApproach: what they likely use today for retrieval/search (named tool if the text shows it), else null.",
+      "why: one line. Return one entry per candidate key.",
+    ].join("\n"),
+    user: [
+      `TARGET COMPANY BRIEF:\n${i.brief}\n`,
+      `Segment: ${i.segment.name}`,
+      `Mechanism: ${i.segment.mechanism.pain}`,
+      "",
+      ...i.candidates.map((c) => `KEY ${c.key} | ${c.source}: ${c.name}${c.domain ? ` (${c.domain})` : ""}
+${c.text.slice(0, 700)}`),
+    ].join("\n\n"),
   };
 }
 
