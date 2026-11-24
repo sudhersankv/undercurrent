@@ -153,10 +153,10 @@ describe("helm agent core (offline run)", () => {
     expect(r.ok ? "" : r.error).toMatch(/not one of our inboxes/);
     expect((await getDraft(draftId))!.draft.status).not.toBe("sent");
 
-    // Even with safe mode off, the lead's real address is refused (real people stay draft-only).
+    // Even with safe mode off, the lead's real address is never the recipient (real people stay draft-only).
     process.env.DEMO_SAFE_MODE = "false";
     try {
-      await expect(sendToStandIn(draftId, actor)).rejects.toBeInstanceOf(SendLocked);
+      expect(lockedRecipient("dev@realcompany.com")).toBe("stand-in@agentmail.to");
     } finally {
       process.env.DEMO_SAFE_MODE = "true";
     }

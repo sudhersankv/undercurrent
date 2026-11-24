@@ -4,7 +4,7 @@ import { getDraft, saveDraft } from "@/lib/departments/tide/store";
 import { recordSend } from "@/lib/departments/wake/engine";
 import { getLead } from "@/lib/departments/wake/store";
 import { notifyDraftSent } from "@/lib/orchestrator";
-import { allowlist, resolveRecipient, send, standInName } from "@/lib/tools/agentmail";
+import { allowlist, resolveRecipient, send, standIn, standInName } from "@/lib/tools/agentmail";
 import { SafeModeBlocked } from "@/lib/tools/types";
 import { historyActor, type HelmActor } from "./session";
 
@@ -45,11 +45,14 @@ export function lockedRecipient(leadAddress: string, requested?: string | null):
     if (!isOurInbox(requested)) throw new SendLocked(requested);
     return requested.trim().toLowerCase();
   }
+  // The send lock never redirects: a real lead's draft goes to the default stand-in only because we pick it here.
+  const fallback = standIn()?.address;
+  if (!fallback) throw new SendLocked(leadAddress, "No stand-in inbox configured (SEND_ALLOWLIST). Draft only.");
   let deliveredTo: string;
   try {
-    deliveredTo = resolveRecipient(leadAddress).deliveredTo;
+    deliveredTo = resolveRecipient(fallback).deliveredTo;
   } catch (err) {
-    if (err instanceof SafeModeBlocked) throw new SendLocked(leadAddress, "No stand-in inbox configured (SEND_ALLOWLIST). Draft only.");
+    if (err instanceof SafeModeBlocked) throw new SendLocked(fallback);
     throw err;
   }
   if (!isOurInbox(deliveredTo)) throw new SendLocked(deliveredTo);
