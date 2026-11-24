@@ -19,7 +19,9 @@ export function clearGithubCache() {
   cache.clear();
 }
 
-const hasKey = () => Boolean(process.env.GITHUB_TOKEN);
+// No token → still live, anonymously (search 10/min, core 60/h). A failed/rate-limited call falls back to fixtures.
+const hasKey = () => process.env.GITHUB_ANON === "off" ? Boolean(process.env.GITHUB_TOKEN) : true;
+const SEARCH_PER_MIN = () => (process.env.GITHUB_TOKEN ? 30 : 10);
 
 /** GET with cache-by-URL. Returns null on 404. */
 async function gh<T>(path: string, opts: { search?: boolean; raw?: boolean } = {}): Promise<T | null> {
@@ -28,10 +30,10 @@ async function gh<T>(path: string, opts: { search?: boolean; raw?: boolean } = {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value as Promise<T | null>;
   const value = (async () => {
-    if (opts.search) await windowLimiter("github-search", 30, 60_000).take();
+    if (opts.search) await windowLimiter("github-search", SEARCH_PER_MIN(), 60_000).take();
     const res = await fetch(url, {
       headers: {
-        authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
         accept: opts.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
         "x-github-api-version": "2022-11-28",
         "user-agent": "undercurrent",
