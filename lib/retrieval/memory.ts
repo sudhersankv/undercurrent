@@ -1,50 +1,96 @@
+import { defaultEmbedder, dot, hashEmbedder, type Embedder } from "./embed";
+import { StatsRecorder } from "./stats";
 import type { Retrieval, RetrievalDoc, RetrievalFilter, RetrievalHit, RetrievalStats } from "./types";
 
-const tokenize = (s: string) =>
-  s
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 2);
+/** Equality filter semantics shared by every backend (kind list = OR). */
+export function matchesFilter(meta: RetrievalDoc["metadata"], f: RetrievalFilter): boolean {
+  if (meta.runId !== f.runId) return false;
+  if (f.kind) {
+    const kinds = Array.isArray(f.kind) ? f.kind : [f.kind];
+    if (!kinds.includes(meta.kind)) return false;
+  }
+  if (f.leadId && meta.leadId !== f.leadId) return false;
+  return true;
+}
+
+interface Entry {
+  doc: RetrievalDoc;
+  vec: number[] | null; // null = not embedded yet
+}
 
 /**
- * Trivial in-memory Retrieval (token-overlap cosine). Placeholder so stubs work without Moss;
- * the Retrieval ticket replaces the default with Moss + an embedding fallback.
+ * In-memory cosine retrieval over gateway embeddings (`qwen3-embedding-0-6b`), or a hashed
+ * bag-of-words vector when no gateway token exists. Embedding is lazy (on first query after
+ * an add), so mirroring every doc here while Moss is healthy costs nothing.
+ * If the gateway errors mid-run, the index re-embeds everything with the hash embedder.
  */
 export class MemoryRetrieval implements Retrieval {
-  private docs = new Map<string, RetrievalDoc & { tf: Map<string, number> }>();
-  private timings: number[] = [];
+  readonly backend = "memory" as const;
+  private entries = new Map<string, Entry>();
+  private embedder: Embedder;
+  private rec = new StatsRecorder();
 
-  async add(docs: RetrievalDoc[]) {
-    for (const d of docs) {
-      const tf = new Map<string, number>();
-      for (const t of tokenize(d.text)) tf.set(t, (tf.get(t) ?? 0) + 1);
-      this.docs.set(d.id, { ...d, tf });
+  constructor(embedder?: Embedder) {
+    this.embedder = embedder ?? defaultEmbedder();
+  }
+
+  get embedderId() {
+    return this.embedder.id;
+  }
+
+  get size() {
+    return this.entries.size;
+  }
+
+  async add(docs: RetrievalDoc[]): Promise<void> {
+    for (const d of docs) this.entries.set(d.id, { doc: d, vec: null });
+  }
+
+  private async embedPending(): Promise<void> {
+    const pending = [...this.entries.values()].filter((e) => !e.vec);
+    if (!pending.length) return;
+    try {
+      const vecs = await this.embedder.embed(pending.map((e) => e.doc.text));
+      pending.forEach((e, i) => (e.vec = vecs[i]));
+    } catch (err) {
+      if (this.embedder.id === "hash") throw err;
+      console.warn("[retrieval] gateway embeddings failed, using hashed vectors:", err instanceof Error ? err.message : err);
+      this.embedder = hashEmbedder;
+      for (const e of this.entries.values()) e.vec = null;
+      return this.embedPending();
     }
+  }
+
+  /** Raw query without timing (used by the resilient wrapper, which times it itself). */
+  async search(text: string, k: number, f: RetrievalFilter): Promise<RetrievalHit[]> {
+    if (k <= 0) return [];
+    await this.embedPending();
+    let q: number[];
+    try {
+      [q] = await this.embedder.embed([text]);
+    } catch {
+      this.embedder = hashEmbedder;
+      for (const e of this.entries.values()) e.vec = null;
+      await this.embedPending();
+      [q] = await this.embedder.embed([text]);
+    }
+    const hits: RetrievalHit[] = [];
+    for (const { doc, vec } of this.entries.values()) {
+      if (!vec || !matchesFilter(doc.metadata, f)) continue;
+      hits.push({ id: doc.id, text: doc.text, metadata: doc.metadata, score: dot(q, vec) });
+    }
+    hits.sort((a, b) => b.score - a.score);
+    return hits.slice(0, k);
   }
 
   async query(text: string, k: number, f: RetrievalFilter): Promise<RetrievalHit[]> {
     const t0 = performance.now();
-    const q = new Map<string, number>();
-    for (const t of tokenize(text)) q.set(t, (q.get(t) ?? 0) + 1);
-    const qn = Math.sqrt([...q.values()].reduce((a, v) => a + v * v, 0)) || 1;
-    const kinds = f.kind ? (Array.isArray(f.kind) ? f.kind : [f.kind]) : null;
-    const hits: RetrievalHit[] = [];
-    for (const d of this.docs.values()) {
-      if (d.metadata.runId !== f.runId) continue;
-      if (kinds && !kinds.includes(d.metadata.kind)) continue;
-      if (f.leadId && d.metadata.leadId !== f.leadId) continue;
-      let dot = 0;
-      for (const [t, v] of q) dot += v * (d.tf.get(t) ?? 0);
-      const dn = Math.sqrt([...d.tf.values()].reduce((a, v) => a + v * v, 0)) || 1;
-      hits.push({ id: d.id, text: d.text, metadata: d.metadata, score: dot / (qn * dn) });
-    }
-    hits.sort((a, b) => b.score - a.score);
-    this.timings.push(performance.now() - t0);
-    return hits.slice(0, k);
+    const hits = await this.search(text, k, f);
+    this.rec.record(performance.now() - t0);
+    return hits;
   }
 
   stats(): RetrievalStats {
-    const s = [...this.timings].sort((a, b) => a - b);
-    return { backend: "memory", p50Ms: s.length ? s[Math.floor(s.length / 2)] : 0, count: s.length };
+    return this.rec.stats("memory");
   }
 }

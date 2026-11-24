@@ -1,0 +1,29 @@
+{
+  "domains": {
+    "callpilot.ai": {
+      "organization": "CallPilot",
+      "emails": [
+        { "value": "dan@callpilot.ai", "type": "personal", "confidence": 94, "firstName": "Dan", "lastName": "Murrell", "position": "CTO" },
+        { "value": "hello@callpilot.ai", "type": "generic", "confidence": 88, "firstName": null, "lastName": null, "position": null }
+      ]
+    },
+    "edgecase.io": {
+      "organization": "Edgecase",
+      "emails": [
+        { "value": "priya@edgecase.io", "type": "personal", "confidence": 90, "firstName": "Priya", "lastName": "Raman", "position": "Founder" }
+      ]
+    },
+    "jouke.dev": {
+      "organization": null,
+      "emails": [
+        { "value": "hi@jouke.dev", "type": "generic", "confidence": 71, "firstName": null, "lastName": null, "position": null }
+      ]
+    }
+  },
+  "default": {
+    "organization": null,
+    "emails": [
+      { "value": "contact@example.com", "type": "generic", "confidence": 60, "firstName": null, "lastName": null, "position": null }
+    ]
+  }
+}

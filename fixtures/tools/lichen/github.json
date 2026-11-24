@@ -1,0 +1,180 @@
+{
+  "issues": [
+    {
+      "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/595",
+      "title": "Local embedding model makes Obsidian unresponsive while indexing",
+      "body": "With the local model enabled the app locks up for minutes on a 4k-note vault. Expected indexing to run in the background. M1 Air, 16 GB.",
+      "author": "jtwaleson",
+      "repo": "brianpetro/obsidian-smart-connections",
+      "number": 595,
+      "state": "open",
+      "createdAt": "2026-03-14T10:00:00Z",
+      "comments": 23
+    },
+    {
+      "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/612",
+      "title": "Renaming a folder triggers full re-embedding of the vault",
+      "body": "Every rename invalidates embeddings for all notes under it. Would love content-hash based reuse so search stays usable.",
+      "author": "kepano_fan",
+      "repo": "brianpetro/obsidian-smart-connections",
+      "number": 612,
+      "state": "open",
+      "createdAt": "2026-04-28T08:12:00Z",
+      "comments": 11
+    },
+    {
+      "url": "https://github.com/Minitour/semlocal/issues/41",
+      "title": "Incremental reindex instead of rebuilding the whole index",
+      "body": "Rebuilding 12k chunks takes 4 minutes. Could we only embed changed files and patch the index?",
+      "author": "hbrndt",
+      "repo": "Minitour/semlocal",
+      "number": 41,
+      "state": "open",
+      "createdAt": "2026-02-17T19:30:00Z",
+      "comments": 8
+    },
+    {
+      "url": "https://github.com/xenova/transformers.js/issues/1188",
+      "title": "WASM backend: embedding 50k chunks blocks main thread even in a worker",
+      "body": "Using feature-extraction with all-MiniLM-L6-v2 in a Web Worker, the tab still janks while persisting results to IndexedDB. Looking for guidance on batching.",
+      "author": "rn_notes",
+      "repo": "xenova/transformers.js",
+      "number": 1188,
+      "state": "open",
+      "createdAt": "2026-05-06T12:44:00Z",
+      "comments": 15
+    },
+    {
+      "url": "https://github.com/pipecat-ai/pipecat/issues/2204",
+      "title": "RAG lookup adds 100+ ms per turn with hosted vector DB",
+      "body": "Our retrieval processor calls a hosted vector store each turn; p95 is 140 ms. Is there a recommended in-process retriever for latency-sensitive pipelines?",
+      "author": "dsmurrell",
+      "repo": "pipecat-ai/pipecat",
+      "number": 2204,
+      "state": "open",
+      "createdAt": "2026-06-20T15:05:00Z",
+      "comments": 19
+    },
+    {
+      "url": "https://github.com/livekit/agents/issues/1733",
+      "title": "Document a low-latency retrieval pattern for voice agents",
+      "body": "The RAG example hits an external vector DB on every turn. For phone calls this adds noticeable dead air. A local index example would help.",
+      "author": "lsorber",
+      "repo": "livekit/agents",
+      "number": 1733,
+      "state": "closed",
+      "createdAt": "2026-07-09T09:00:00Z",
+      "comments": 7
+    },
+    {
+      "url": "https://github.com/asg017/sqlite-vec/issues/233",
+      "title": "WASM build: loading a 200 MB vector table on startup is slow",
+      "body": "In a Tauri app the first query waits ~3 s while the table loads. Is there a lazy or mmap-style option for the WASM build?",
+      "author": "hbrndt",
+      "repo": "asg017/sqlite-vec",
+      "number": 233,
+      "state": "open",
+      "createdAt": "2026-08-01T07:22:00Z",
+      "comments": 5
+    },
+    {
+      "url": "https://github.com/vercel/ai/issues/7712",
+      "title": "Edge runtime: embedding model cold start adds ~700 ms",
+      "body": "Running a small embedding model in an edge route reloads weights on every cold start. Any pattern for caching or precomputing?",
+      "author": "edgecase_io",
+      "repo": "vercel/ai",
+      "number": 7712,
+      "state": "open",
+      "createdAt": "2026-07-24T21:10:00Z",
+      "comments": 12
+    }
+  ],
+  "repos": [
+    {
+      "fullName": "Minitour/semlocal",
+      "url": "https://github.com/Minitour/semlocal",
+      "description": "Local semantic search for your notes. No vector DB.",
+      "stars": 412,
+      "language": "TypeScript",
+      "topics": ["semantic-search", "local-first", "embeddings", "obsidian"],
+      "owner": "Minitour",
+      "pushedAt": "2026-10-30T00:00:00Z",
+      "homepage": null
+    },
+    {
+      "fullName": "brianpetro/obsidian-smart-connections",
+      "url": "https://github.com/brianpetro/obsidian-smart-connections",
+      "description": "Chat with your notes and see links to related content with local or remote models.",
+      "stars": 4120,
+      "language": "JavaScript",
+      "topics": ["obsidian-plugin", "embeddings", "semantic-search"],
+      "owner": "brianpetro",
+      "pushedAt": "2026-11-18T00:00:00Z",
+      "homepage": "https://smartconnections.app"
+    },
+    {
+      "fullName": "hbrndt/tauri-notes-search",
+      "url": "https://github.com/hbrndt/tauri-notes-search",
+      "description": "Offline semantic search for a Tauri note-taking app (sqlite-vec + MiniLM WASM).",
+      "stars": 138,
+      "language": "Rust",
+      "topics": ["tauri", "offline-first", "wasm", "vector-search"],
+      "owner": "hbrndt",
+      "pushedAt": "2026-11-02T00:00:00Z",
+      "homepage": null
+    },
+    {
+      "fullName": "dsmurrell/voice-rag-bench",
+      "url": "https://github.com/dsmurrell/voice-rag-bench",
+      "description": "Benchmarks retrieval latency inside voice agent turns (pgvector, Pinecone, in-process).",
+      "stars": 267,
+      "language": "Python",
+      "topics": ["voice-agents", "rag", "latency", "benchmark"],
+      "owner": "dsmurrell",
+      "pushedAt": "2026-10-11T00:00:00Z",
+      "homepage": null
+    },
+    {
+      "fullName": "rn-notes/rn-embed-search",
+      "url": "https://github.com/rn-notes/rn-embed-search",
+      "description": "On-device embedding search for React Native notes apps.",
+      "stars": 91,
+      "language": "TypeScript",
+      "topics": ["react-native", "embeddings", "on-device"],
+      "owner": "rn-notes",
+      "pushedAt": "2026-10-20T00:00:00Z",
+      "homepage": null
+    },
+    {
+      "fullName": "edgecase-io/edge-semantic-docs",
+      "url": "https://github.com/edgecase-io/edge-semantic-docs",
+      "description": "Semantic docs search at the edge with precomputed embeddings.",
+      "stars": 54,
+      "language": "TypeScript",
+      "topics": ["edge", "docs-search", "embeddings", "wasm"],
+      "owner": "edgecase-io",
+      "pushedAt": "2026-09-29T00:00:00Z",
+      "homepage": null
+    }
+  ],
+  "users": {
+    "Minitour": { "name": "Tom Kahana", "company": null, "blog": "https://minitour.dev", "location": "Tel Aviv", "twitter": "minitour_dev", "email": null, "followers": 340, "publicRepos": 41, "bio": "Local-first tools. Author of semlocal." },
+    "jtwaleson": { "name": "Jouke Waleson", "company": "@notekit", "blog": "https://jouke.dev", "location": "Amsterdam", "twitter": null, "email": null, "followers": 512, "publicRepos": 63, "bio": "Local-first everything." },
+    "hbrndt": { "name": "Hanna Brandt", "company": null, "blog": null, "location": "Berlin", "twitter": "hbrndt", "email": null, "followers": 188, "publicRepos": 27, "bio": "Rust + Tauri. Building offline note search." },
+    "dsmurrell": { "name": "Dan Murrell", "company": "@callpilot", "blog": "https://callpilot.ai", "location": "London", "twitter": "dsmurrell", "email": null, "followers": 920, "publicRepos": 34, "bio": "CTO @callpilot. Voice agents, latency." },
+    "lsorber": { "name": "Laurent Sorber", "company": null, "blog": null, "location": "Ghent", "twitter": null, "email": null, "followers": 610, "publicRepos": 48, "bio": "ML infra for realtime agents." },
+    "edgecase_io": { "name": "Priya Raman", "company": "@edgecase-io", "blog": "https://edgecase.io", "location": "Bengaluru", "twitter": "priyaonedge", "email": null, "followers": 145, "publicRepos": 19, "bio": "Edge runtimes, docs search." }
+  },
+  "readmes": {
+    "Minitour/semlocal": "# semlocal\n\nLocal semantic search for your notes. No server, no vector DB.\n\n```\nnpx semlocal index ~/vault\nnpx semlocal search \"notes about retrieval latency\"\n```\n\n## Why\nObsidian and plain-markdown users want meaning-based search without shipping notes to an API.\n\n## Roadmap\n- [ ] Incremental reindex (#41)\n- [ ] Obsidian plugin\n- [ ] WASM build for the browser\n",
+    "hbrndt/tauri-notes-search": "# tauri-notes-search\n\nOffline semantic search for a Tauri notes app.\n\n- Embeddings: all-MiniLM-L6-v2 via WASM\n- Storage: sqlite-vec\n\n## Known issues\nStartup takes ~3 s on large vaults while the vector table loads.\n",
+    "dsmurrell/voice-rag-bench": "# voice-rag-bench\n\nHow much of a voice turn does retrieval eat?\n\n| backend | p50 | p99 |\n|---|---|---|\n| hosted vector DB | 62 ms | 140 ms |\n| pgvector (private link) | 18 ms | 90 ms |\n| in-process | 1.2 ms | 4 ms |\n"
+  },
+  "commits": [
+    { "sha": "a1c9e04", "message": "swap substring search for embeddings (wip)", "date": "2026-11-01T00:00:00Z" },
+    { "sha": "7b2f1d9", "message": "cache model weights across worker restarts", "date": "2026-10-28T00:00:00Z" },
+    { "sha": "e44a0c3", "message": "batch embedding writes to IndexedDB", "date": "2026-10-21T00:00:00Z" },
+    { "sha": "0d81b6a", "message": "bench: retrieval p99 under 20 concurrent turns", "date": "2026-10-11T00:00:00Z" },
+    { "sha": "c3307fe", "message": "fix: reindex only changed files", "date": "2026-10-02T00:00:00Z" }
+  ]
+}

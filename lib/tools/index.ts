@@ -7,8 +7,10 @@ import { tavily } from "./tavily";
 import type { Tools } from "./types";
 
 export * from "./types";
-export { TokenBucket, bucket } from "./ratelimit";
+export { TokenBucket, bucket, SlidingWindowLimiter, windowLimiter } from "./ratelimit";
 export { withReplay, replayMode } from "./replay";
+export { forceFixtures, stripHtml } from "./core";
+export { htmlToMarkdown } from "./fetchPage";
 
 /** The tool belt handed to departments via DeptContext.tools. */
 export function createTools(): Tools {
