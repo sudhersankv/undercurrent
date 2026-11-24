@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import { useRun } from "./run-context";
 
 const TABS = [
-  { href: "", label: "Mission" },
-  { href: "/market", label: "Market" },
-  { href: "/leads", label: "Leads" },
-  { href: "/review", label: "Review" },
+  { href: "", label: "Workspace" },
+  { href: "/leads", label: "Accounts & People" },
+  { href: "/review", label: "Outreach" },
   { href: "/inbox", label: "Inbox" },
+  { href: "/pipeline", label: "Pipeline" },
+  { href: "/market", label: "Discovery" },
   { href: "/campaign", label: "Campaign" },
   { href: "/chart", label: "Chart" },
 ] as const;
@@ -71,7 +72,7 @@ export function MissionHeader() {
                 )}
               >
                 {t.label}
-                {t.label === "Review" && queue > 0 ? (
+                {t.label === "Outreach" && queue > 0 ? (
                   <span className="rounded-full bg-lichen px-1.5 font-mono text-[10.5px] font-medium leading-4 text-recessed tabular" aria-label={`${queue} waiting`}>
                     {queue}
                   </span>

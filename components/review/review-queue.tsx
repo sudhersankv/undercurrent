@@ -116,9 +116,9 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     say(id, { tone: "ok", text: "Marked posted. Log replies in Inbox." });
   };
 
-  const approve = async () => {
-    if (!cur || busy || cur.status !== "pending_review") return;
-    if (!isEmailChannel(cur.channel)) return approveManual(cur);
+  const approve = async (opts: { standIn?: boolean } = {}) => {
+    if (!cur || busy || (cur.status !== "pending_review" && cur.status !== "approved")) return;
+    if (!isEmailChannel(cur.channel)) return cur.status === "pending_review" ? approveManual(cur) : undefined;
     const id = cur.id;
     setBusy(id);
     setEditing(false);
@@ -128,13 +128,13 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
       setBusy(null);
       return say(id, { tone: "error", text: errorText(e) });
     }
-    const a = await callApi("PATCH", `/api/drafts/${id}`, { action: "approve", actor: "human:reviewer" });
-    if (!a.ok) {
+    const a = cur.status === "approved" ? null : await callApi("PATCH", `/api/drafts/${id}`, { action: "approve", actor: "human:reviewer" });
+    if (a && !a.ok) {
       setBusy(null);
       return say(id, { tone: "error", text: errorText(a) });
     }
     patch(id, { status: "approved", dirty: false });
-    const s = await callApi("POST", `/api/drafts/${id}/send`, { actor: "reviewer" });
+    const s = await callApi("POST", `/api/drafts/${id}/send`, { actor: "reviewer", standIn: opts.standIn || undefined });
     setBusy(null);
     const j = s.json ?? {};
     const sentDraft = (j.draft ?? null) as Partial<Draft> | null;
@@ -330,7 +330,8 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
           onBody={(v) => patch(cur.id, { body: v, dirty: true })}
           onEdit={edit}
           onSave={save}
-          onApprove={approve}
+          onApprove={() => approve()}
+          onSend={(o) => approve(o)}
           onReject={reject}
           onRegenerate={regenerate}
           onRejectOpen={setRejectOpen}

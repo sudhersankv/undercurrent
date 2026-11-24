@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { useRunStream } from "@/lib/client/run-store";
+import { useRun } from "@/components/mission/run-context";
 import { CampaignTab } from "@/components/campaign";
 import { ReviewQueue } from "./review-queue";
 
@@ -14,7 +14,7 @@ const tab =
 
 /** Review page body: HITL queue + campaign tab, driven by the run stream. */
 export function ReviewScreen({ runId }: { runId: string }) {
-  const { store } = useRunStream(runId);
+  const { store } = useRun();
   const pending = Object.values(store.drafts).filter((d) => d.status === "pending_review").length;
   const campaigns = Object.keys(store.campaigns).length;
   return (

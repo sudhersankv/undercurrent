@@ -3,8 +3,10 @@ import { SafeModeBlocked, type EmailTool, type InboundReply, type SendEmailOpts,
 
 /**
  * AgentMail (AMENDMENTS: replaces Gmail). Ticket #10.
- * - send(): demo footer (SPEC §2.2) + safe mode: every non-allowlisted recipient is redirected to the
- *   stand-in (first SEND_ALLOWLIST address); with SAFE_MODE_REDIRECT=false it throws SafeModeBlocked.
+ * SEND LOCK (non-negotiable): send() only ever delivers to OUR AgentMail inboxes, i.e.
+ * AGENTMAIL_INBOX_ID (the sender) and SEND_ALLOWLIST (stand-ins). Any other recipient throws
+ * SafeModeBlocked, regardless of DEMO_SAFE_MODE. There is no silent redirect: a real lead's draft
+ * reaches a stand-in only when a human clicks "Send to stand-in" (the route passes the stand-in address).
  * - onReply(): one websocket per process (lazy singleton), fans out `message.received` events.
  * - poll(): manual fallback; lists messages of every thread this process sent on.
  * Without AGENTMAIL_API_KEY / AGENTMAIL_INBOX_ID: send logs and returns a fake thread id; no replies.
@@ -21,6 +23,12 @@ export function demoFooter(company = DEMO_COMPANY): string {
   ].join("\n");
 }
 
+function norm(a: string): string {
+  const m = /<([^>]+)>/.exec(a);
+  return (m ? m[1] : a).trim().toLowerCase();
+}
+
+/** Stand-in inboxes (SEND_ALLOWLIST), lowercased. */
 export function allowlist(): string[] {
   return (process.env.SEND_ALLOWLIST ?? "")
     .split(",")
@@ -28,32 +36,49 @@ export function allowlist(): string[] {
     .filter(Boolean);
 }
 
+/** Every inbox we own: the sender (AGENTMAIL_INBOX_ID) plus the stand-ins. */
+export function ourInboxes(): string[] {
+  const sender = (process.env.AGENTMAIL_INBOX_ID ?? "").trim().toLowerCase();
+  return [...new Set([...(sender ? [sender] : []), ...allowlist()])];
+}
+
+export function isOurInbox(addr: string | null | undefined): boolean {
+  if (!addr) return false;
+  return ourInboxes().includes(norm(addr));
+}
+
+/** UI hint only. The send lock does NOT depend on it. */
 export function safeMode(): boolean {
   return process.env.DEMO_SAFE_MODE !== "false";
 }
 
-/** Redirect non-allowlisted recipients to the stand-in (default). False → block instead. */
-export function safeModeRedirect(): boolean {
-  return process.env.SAFE_MODE_REDIRECT !== "false";
+/** Stand-ins with display names ("undercurrent-sam@…" → "Sam"; STANDIN_NAME names the first). */
+export function standIns(): Array<{ name: string; address: string }> {
+  return allowlist().map((address, i) => {
+    const local = address.split("@")[0].split(/[-_.]/).pop() ?? address;
+    const name = i === 0 && process.env.STANDIN_NAME ? process.env.STANDIN_NAME : local.charAt(0).toUpperCase() + local.slice(1);
+    return { name, address };
+  });
+}
+
+/** Default stand-in (Sam): first SEND_ALLOWLIST entry. */
+export function standIn(): { name: string; address: string } | null {
+  return standIns()[0] ?? null;
 }
 
 export function standInName(): string | null {
-  return process.env.STANDIN_NAME || allowlist()[0] || null;
+  return standIn()?.name ?? null;
 }
 
 export function hasAgentMail(): boolean {
   return Boolean(process.env.AGENTMAIL_API_KEY && process.env.AGENTMAIL_INBOX_ID);
 }
 
-/** Pure safe-mode routing decision. Throws SafeModeBlocked when nothing safe is possible. */
-export function resolveRecipient(to: string): { deliveredTo: string; redirected: boolean } {
-  const addr = to.trim().toLowerCase();
-  if (!safeMode()) return { deliveredTo: to.trim(), redirected: false };
-  const list = allowlist();
-  if (list.includes(addr)) return { deliveredTo: addr, redirected: false };
-  const standIn = list[0];
-  if (!safeModeRedirect() || !standIn) throw new SafeModeBlocked(to);
-  return { deliveredTo: standIn, redirected: true };
+/** The send lock. Normalized address of one of our inboxes, else throws SafeModeBlocked. */
+export function resolveRecipient(to: string): { deliveredTo: string; redirected: false } {
+  const addr = norm(to ?? "");
+  if (!addr || !isOurInbox(addr)) throw new SafeModeBlocked(to);
+  return { deliveredTo: addr, redirected: false };
 }
 
 // ---- process-wide state (survives Next dev HMR) ----
@@ -76,6 +101,17 @@ const st: MailState = (g.__ucMail ??= {
   seen: new Set(),
 });
 
+/** Tests: inject a fake (or spy-wrapped) AgentMail client. null restores lazy creation. */
+export function setAgentMailClient(c: AgentMailClient | null): void {
+  st.client = c;
+  try {
+    st.socket?.close();
+  } catch {
+    /* already closed */
+  }
+  st.socket = null;
+}
+
 async function client(): Promise<AgentMailClient> {
   if (!st.client) {
     const { AgentMailClient: Ctor } = await import("agentmail");
@@ -94,17 +130,19 @@ export function trackThread(threadId: string, sinceMs = Date.now()): void {
 }
 
 export async function send(opts: SendEmailOpts): Promise<SendEmailResult> {
-  const { deliveredTo, redirected } = resolveRecipient(opts.to);
+  const { deliveredTo } = resolveRecipient(opts.to); // throws SafeModeBlocked unless it's our inbox
   const text = `${opts.body.trim()}\n\n${demoFooter()}`;
-  const standIn = redirected ? standInName() : null;
+  const stand = standIns().find((s) => s.address === deliveredTo) ?? null;
 
   if (!hasAgentMail()) {
     const threadId = opts.threadId ?? `fixture-thread-${Date.now().toString(36)}`;
-    console.info(`[agentmail] (no key) would send "${opts.subject}" to ${deliveredTo}${redirected ? ` (redirected from ${opts.to})` : ""}`);
+    console.info(`[agentmail] (no key) would send "${opts.subject}" to ${deliveredTo}`);
     trackThread(threadId);
-    return { messageId: `fixture-msg-${Date.now().toString(36)}`, threadId, deliveredTo, standIn, safeModeRedirected: redirected, fixture: true };
+    return { messageId: `fixture-msg-${Date.now().toString(36)}`, threadId, deliveredTo, standIn: stand?.name ?? null, safeModeRedirected: false, fixture: true };
   }
 
+  // Belt and braces: re-check at the network boundary.
+  if (!isOurInbox(deliveredTo)) throw new SafeModeBlocked(deliveredTo);
   const res = await (await client()).inboxes.messages.send(inboxId(), {
     to: [deliveredTo],
     subject: opts.subject,
@@ -112,7 +150,7 @@ export async function send(opts: SendEmailOpts): Promise<SendEmailResult> {
     headers: { "List-Unsubscribe": `<mailto:${inboxId()}?subject=unsubscribe>` },
   });
   trackThread(res.threadId);
-  return { messageId: res.messageId, threadId: res.threadId, deliveredTo, standIn, safeModeRedirected: redirected };
+  return { messageId: res.messageId, threadId: res.threadId, deliveredTo, standIn: stand?.name ?? null, safeModeRedirected: false };
 }
 
 function fromAddress(from: string): string {

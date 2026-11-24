@@ -7,6 +7,7 @@ import { Check, ChevronDown, CircleAlert, Copy, ExternalLink, GitBranch, Lock, X
 import type { Draft, Lead, LeadBrief, SegmentHypothesis, StyleProfile } from "@/lib/contracts";
 import { Button, Eyebrow, Pill, VerdictChip } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { SendControls } from "@/components/outreach/send-controls";
 import { CHANNEL_LABEL, ChannelGlyph, compact, isEmailChannel, isXChannel, ReplyToCard, X_LIMIT, xFollowers, XGlyph, xHandle, xIntentUrl, xProfileUrl, type XDraft, type XLead } from "./x";
 
 export interface SendInfo {
@@ -38,6 +39,8 @@ export interface DraftCardProps {
   onEdit: () => void;
   onSave: () => void;
   onApprove: () => void;
+  /** Email: send to the lead (only if it's our inbox) or to the stand-in. */
+  onSend?: (o: { standIn: boolean }) => void;
   onReject: (reason: string) => void;
   onRegenerate: (instruction: string) => void;
   onRejectOpen: (o: boolean) => void;
@@ -260,7 +263,7 @@ export function DraftCard(p: DraftCardProps) {
 
         {sent ? (
           <div className="rounded-control border border-lichen/30 bg-lichen/5 p-2.5 text-xs" role="status">
-            <p className="text-lichen">{sent.safeMode !== false && sent.standIn ? `Safe mode: delivered to stand-in ${sent.standIn}` : `Sent to ${sent.deliveredTo ?? "recipient"}`}</p>
+            <p className="text-lichen">{sent.safeMode && sent.standIn ? `Sent to stand-in ${sent.standIn} (${sent.deliveredTo ?? ""})` : `Sent to ${sent.deliveredTo ?? "recipient"}`}</p>
             <p className="mt-0.5 font-mono text-muted">thread {sent.threadId}</p>
           </div>
         ) : null}
@@ -273,9 +276,9 @@ export function DraftCard(p: DraftCardProps) {
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
           {isEmail ? (
-            <Button variant="cta" onClick={p.onApprove} disabled={p.busy || done || draft.status === "approved"}>
-              Approve & send
-            </Button>
+            draft.status === "sent" ? null : (
+              <SendControls draftId={draft.id} disabled={p.busy} done={done} onSend={(o) => (p.onSend ? p.onSend(o) : p.onApprove())} />
+            )
           ) : draft.status === "approved" || draft.status === "sent" ? (
             <label className="inline-flex h-8 items-center gap-2 rounded-control border border-hairline-strong px-3 text-[13px] text-strong">
               <Switch.Root
@@ -320,9 +323,9 @@ export function DraftCard(p: DraftCardProps) {
             <InputPopover label="Reason" placeholder="wrong person, weak hook" submit="Reject" onSubmit={p.onReject} />
           </Popover.Root>
           {isEmail ? (
-            <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted" title="Sends go to an allowlisted stand-in inbox. Real developers are never contacted.">
+            <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted" title="Email only goes to our own AgentMail inboxes. Real developers are never contacted.">
               <Lock className="size-3" />
-              Safe mode
+              Send lock
             </span>
           ) : (
             <span className="ml-auto text-[11px] text-muted" title="We never post for you. Open it in X, post, then flip the switch.">

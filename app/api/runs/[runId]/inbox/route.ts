@@ -1,7 +1,7 @@
 import { bus } from "@/lib/events";
 import { getRunSnapshot } from "@/lib/orchestrator";
 import { listOutcomes } from "@/lib/departments/wake/store";
-import { safeMode, standInName } from "@/lib/tools/agentmail";
+import { standInName } from "@/lib/tools/agentmail";
 import { buildInbox } from "@/components/inbox/model";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ runId: string 
   if (!snap && !events.length) return Response.json({ error: "Run not found" }, { status: 404 });
   const data = buildInbox({
     runId,
-    sender: { inboxId: process.env.AGENTMAIL_INBOX_ID || null, standIn: standInName(), safeMode: safeMode() },
+    sender: { inboxId: process.env.AGENTMAIL_INBOX_ID || null, standIn: standInName(), safeMode: true },
     drafts: snap?.drafts ?? [],
     leads: snap?.leads ?? [],
     outcomes,

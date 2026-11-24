@@ -7,6 +7,7 @@ import { tryLlm } from "./llm";
 import { review, type ReviewOpts } from "./reviewer";
 import { saveDraft } from "./store";
 import { xIntentUrl } from "@/lib/tools/x";
+import { registerFor, registerInstruction, type LeadExt } from "./register";
 
 /** SPEC §5.5 Steps C (draft), D (review, 1 regeneration), E (queue as pending_review). */
 
@@ -66,6 +67,18 @@ export function fallbackDraft(a: ComposeArgs): { subject: string | null; body: s
     lines.push(`one more thing on ${name}: ${clipWords(n.detail, 18)}`);
     lines.push(`${a.company.name} handles that in-process, so there's nothing extra to run.`);
     lines.push("no worries if it's not a fit.");
+  } else if (registerFor(a.lead) === "enterprise") {
+    // Business register: the problem first, in their terms, then how we solve it.
+    const acct = (a.lead as LeadExt).account?.name ?? a.lead.company?.name ?? "your team";
+    if (a.referral) lines.push(`${a.referral.referrerName} mentioned you handle ${a.referral.role ?? "this area"}.`);
+    lines.push(`Teams like ${acct} usually hit this: ${clipWords(n.relevanceToUs, 22)}`);
+    lines.push(`We noticed: ${clipWords(n.detail, 22)}`);
+    lines.push(`${a.company.name}: ${clipWords(product, 22)}`);
+    if (a.creditUsd && a.channel === "email") {
+      lines.push(`We've added $${a.creditUsd} in credits to try it, no strings.`);
+      lines.push(DISCLOSURE_LINE);
+    }
+    lines.push("Worth a 20-minute look with your team?");
   } else {
     if (a.referral) lines.push(`${a.referral.referrerName} mentioned you handle ${a.referral.role ?? "this area"}.`);
     lines.push(`saw ${name}. ${clipWords(n.detail, 22)}`);
@@ -80,15 +93,16 @@ export function fallbackDraft(a: ComposeArgs): { subject: string | null; body: s
   let body = lines.join("\n");
   const lim = CHANNEL_LIMITS[a.channel];
   if (lim.chars && body.length > lim.chars) body = clipChars(body, lim.chars);
-  if (a.style?.casing === "lowercase") body = body.replace(/(^|\n)([A-Z])(?=[a-z])/g, (_m, p: string, c: string) => p + c.toLowerCase());
+  if (a.style?.casing === "lowercase" && registerFor(a.lead) === "peer") body = body.replace(/(^|\n)([A-Z])(?=[a-z])/g, (_m, p: string, c: string) => p + c.toLowerCase());
   const subject = lim.subjectWords ? (a.referral ? `${a.referral.referrerName} said to ping you` : `${name} + ${a.company.name}`).split(/\s+/).slice(0, 7).join(" ") : null;
   return { subject, body };
 }
 
 async function generate(ctx: DeptContext, a: ComposeArgs, previousFailures?: string[]) {
   const p = draftPrompt({ ...a, previousFailures });
+  const system = `${p.system}\n${registerInstruction(a.lead)}`;
   const out = await tryLlm("draft", () =>
-    callStructured({ model: "smart", system: p.system, user: p.user, schema: DraftOut, runId: ctx.runId, dept: "tide", temperature: 0.6, abortSignal: ctx.signal }),
+    callStructured({ model: "smart", system, user: p.user, schema: DraftOut, runId: ctx.runId, dept: "tide", temperature: 0.6, abortSignal: ctx.signal }),
   );
   if (!out) return fallbackDraft(a);
   const lim = CHANNEL_LIMITS[a.channel];

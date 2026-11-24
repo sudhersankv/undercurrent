@@ -2,25 +2,28 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { useRunStream } from "@/lib/client/run-store";
+import { useRun } from "@/components/mission/run-context";
 import { Eyebrow } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { isAccount } from "@/lib/client/gtm";
 import { useLeads } from "./model";
 import { LeadGrid } from "./lead-grid";
-import { LeadBoard } from "./lead-board";
 import { FunnelStrip } from "./funnel-strip";
 import { BriefPanel } from "./brief-panel";
-import { WakePanel } from "@/components/wake";
+import { AccountsTable } from "./accounts-table";
 
-type View = "grid" | "board";
+type View = "people" | "accounts";
 
-export function LeadsView({ runId, showWake = true }: { runId: string; showWake?: boolean }) {
-  const { store, connected } = useRunStream(runId);
-  const { rows, moveLead, skipLead, notice, clearNotice } = useLeads(store);
-  const [view, setView] = useState<View>("grid");
+/** Accounts & People: Pilot's leads with the real public data, plus the reach-out panel per person. */
+export function LeadsView({ runId, initialView = "people" }: { runId: string; initialView?: View }) {
+  const { store, status } = useRun();
+  const connected = status === "live";
+  const { rows: allRows, moveLead, skipLead, notice, clearNotice } = useLeads(store);
+  const rows = useMemo(() => allRows.filter((r) => !isAccount(r.lead)), [allRows]);
+  const [view, setView] = useState<View>(initialView);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
-  const selected = useMemo(() => rows.find((r) => r.lead.id === selectedId) ?? null, [rows, selectedId]);
+  const selected = useMemo(() => allRows.find((r) => r.lead.id === selectedId) ?? null, [allRows, selectedId]);
 
   const message = flash ?? notice;
   useEffect(() => {
@@ -56,11 +59,11 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Eyebrow className="flex items-center gap-2">
-            Pilot · Leads
+            Accounts & People
             <span className={cn("size-1.5 rounded-full", connected ? "bg-lichen" : "bg-muted")} title={connected ? "Live" : "Disconnected"} />
           </Eyebrow>
           <h1 className="mt-1 text-[22px]">
-            {rows.length} leads <span className="text-muted">·</span> <span className="text-body">{tierA} tier A</span> <span className="text-muted">·</span>{" "}
+            {rows.length} people <span className="text-muted">·</span> <span className="text-body">{tierA} tier A</span> <span className="text-muted">·</span>{" "}
             <span className="text-body">{approved} in motion</span>
           </h1>
         </div>
@@ -71,7 +74,7 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
             </span>
           )}
           <div role="radiogroup" aria-label="View" className="flex rounded-control border border-hairline bg-recessed p-0.5">
-            {(["grid", "board"] as const).map((v) => (
+            {(["people", "accounts"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -87,14 +90,14 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
         </div>
       </header>
 
-      <FunnelStrip rows={rows} />
+      {view === "people" ? <FunnelStrip rows={rows} /> : null}
 
-      <div className={cn("grid items-start gap-3", selected && "lg:grid-cols-[minmax(0,1fr)_380px]")}>
+      <div className={cn("grid items-start gap-3", selected && "lg:grid-cols-[minmax(0,1fr)_440px]")}>
         <div className="min-w-0">
-          {view === "grid" ? (
-            <LeadGrid rows={rows} selectedId={selectedId} onSelect={setSelectedId} />
+          {view === "people" ? (
+            <LeadGrid rows={rows} store={store} selectedId={selectedId} onSelect={setSelectedId} />
           ) : (
-            <LeadBoard rows={rows} selectedId={selectedId} onSelect={setSelectedId} onMove={(l, to) => moveLead(l, to)} />
+            <AccountsTable store={store} selectedId={selectedId} onSelect={setSelectedId} />
           )}
         </div>
         <AnimatePresence mode="wait">
@@ -103,6 +106,7 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
               <BriefPanel
                 key={selected.lead.id}
                 row={selected}
+                store={store}
                 onClose={() => setSelectedId(null)}
                 onApprove={() => moveLead(selected.lead, "approved", "brief approved")}
                 onSkip={() => {
@@ -115,8 +119,6 @@ export function LeadsView({ runId, showWake = true }: { runId: string; showWake?
           )}
         </AnimatePresence>
       </div>
-
-      {showWake && <WakePanel runId={runId} store={store} />}
     </div>
   );
 }

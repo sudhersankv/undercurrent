@@ -73,9 +73,9 @@ export function InboxView({ runId }: { runId: string }) {
           <span className="truncate font-mono text-body">{data?.sender.inboxId ?? "fixture inbox"}</span>
         </span>
         {data?.sender.safeMode ? (
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted" title="Emails go to an allowlisted stand-in. Real developers are never contacted.">
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted" title="Email only goes to our own AgentMail inboxes. Real developers are never contacted.">
             <Lock className="size-3" />
-            Safe mode{data.sender.standIn ? ` · stand-in ${data.sender.standIn}` : ""}
+            Send lock{data.sender.standIn ? ` · stand-in ${data.sender.standIn}` : ""}
           </span>
         ) : null}
         {error ? (
