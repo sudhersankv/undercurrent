@@ -1,12 +1,6 @@
-import { Eyebrow } from "@/components/ui";
+import { ChartView } from "@/components/chart";
 
-// Placeholder: owned by its UI ticket (see CONTRIBUTING.md).
-export default async function Page({ params }: { params: Promise<{ runId: string }> }) {
+export default async function ChartPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
-  return (
-    <main className="p-8">
-      <Eyebrow>chart</Eyebrow>
-      <p className="font-mono text-[13px]">{runId}</p>
-    </main>
-  );
+  return <ChartView runId={runId} />;
 }
