@@ -1,12 +1,6 @@
-import { Eyebrow } from "@/components/ui";
+import { LeadsView } from "@/components/leads";
 
-// Placeholder: owned by its UI ticket (see CONTRIBUTING.md).
-export default async function Page({ params }: { params: Promise<{ runId: string }> }) {
+export default async function LeadsPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
-  return (
-    <main className="p-8">
-      <Eyebrow>leads</Eyebrow>
-      <p className="font-mono text-[13px]">{runId}</p>
-    </main>
-  );
+  return <LeadsView runId={runId} />;
 }
