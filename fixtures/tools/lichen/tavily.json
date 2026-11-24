@@ -69,6 +69,82 @@
       "content": "Discussion of agent pipelines doing 10-30 small retrievals per task; each 50 ms hop compounds. People move to in-memory indexes and accept rebuilding on restart.",
       "score": 0.58,
       "publishedDate": "2026-08-19"
+    },
+    {
+      "title": "@minitour_dev on X",
+      "url": "https://x.com/minitour_dev/status/1985412236617728321",
+      "content": "semlocal v0.4 is out. search is way faster but still substring under the hood. local embeddings work fine until ~5k notes, then indexing pins a core for minutes and the app feels frozen. anyone doing semantic search in an electron app without a server?",
+      "score": 0.83,
+      "publishedDate": "2026-10-28"
+    },
+    {
+      "title": "@minitour_dev on X",
+      "url": "https://x.com/minitour_dev/status/1979133002841399555",
+      "content": "shipped incremental reindex for semlocal. fwiw the hard part of local-first search isn't the vectors, it's not blocking the UI thread while you build them.",
+      "score": 0.71,
+      "publishedDate": "2026-10-11"
+    },
+    {
+      "title": "@hbrndt on X",
+      "url": "https://x.com/hbrndt/status/1983020945711235072",
+      "content": "tauri + local embeddings for offline note search: model load is 1.8s, embedding 3k notes takes 4 minutes on an M1. users think the app crashed. there has to be a lighter in-process option",
+      "score": 0.8,
+      "publishedDate": "2026-10-21"
+    },
+    {
+      "title": "@vaultgardener on X",
+      "url": "https://x.com/vaultgardener/status/1986702114985119911",
+      "content": "turned on local embeddings in my obsidian vault (6k notes) and obsidian was unusable for 20 minutes while it indexed. love the idea of private semantic search, hate the freeze",
+      "score": 0.82,
+      "publishedDate": "2026-11-01"
+    },
+    {
+      "title": "@vaultgardener on X",
+      "url": "https://x.com/vaultgardener",
+      "content": "Obsidian plugin tinkerer. Local-first, offline, no cloud. Writing about PKM tooling.",
+      "score": 0.4
+    },
+    {
+      "title": "@obsidian_tinkerer on X",
+      "url": "https://x.com/obsidian_tinkerer/status/1981540771230183467",
+      "content": "building an obsidian plugin that needs semantic search on mobile. every option wants a server or a 400mb model. is there anything that runs embeddings in wasm and works offline on ios?",
+      "score": 0.79,
+      "publishedDate": "2026-10-17"
+    },
+    {
+      "title": "@wasm_wren on X",
+      "url": "https://x.com/wasm_wren/status/1984228870563348481",
+      "content": "benchmarked transformers.js embeddings in the browser: ~40ms per doc on a laptop, 5k docs = 3+ minutes of indexing. fine for a demo, painful for a real app. want wasm vector search with embeddings built in",
+      "score": 0.78,
+      "publishedDate": "2026-10-24"
+    },
+    {
+      "title": "@priyaonedge on X",
+      "url": "https://x.com/priyaonedge/status/1980311458021470208",
+      "content": "docs search on the edge: every query to a hosted vector db adds 80-120ms from our edge runtime. moving the index in-process with wasm is the obvious fix, the embedding step is what's slow",
+      "score": 0.74,
+      "publishedDate": "2026-10-14"
+    },
+    {
+      "title": "@dsmurrell on X",
+      "url": "https://x.com/dsmurrell/status/1987015532764008559",
+      "content": "our voice agent turn budget is 800ms. retrieval to a hosted vector db eats 140-320ms of it, every single turn. callers hear that pause. in-process retrieval or bust",
+      "score": 0.85,
+      "publishedDate": "2026-11-02"
+    },
+    {
+      "title": "@dsmurrell on X",
+      "url": "https://x.com/dsmurrell/status/1975550297183531200",
+      "content": "shipped barge-in for callpilot. turns out p95 latency matters more than p50 for how human the agent feels. next target is the RAG hop",
+      "score": 0.66,
+      "publishedDate": "2026-09-30"
+    },
+    {
+      "title": "@latencynerd on X",
+      "url": "https://x.com/latencynerd/status/1982911346671845790",
+      "content": "voice agent latency breakdown from our prod traces: stt 180ms, llm first token 260ms, vector db lookup 210ms p95. the network hop to pinecone is the cheapest thing to delete",
+      "score": 0.8,
+      "publishedDate": "2026-10-20"
     }
   ]
 }

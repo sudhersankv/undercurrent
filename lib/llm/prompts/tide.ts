@@ -107,11 +107,23 @@ export function draftPrompt(args: {
   previousFailures?: string[];
   referral?: { referrerName: string; fromLeadName: string; role?: string };
   followupOf?: string;
+  replyTo?: { url: string; text: string } | null;
 }) {
   const lim = CHANNEL_LIMITS[args.channel];
   const limit = lim.words ? `≤${lim.words} words, subject ≤${lim.subjectWords} words` : `≤${lim.chars} characters, subject null`;
   const spine =
-    args.channel === "followup_email"
+    args.channel === "x_reply"
+      ? `A PUBLIC reply on X to their post${args.replyTo ? `:\n"""${args.replyTo.text.slice(0, 500)}"""` : "."}
+1. React to THEIR specific point first (the number, the tool, the failure they described). No "great post".
+2. One line on how ${args.company.name} handles exactly that, concretely (no link dump, no pitch deck words).
+3. Optional: offer to send credits. Never put the disclosure line in a public reply; no hashtags; no @mentions (the reply already addresses them).
+≤280 characters total. Sound like a dev replying, not a brand account.`
+      : args.channel === "x_dm"
+        ? `A short X DM (≤280 characters).
+1. One line proving we read their posts / work (specific).
+2. One line on what ${args.company.name} does for that problem.
+3. Soft optional ask. No greeting fluff.`
+        : args.channel === "followup_email"
       ? "A short follow-up with ONE new piece of info (not 'bumping this'). Reference the earlier note in a few words."
       : `Structure:
 1. One line proving we looked (a noticed item, specific).
@@ -133,6 +145,7 @@ ${args.noticed.map((n) => `- ${n.detail} (${n.sourceUrl}); why it matters: ${n.r
 Their voice: ${styleSummary(args.style)}
 ${args.referral ? `Referral: ${args.referral.referrerName} (${args.referral.fromLeadName}) said this person handles ${args.referral.role ?? "this area"}. Open with that, e.g. "${args.referral.referrerName} mentioned you handle ${args.referral.role ?? "search"}".` : ""}
 ${args.followupOf ? `Earlier note:\n${args.followupOf}` : ""}
+${args.channel.startsWith("x_") ? "Their voice above comes mostly from their X posts: mirror it (casing, length, emoji habits) without copying phrases." : ""}
 ${spine}
 ${args.instruction ? `Human instruction: ${args.instruction}` : ""}
 ${args.previousFailures?.length ? `The previous draft failed review: ${args.previousFailures.join("; ")}. Fix these.` : ""}`,
@@ -174,17 +187,21 @@ export const CampaignOut = z.object({
     .array(z.object({ angle: z.string(), evidenceUrls: z.array(z.string()), vendorReportedNumbers: z.boolean() }))
     .min(1)
     .max(3),
-  posts: z.array(z.string()).min(1).max(5),
+  posts: z.array(z.string()).min(1).max(5), // 3-5 asked; topped up to 3 deterministically
   framing: z.string(),
 });
 
-export function campaignPrompt(args: { company: CompanyProfile; segmentName: string; pain: string; evidence: Array<{ title: string; url: string; quote: string }> }) {
+export function campaignPrompt(args: { company: CompanyProfile; segmentName: string; pain: string; evidence: Array<{ title: string; url: string; quote: string; source?: string }> }) {
   return {
-    system: `You plan an X (Twitter) listening + seeding campaign for ${args.company.name} in one market segment. Hooks must be tied to the given evidence URLs; set vendorReportedNumbers=true if a hook relies on a vendor-run benchmark. Posts ≤280 chars, dev voice, no hype words (${BANNED_PHRASES.slice(0, 8).join(", ")}...). Framing: how to offer simulated credits ("build something, share if it's good").`,
+    system: `You plan an X (Twitter) listening + seeding campaign for ${args.company.name} in one market segment. Developers live on X; this is the core launch channel. We NEVER auto-post: every post is a draft a human opens and posts.
+listenQueries: 4-8 short X search phrases (2-5 words) in the words devs actually use in the X posts below (pain phrasing, not product names).
+Hooks must be tied to the given evidence URLs; set vendorReportedNumbers=true if a hook relies on a vendor-run benchmark.
+posts: 3-5 posts, each ≤280 chars, dev voice (lowercase ok, concrete numbers/tools, no hashtags, no emoji), no hype words (${BANNED_PHRASES.slice(0, 8).join(", ")}...).
+Framing: how to offer simulated credits ("build something, share if it's good").`,
     user: `${args.company.name}: ${args.company.oneLiner}
 Segment: ${args.segmentName}. Pain: ${args.pain}
 Evidence:
-${args.evidence.map((e) => `- ${e.title} (${e.url}): "${e.quote}"`).join("\n")}`,
+${args.evidence.map((e) => `- ${e.source === "x_post" ? "[X post] " : ""}${e.title} (${e.url}): "${e.quote}"`).join("\n")}`,
   };
 }
 

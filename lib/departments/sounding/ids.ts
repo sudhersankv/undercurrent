@@ -21,6 +21,7 @@ export function shortHash(s: string): string {
 export const evidenceId = (segmentId: string, url: string) => `${segmentId}-ev-${shortHash(url)}`;
 export const ghPersonId = (runId: string, login: string) => `${runId}-person-gh-${slug(login)}`;
 export const hnPersonId = (runId: string, handle: string) => `${runId}-person-hn-${slug(handle)}`;
+export const xPersonId = (runId: string, handle: string) => `${runId}-person-x-${slug(handle)}`;
 export const domainPersonId = (runId: string, domain: string) => `${runId}-person-dom-${slug(domain)}`;
 export const repoNodeId = (runId: string, fullName: string) => `${runId}-repo-${slug(fullName)}`;
 export const techNodeId = (runId: string, name: string) => `${runId}-tech-${slug(name)}`;

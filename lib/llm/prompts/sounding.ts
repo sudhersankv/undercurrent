@@ -3,7 +3,7 @@ import type { CompanyProfile, SegmentHypothesis } from "@/lib/contracts";
 
 // Prompts for Undercurrent Sounding (SPEC §5.3, §11). Typed inputs, no inline prompt strings in dept code.
 
-export const QUERY_SOURCES = ["github_issues", "github_repos", "hn", "web", "web_reddit", "web_jobs"] as const;
+export const QUERY_SOURCES = ["github_issues", "github_repos", "hn", "web", "web_reddit", "web_jobs", "x"] as const;
 export type QuerySource = (typeof QUERY_SOURCES)[number];
 
 export const QueryPlan = z.object({
@@ -28,8 +28,9 @@ export function queryPlanPrompt(i: { profile: CompanyProfile; segment: SegmentHy
       "Queries must find real developers stating the pain, people building workarounds, competitor frustration, or job posts.",
       "Never search for the company itself. Keep queries short (2-6 words), the way developers actually phrase things.",
       "Sources: github_issues (bug/feature reports, pain phrases), github_repos (stack combos like 'electron semantic search'),",
-      "hn (Hacker News stories/comments, 'Ask HN' phrasing), web (blogs), web_reddit (reddit threads), web_jobs (job posts: 'hiring <role> <stack>').",
-      "Spread queries across at least 3 sources.",
+      "hn (Hacker News stories/comments, 'Ask HN' phrasing), web (blogs), web_reddit (reddit threads), web_jobs (job posts: 'hiring <role> <stack>'),",
+      "x (posts on X/Twitter: first-person pain phrases the way devs vent, e.g. 'obsidian indexing freezes', 'vector db latency killing my voice agent').",
+      "Developers live on X: include 2-3 x queries. Spread queries across at least 4 sources.",
     ].join("\n"),
     user: [
       `Segment: ${i.segment.name} (domain: ${i.segment.domain})`,

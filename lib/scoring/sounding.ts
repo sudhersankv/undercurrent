@@ -10,6 +10,7 @@ export const SOURCE_WEIGHT: Record<Evidence["source"], number> = {
   github_repo: 0.7,
   reddit: 0.6,
   web: 0.5,
+  x_post: 0.8,
 };
 
 const DAY_MS = 86_400_000;

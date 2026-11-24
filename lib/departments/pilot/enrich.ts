@@ -1,6 +1,7 @@
-import type { Lead } from "@/lib/contracts";
+import type { Lead, XProfile } from "@/lib/contracts";
 import type { EmailStatus } from "@/lib/scoring/pilot";
 import type { GhUser, HnUser } from "@/lib/tools/types";
+import { normalizeHandle, xProfileUrl } from "@/lib/tools/x";
 import type { DeptContext } from "../shared/types";
 import { domainOf, parseGithubUrl } from "../sounding/ids";
 import { isAggregator, mergeTwo, type Candidate } from "./candidates";
@@ -30,6 +31,10 @@ export interface Enriched extends Candidate {
   hunter: HunterDisplay | null;
   readme: string | null;
   followers: number | null;
+  /** Filled by Pilot's X resolution step (lib/departments/pilot/x.ts). */
+  xProfile?: XProfile | null;
+  /** Lead authored an X post stating the pain. */
+  xPainPost?: boolean;
 }
 
 const latest = (...ds: Array<string | null | undefined>) =>
@@ -140,8 +145,10 @@ export async function enrichCandidate(ctx: DeptContext, c0: Candidate): Promise<
       ? repoName
       : c.kind === "company"
         ? (hunter?.organization ?? domain ?? c.key)
-        : (user?.name ?? c.github ?? c.hn ?? c.key);
-  const projectUrl = repo?.url ?? (c.repo ? `https://github.com/${c.repo}` : domain ? `https://${domain}` : c.github ? `https://github.com/${c.github}` : `https://news.ycombinator.com/user?id=${c.hn}`);
+        : (user?.name ?? c.github ?? c.hn ?? (c.x ? `@${c.x}` : c.key));
+  const projectUrl =
+    repo?.url ??
+    (c.repo ? `https://github.com/${c.repo}` : domain ? `https://${domain}` : c.github ? `https://github.com/${c.github}` : c.hn ? `https://news.ycombinator.com/user?id=${c.hn}` : c.x ? xProfileUrl(c.x) : `https://github.com`);
   const languages = [...new Set([...(repo?.languages ?? []), ...(repo?.language ? [repo.language] : [])])].slice(0, 8);
   const description = [repo?.description, user?.bio, hnUser?.about?.slice(0, 200), c.evidence[0]?.title].filter(Boolean).join(" · ");
 
@@ -154,7 +161,7 @@ export async function enrichCandidate(ctx: DeptContext, c0: Candidate): Promise<
     stars: repo?.stars ?? null,
     lastActive: latest(repo?.pushedAt, ...c.evidence.map((e) => e.createdAt)),
     projectUrl,
-    twitter: user?.twitter ?? null,
+    twitter: normalizeHandle(user?.twitter) ?? normalizeHandle(c.x) ?? null,
     company,
     email,
     emailStatus: status,
@@ -164,18 +171,25 @@ export async function enrichCandidate(ctx: DeptContext, c0: Candidate): Promise<
   };
 }
 
-/** After enrichment an HN handle may resolve to an existing GitHub candidate: fold it in. */
+/**
+ * After enrichment an HN handle may resolve to an existing GitHub candidate, and an X author may be a
+ * GitHub user whose profile lists that handle: fold them in.
+ */
 export function foldLinked(list: Enriched[]): Enriched[] {
   const byGh = new Map<string, Enriched>();
+  const byX = new Map<string, Enriched>();
   const out: Enriched[] = [];
   for (const e of list) {
     const gh = e.github?.toLowerCase();
-    const target = gh && e.key !== `gh:${gh}` ? byGh.get(gh) : undefined;
+    const xh = e.key.startsWith("x:") ? e.key.slice(2) : null;
+    const target = (gh && e.key !== `gh:${gh}` ? byGh.get(gh) : undefined) ?? (xh ? byX.get(xh) : undefined);
     if (target) {
-      Object.assign(target, mergeTwo(target, e), { hn: target.hn ?? e.hn });
+      Object.assign(target, mergeTwo(target, e), { hn: target.hn ?? e.hn, x: target.x ?? e.x, twitter: target.twitter ?? e.twitter });
       continue;
     }
     if (gh) byGh.set(gh, e);
+    const tw = (e.twitter ?? e.x)?.toLowerCase();
+    if (tw && !byX.has(tw)) byX.set(tw, e);
     out.push(e);
   }
   return out;

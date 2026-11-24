@@ -41,11 +41,15 @@ export function activityRecency(lastActive: string | null | undefined, now: Date
 
 export type EmailStatus = "verified" | "low" | "none" | "test-data";
 
-/** §9.6 reachability: verified email 1.0, low-score 0.6, X/GitHub only 0.4 (test data never counts). */
-export function reachability(status: EmailStatus): number {
-  if (status === "verified") return 1.0;
-  if (status === "low") return 0.6;
-  return 0.4;
+/**
+ * §9.6 reachability: verified email 1.0, low-score 0.6, X/GitHub only 0.4 (test data never counts).
+ * X is first-class: a known X handle counts like "X/GitHub only" (0.4); if the lead authored an
+ * X post stating the pain, a public reply is a warm opening → 0.6. Never lowers an email score.
+ */
+export function reachability(status: EmailStatus, x?: { handle: boolean; painPost: boolean }): number {
+  const email = status === "verified" ? 1.0 : status === "low" ? 0.6 : 0.4;
+  const viaX = x?.painPost ? 0.6 : 0.4;
+  return Math.max(email, viaX);
 }
 
 export type LeadRole = "owner" | "contributor" | "commenter";

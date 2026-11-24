@@ -1,5 +1,6 @@
 import { RawEvidence, type CompanyProfile, type PersonaReaction, type Persona, type SegmentHypothesis } from "@/lib/contracts";
 import { QueryPlan, queryPlanPrompt, type QuerySource } from "@/lib/llm/prompts/sounding";
+import { canonicalXUrl, parseXUrl, searchX } from "@/lib/tools/x";
 import type { DeptContext } from "../shared/types";
 
 // SPEC §5.3 steps A (query planning) + B (collect, normalize, dedupe).
@@ -34,7 +35,27 @@ export function fallbackPlan(segment: SegmentHypothesis, phrases: string[], n: n
   ];
   const srcCycle: QuerySource[] = ["github_issues", "hn", "web", "github_repos"];
   phrases.forEach((p, i) => base.push({ source: srcCycle[i % srcCycle.length], query: p.slice(0, 100) }));
-  return dedupeQueries(base).slice(0, n);
+  return ensureXQueries(dedupeQueries(base).slice(0, n), xQueriesFor(segment, phrases));
+}
+
+/** 2-3 X queries per segment: short first-person pain phrases (devs vent on X). */
+export function xQueriesFor(segment: SegmentHypothesis, phrases: string[]): PlannedQuery[] {
+  const clean = (s: string) => s.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
+  const pain = clean(segment.mechanism.pain).split(" ").slice(0, 5).join(" ");
+  const out: PlannedQuery[] = [{ source: "x", query: pain }];
+  for (const p of phrases.slice(0, 2)) out.push({ source: "x", query: clean(p).slice(0, 80) });
+  if (out.length < 3) out.push({ source: "x", query: `${clean(segment.domain).split(" ").slice(0, 3).join(" ")} ${pain.split(" ").slice(0, 3).join(" ")}`.trim() });
+  return dedupeQueries(out).slice(0, 3);
+}
+
+/** X is a first-class source: make sure ≥2 X queries are in the plan (replacing the tail if needed). */
+export function ensureXQueries(plan: PlannedQuery[], xs: PlannedQuery[], min = 2): PlannedQuery[] {
+  const have = plan.filter((q) => q.source === "x").length;
+  if (have >= min) return plan;
+  const add = xs.filter((x) => !plan.some((q) => q.source === "x" && q.query.toLowerCase() === x.query.toLowerCase())).slice(0, min - have);
+  if (!add.length) return plan;
+  const keep = Math.max(0, plan.length - add.length);
+  return dedupeQueries([...plan.slice(0, Math.max(keep, Math.min(plan.length, 3))), ...add]);
 }
 
 function dedupeQueries(qs: PlannedQuery[]): PlannedQuery[] {
@@ -67,7 +88,7 @@ export async function planQueries(
       cacheKey: `sounding.plan:${i.segment.id}:${i.n}`,
     });
     const qs = dedupeQueries(plan.queries);
-    if (qs.length >= Math.min(3, i.n)) return qs.slice(0, i.n);
+    if (qs.length >= Math.min(3, i.n)) return ensureXQueries(qs.slice(0, i.n), xQueriesFor(i.segment, i.searchPhrases));
   } catch (err) {
     ctx.emit({
       dept: "sounding",
@@ -141,6 +162,21 @@ export async function runQuery(ctx: DeptContext, q: PlannedQuery): Promise<RawEv
         );
       break;
     }
+    case "x": {
+      const res = await searchX(t, q.query, 6, "year");
+      for (const post of res.posts)
+        out.push(
+          valid({
+            url: post.url,
+            source: "x_post",
+            title: `@${post.handle} on X`,
+            text: post.text || post.title,
+            author: post.handle,
+            createdAt: post.createdAt,
+          }),
+        );
+      break;
+    }
     case "web":
     case "web_reddit":
     case "web_jobs": {
@@ -158,6 +194,11 @@ export async function runQuery(ctx: DeptContext, q: PlannedQuery): Promise<RawEv
             return "";
           }
         })();
+        const xref = parseXUrl(r.url);
+        if (xref?.statusId) {
+          out.push(valid({ url: canonicalXUrl(r.url), source: "x_post", title: `@${xref.handle} on X`, text: r.content || r.rawContent || r.title, author: xref.handle, createdAt: r.publishedDate || undefined }));
+          continue;
+        }
         const source = /(^|\.)reddit\.com$/.test(host) ? "reddit" : q.source === "web_jobs" ? "job_post" : "web";
         out.push(
           valid({

@@ -1,7 +1,7 @@
 import type { Evidence, SegmentHypothesis } from "@/lib/contracts";
 import type { EdgeInput, GraphNode } from "@/lib/graph/types";
 import type { DeptContext } from "../shared/types";
-import { ghPersonId, hnPersonId, parseGithubUrl, repoNodeId } from "./ids";
+import { ghPersonId, hnPersonId, parseGithubUrl, repoNodeId, xPersonId } from "./ids";
 
 /** SPEC §5.3 graph writes. Returns the node ids touched (chart trace mode). Failures → warning event. */
 export async function writeSoundingGraph(ctx: DeptContext, segment: SegmentHypothesis, evidence: Evidence[]): Promise<string[]> {
@@ -35,6 +35,11 @@ export async function writeSoundingGraph(ctx: DeptContext, segment: SegmentHypot
     }
     const isGh = e.source === "github_issue" || e.source === "github_repo";
     const isHn = e.source === "hn_comment" || e.source === "hn_story";
+    if (e.author && e.source === "x_post") {
+      const pid = xPersonId(runId, e.author);
+      nodes.push({ runId, id: pid, label: "Person", props: { displayName: `@${e.author}`, xHandle: e.author } });
+      edges.push({ runId, type: "AUTHORED", from: pid, to: e.id, props: {} });
+    }
     if (e.author && (isGh || isHn)) {
       const pid = isGh ? ghPersonId(runId, e.author) : hnPersonId(runId, e.author);
       nodes.push({

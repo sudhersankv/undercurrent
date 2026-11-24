@@ -37,6 +37,11 @@ export async function profileFor(ctx: DeptContext): Promise<CompanyProfile> {
   return LICHEN_PROFILE;
 }
 
+function dedupeNoticed<T extends { sourceUrl: string; detail: string }>(xs: T[]): T[] {
+  const seen = new Set<string>();
+  return xs.filter((n) => !seen.has(n.sourceUrl + n.detail) && seen.add(n.sourceUrl + n.detail)).slice(0, 4);
+}
+
 const summary = (l: Lead) => `${l.displayName}${l.primaryRepo ? `, maintains ${l.primaryRepo}` : ""}${l.company ? ` at ${l.company.name}` : ""}.`;
 
 export const tide: Department<TideInput, TideOutput> = {
@@ -55,7 +60,8 @@ export const tide: Department<TideInput, TideOutput> = {
         limit(async () => {
           if (ctx.signal.aborted) return;
           const brief = input.briefs.find((b) => b.leadId === lead.id);
-          const work = await readWork(ctx, lead, brief, input.evidence);
+          const segment = input.segments.find((s) => s.id === lead.segmentId);
+          const work = await readWork(ctx, lead, brief, input.evidence, { pain: segment?.mechanism.pain });
           const noticed = await whatWeNoticed(ctx, input.profile, lead, work);
           const style = await voiceMatch(ctx, lead, work);
           await saveStyle(style);
@@ -65,9 +71,16 @@ export const tide: Department<TideInput, TideOutput> = {
           const gift = !brief || brief.suggestedChannels.includes("credit_gift") || brief.suggestedChannels.includes("email") ? DEFAULT_CREDIT_USD : null;
           const referral = input.referral ? { referrerName: input.referral.referrerName, fromLeadName: input.leads.find((l) => l.id === input.referral?.fromLeadId)?.displayName ?? input.referral.referrerName } : undefined;
 
+          // X first (developers live there): reply to their pain post when we have one, then DM, then email.
+          // Drafts only: a human copies the text or opens the intent link. Nothing is posted or sent to X.
+          if (work.x && !referral) {
+            if (work.x.replyTo) {
+              const replyNoticed = [noticed.find((n) => n.sourceUrl === work.x?.replyTo?.url) ?? work.facts.find((f) => f.sourceUrl === work.x?.replyTo?.url), ...noticed].filter((n): n is NonNullable<typeof n> => !!n);
+              drafts.push(await composeDraft(ctx, { company: input.profile, lead, channel: "x_reply", noticed: dedupeNoticed(replyNoticed), style, creditUsd: null, otherLead, replyTo: work.x.replyTo }));
+            }
+            drafts.push(await composeDraft(ctx, { company: input.profile, lead, channel: "x_dm", noticed, style, creditUsd: null, otherLead, replyTo: work.x.replyTo }));
+          }
           drafts.push(await composeDraft(ctx, { company: input.profile, lead, channel: "email", noticed, style, creditUsd: gift, otherLead, referral }));
-          // Thin channels: only where we have a handle.
-          if (lead.handles.x) drafts.push(await composeDraft(ctx, { company: input.profile, lead, channel: "x_dm", noticed, style, creditUsd: null, otherLead }));
           if (lead.handles.linkedin) drafts.push(await composeDraft(ctx, { company: input.profile, lead, channel: "linkedin", noticed, style, creditUsd: null, otherLead }));
         }),
       ),
@@ -75,7 +88,13 @@ export const tide: Department<TideInput, TideOutput> = {
 
     const campaigns: Campaign[] = [];
     if (!input.referral) {
-      for (const seg of input.segments.filter((s) => s.verdict === "VERIFIED")) {
+      // Campaign brief (Ripple) is core: every VERIFIED segment, else the strongest PROMISING one.
+      const verified = input.segments.filter((s) => s.verdict === "VERIFIED" && s.origin !== "control_negative");
+      const promising = input.segments
+        .filter((s) => s.verdict === "PROMISING" && s.origin !== "control_negative")
+        .sort((a, b) => (b.evidenceStrength ?? 0) - (a.evidenceStrength ?? 0))
+        .slice(0, 1);
+      for (const seg of verified.length ? verified : promising) {
         campaigns.push(await buildCampaign(ctx, input.profile, seg, input.leads, input.evidence).catch((e: unknown) => {
           console.warn("[tide] campaign failed", e);
           return null as never;
@@ -117,7 +136,16 @@ export async function regenerateDraft(ctx: DeptContext, draftId: string, instruc
   const style = await getStyle(draft.leadId);
   return composeDraft(
     ctx,
-    { company: await profileFor(ctx), lead, channel: draft.channel, noticed: draft.noticed, style, creditUsd: draft.creditOffer?.amountUsd ?? null, instruction },
+    {
+      company: await profileFor(ctx),
+      lead,
+      channel: draft.channel,
+      noticed: draft.noticed,
+      style,
+      creditUsd: draft.creditOffer?.amountUsd ?? null,
+      instruction,
+      replyTo: draft.replyToUrl ? { url: draft.replyToUrl, text: draft.noticed.find((n) => n.sourceUrl === draft.replyToUrl)?.detail ?? "" } : null,
+    },
     { draftId: draft.id, history: [...draft.history, { actor: actor as Draft["history"][number]["actor"], action: "regenerate_requested", at: new Date().toISOString(), note: instruction }] },
   );
 }

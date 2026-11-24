@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { LeadStage, SourceUrl } from "./common";
 
+export const XProfile = z.object({
+  handle: z.string(), // without "@"
+  url: SourceUrl, // https://x.com/<handle>
+  followers: z.number().optional(),
+  bioSnippet: z.string().max(200).optional(),
+  recentPostUrls: z.array(SourceUrl), // https://x.com/<handle>/status/<id>, newest / most relevant first
+});
+export type XProfile = z.infer<typeof XProfile>;
+
 export const Lead = z.object({
   id: z.string(),
   runId: z.string(),
@@ -17,6 +26,8 @@ export const Lead = z.object({
   tier: z.enum(["A", "B", "C"]),
   stage: LeadStage,
   isDemoRecipient: z.boolean(),
+  /** X (Twitter) presence. Read via web search only; we never post or DM through the X API. */
+  xProfile: XProfile.optional(),
 });
 export type Lead = z.infer<typeof Lead>;
 

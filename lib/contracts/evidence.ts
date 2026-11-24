@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Confidence, SourceUrl } from "./common";
 
-export const EvidenceSource = z.enum(["github_issue", "github_repo", "hn_story", "hn_comment", "web", "reddit", "job_post"]);
+export const EvidenceSource = z.enum(["github_issue", "github_repo", "hn_story", "hn_comment", "web", "reddit", "job_post", "x_post"]);
 export type EvidenceSource = z.infer<typeof EvidenceSource>;
 
 const Metrics = z.object({ stars: z.number().optional(), points: z.number().optional(), comments: z.number().optional() });

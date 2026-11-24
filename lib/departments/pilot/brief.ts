@@ -7,13 +7,21 @@ import type { Enriched } from "./enrich";
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
+/** X first: developers live on X. x_reply leads when we have a post of theirs to reply to. */
 export function availableChannels(lead: Lead): LeadBrief["suggestedChannels"] {
   const ch: LeadBrief["suggestedChannels"] = [];
+  if (lead.handles.x) ch.push(...(lead.xProfile?.recentPostUrls.length ? (["x_reply", "x_dm"] as const) : (["x_dm", "x_reply"] as const)));
   if (lead.email) ch.push("email");
-  if (lead.handles.x) ch.push("x_dm", "x_reply");
   if (lead.handles.linkedin) ch.push("linkedin");
   ch.push("credit_gift");
   return ch;
+}
+
+/** Keep the model's picks but put X channels first, in availableChannels order. */
+export function xFirst(chosen: LeadBrief["suggestedChannels"], available: LeadBrief["suggestedChannels"]): LeadBrief["suggestedChannels"] {
+  const isX = (c: string) => c === "x_reply" || c === "x_dm";
+  const xs = available.filter(isX);
+  return [...new Set([...xs, ...chosen.filter((c) => !isX(c))])];
 }
 
 /** Evidence bullets we can always vouch for: the lead's own evidence, its project page, then segment support. */
@@ -47,7 +55,7 @@ export function sanitizeBrief(leadId: string, draft: BriefDraft, allowed: Array<
     whyNow: draft.whyNow ? clip(draft.whyNow, 200) : null,
     evidence: ev.slice(0, 5),
     risks: draft.risks.slice(0, 3).map((r) => clip(r, 140)),
-    suggestedChannels: chan.length ? [...new Set(chan)] : channels.slice(0, 2),
+    suggestedChannels: xFirst(chan.length ? [...new Set(chan)] : channels.slice(0, 2), channels),
   });
 }
 

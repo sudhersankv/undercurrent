@@ -178,7 +178,18 @@ const EVIDENCE_SEEDS: EvSeed[] = [
   ["obsidian", "github_repo", "https://github.com/Minitour/semlocal", "semlocal: local semantic search", "builder_exists", "supports", 0.6, "semantic search for your notes, fully local"],
   ["ext", "github_issue", "https://github.com/nicedoc/history-search/issues/31", "Embeddings in a service worker", "pain", "supports", 0.62, "the hosted embedding call makes the popup feel sluggish"],
   ["ext", "hn_comment", "https://news.ycombinator.com/item?id=46616534", "Re: private browsing-history search", "pain", "supports", 0.5, "i don't want my history leaving the browser"],
+  // X posts (developers live on X). Quotes are verbatim from fixtures/tools/lichen/tavily.json.
+  ["localfirst", "x_post", "https://x.com/minitour_dev/status/1985412236617728321", "@minitour_dev on X", "pain", "supports", 0.78, "local embeddings work fine until ~5k notes, then indexing pins a core for minutes and the app feels frozen"],
+  ["localfirst", "x_post", "https://x.com/hbrndt/status/1983020945711235072", "@hbrndt on X", "pain", "supports", 0.74, "embedding 3k notes takes 4 minutes on an M1. users think the app crashed"],
+  ["obsidian", "x_post", "https://x.com/vaultgardener/status/1986702114985119911", "@vaultgardener on X", "pain", "supports", 0.76, "obsidian was unusable for 20 minutes while it indexed"],
+  ["obsidian", "x_post", "https://x.com/obsidian_tinkerer/status/1981540771230183467", "@obsidian_tinkerer on X", "pain", "supports", 0.7, "is there anything that runs embeddings in wasm and works offline on ios?"],
+  ["voice", "x_post", "https://x.com/dsmurrell/status/1987015532764008559", "@dsmurrell on X", "pain", "supports", 0.81, "retrieval to a hosted vector db eats 140-320ms of it, every single turn"],
+  ["voice", "x_post", "https://x.com/latencynerd/status/1982911346671845790", "@latencynerd on X", "competitor_frustration", "supports", 0.72, "the network hop to pinecone is the cheapest thing to delete"],
+  ["ext", "x_post", "https://x.com/wasm_wren/status/1984228870563348481", "@wasm_wren on X", "pain", "supports", 0.66, "5k docs = 3+ minutes of indexing. fine for a demo, painful for a real app"],
 ];
+
+/** Handle from an x.com status URL (fixture data only). */
+const xHandleOf = (url: string) => /^https:\/\/x\.com\/([A-Za-z0-9_]+)\//.exec(url)?.[1] ?? null;
 
 export function lichenEvidence(runId: string): Evidence[] {
   return EVIDENCE_SEEDS.map(([key, source, url, title, type, stance, strength, quote], i) => ({
@@ -187,7 +198,7 @@ export function lichenEvidence(runId: string): Evidence[] {
     url,
     source,
     title,
-    author: source.startsWith("github") ? "fixture-author" : null,
+    author: source === "x_post" ? xHandleOf(url) : source.startsWith("github") ? "fixture-author" : null,
     createdAt: "2026-06-01T00:00:00Z",
     metrics: source === "hn_story" ? { points: 214, comments: 133 } : undefined,
     type,
@@ -198,11 +209,29 @@ export function lichenEvidence(runId: string): Evidence[] {
   }));
 }
 
-type LeadSeed = { key: string; seg: string; name: string; gh: string; repo: string; fit: number; tier: Lead["tier"] };
+type LeadSeed = { key: string; seg: string; name: string; gh: string; repo: string; fit: number; tier: Lead["tier"]; x?: { handle: string; posts: string[]; bio?: string } };
 const LEAD_SEEDS: LeadSeed[] = [
-  { key: "semlocal", seg: "localfirst", name: "semlocal", gh: "Minitour", repo: "Minitour/semlocal", fit: 84, tier: "A" },
+  {
+    key: "semlocal",
+    seg: "localfirst",
+    name: "semlocal",
+    gh: "Minitour",
+    repo: "Minitour/semlocal",
+    fit: 84,
+    tier: "A",
+    x: { handle: "minitour_dev", posts: ["https://x.com/minitour_dev/status/1985412236617728321", "https://x.com/minitour_dev/status/1979133002841399555"], bio: "Local-first tools. Author of semlocal." },
+  },
   { key: "smartconn", seg: "obsidian", name: "Smart Connections", gh: "brianpetro", repo: "brianpetro/obsidian-smart-connections", fit: 79, tier: "A" },
-  { key: "voicebench", seg: "voice", name: "voice-rag-bench", gh: "growwstacks", repo: "growwstacks/voice-rag-bench", fit: 72, tier: "A" },
+  {
+    key: "voicebench",
+    seg: "voice",
+    name: "voice-rag-bench",
+    gh: "growwstacks",
+    repo: "growwstacks/voice-rag-bench",
+    fit: 72,
+    tier: "A",
+    x: { handle: "dsmurrell", posts: ["https://x.com/dsmurrell/status/1987015532764008559", "https://x.com/dsmurrell/status/1975550297183531200"], bio: "CTO @callpilot. Voice agents, latency." },
+  },
   { key: "fossick", seg: "localfirst", name: "Fossick", gh: "fossick-app", repo: "fossick-app/fossick", fit: 61, tier: "B" },
   { key: "godotlore", seg: "games", name: "godot-lore-rag", gh: "loresmith", repo: "loresmith/godot-lore-rag", fit: 48, tier: "B" },
 ];
@@ -216,7 +245,7 @@ export function lichenLeads(runId: string): Lead[] {
     segmentId: segId(runId, l.seg),
     personId: `${runId}-person-${l.gh}`,
     displayName: l.name,
-    handles: { github: l.gh },
+    handles: { github: l.gh, ...(l.x ? { x: l.x.handle } : {}) },
     company: null,
     email: null,
     primaryRepo: l.repo,
@@ -224,6 +253,7 @@ export function lichenLeads(runId: string): Lead[] {
     tier: l.tier,
     stage: "discovered",
     isDemoRecipient: false,
+    ...(l.x ? { xProfile: { handle: l.x.handle, url: `https://x.com/${l.x.handle}`, ...(l.x.bio ? { bioSnippet: l.x.bio } : {}), recentPostUrls: l.x.posts } } : {}),
   }));
 }
 
@@ -238,7 +268,7 @@ export function lichenBriefs(runId: string): LeadBrief[] {
       { text: `Repo: ${l.repo}`, url: `https://github.com/${l.repo}` },
     ],
     risks: ["May prefer to keep their own embedding stack"],
-    suggestedChannels: ["email", "x_dm"],
+    suggestedChannels: l.x ? ["x_reply", "x_dm", "email"] : ["email", "x_dm"],
   }));
 }
 
@@ -299,6 +329,30 @@ export function lichenDrafts(runId: string): Draft[] {
       74,
       [{ check: "voice", reason: "first draft read like a marketer; regenerated once" }],
     ),
+  ];
+}
+
+/** X drafts (copy + intent link only; never posted for the user). */
+export function lichenXDrafts(runId: string): Draft[] {
+  const replyTo = "https://x.com/minitour_dev/status/1985412236617728321";
+  const reply = "the ~5k notes cliff is real. lichen does the embedding + search in-process (wasm), so indexing doesn't sit on the UI thread. happy to send credits if you want to try it on semlocal.";
+  const dm = "saw your semlocal v0.4 post, the substring search + 5k note freeze. lichen is in-process semantic search with embeddings built in, runs offline. if you try it and hit anything weird, i'd like to hear.";
+  const base = draft(runId, "semlocal", "", "", 0);
+  const noticed = [{ detail: '@minitour_dev on X: "local embeddings work fine until ~5k notes, then indexing pins a core for minutes"', sourceUrl: replyTo, relevanceToUs: "They posted the exact pain in-process search removes" }];
+  return [
+    {
+      ...base,
+      id: `${runId}-draft-semlocal-xreply`,
+      channel: "x_reply",
+      subject: null,
+      body: reply,
+      noticed,
+      creditOffer: null,
+      review: { passed: true, specificity: 84, failures: [] },
+      replyToUrl: replyTo,
+      xIntentUrl: `https://x.com/intent/post?${new URLSearchParams({ text: reply, in_reply_to: "1985412236617728321" }).toString()}`,
+    },
+    { ...base, id: `${runId}-draft-semlocal-xdm`, channel: "x_dm", subject: null, body: dm, noticed, creditOffer: null, review: { passed: true, specificity: 80, failures: [] } },
   ];
 }
 
@@ -363,12 +417,15 @@ export function lichenCampaign(runId: string): Campaign {
   return {
     id: `${runId}-camp-localfirst`,
     segmentId: segId(runId, "localfirst"),
-    listenQueries: ["offline semantic search electron", "obsidian local embeddings slow", "vector db without server"],
+    listenQueries: ["local embeddings 5k notes", "obsidian unusable indexed", "offline semantic search electron", "obsidian local embeddings slow", "vector db without server"],
     hooks: [
       { angle: "Indexing shouldn't freeze your app", evidenceUrls: ["https://github.com/brianpetro/obsidian-smart-connections/issues/595"], vendorReportedNumbers: false },
       { angle: "Search that works on a plane", evidenceUrls: ["https://forum.obsidian.md/t/113716"], vendorReportedNumbers: false },
     ],
-    amplifiers: [{ personId: `${runId}-person-Minitour`, tier: 1, reason: "Authored pain evidence and ships a local search tool", evidenceUrl: "https://github.com/Minitour/semlocal", score: 0.81 }],
+    amplifiers: [
+      { personId: `${runId}-person-Minitour`, tier: 1, reason: "Posted the pain on X and builds Minitour/semlocal", evidenceUrl: "https://x.com/minitour_dev/status/1985412236617728321", score: 0.86 },
+      { personId: `${runId}-person-x-hbrndt`, tier: 2, reason: "Posted the pain on X", evidenceUrl: "https://x.com/hbrndt/status/1983020945711235072", score: 0.74 },
+    ],
     posts: [],
     creditGiftPlan: { recipients: [`${runId}-person-Minitour`], amountUsdEach: 50, framing: "Build something, share it if it's good", disclosureRequired: true },
     utmBase: "utm_source=undercurrent&utm_campaign=localfirst",
