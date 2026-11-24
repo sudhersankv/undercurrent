@@ -192,35 +192,78 @@ export function deptCounts(s: RunStore): Record<DeptId, number> {
   };
 }
 
-/** Subscribe to /api/runs/:runId/stream. EventSource resends Last-Event-ID on reconnect; the reducer dedupes by seq. */
+/** Drafts waiting on a human (review-queue badge). */
+export function reviewQueueCount(s: RunStore): number {
+  return Object.values(s.drafts).filter((d) => d.status === "pending_review").length;
+}
+
+export type StreamStatus = "connecting" | "live" | "reconnecting";
+
+/**
+ * Subscribe to /api/runs/:runId/stream.
+ * EventSource resends Last-Event-ID on its own retries; if the browser gives up (readyState CLOSED),
+ * we reopen with `?since=<lastSeq>`. The reducer dedupes by seq, so a resume never duplicates feed items.
+ */
 export function useRunStream(runId: string | null) {
   const [store, dispatch] = useReducer(
-    (s: RunStore, a: { type: "event"; e: RunEvent } | { type: "reset"; runId: string }) =>
-      a.type === "reset" ? initialRunStore(a.runId) : reduceRunEvent(s, a.e),
+    (s: RunStore, a: { type: "events"; es: RunEvent[] } | { type: "reset"; runId: string }) =>
+      a.type === "reset" ? initialRunStore(a.runId) : a.es.reduce(reduceRunEvent, s),
     initialRunStore(runId ?? ""),
   );
-  const [connected, setConnected] = useState(false);
-  const esRef = useRef<EventSource | null>(null);
+  const [status, setStatus] = useState<StreamStatus>("connecting");
+  const lastSeqRef = useRef(0);
 
   useEffect(() => {
     if (!runId) return;
     dispatch({ type: "reset", runId });
-    const es = new EventSource(`/api/runs/${runId}/stream`);
-    esRef.current = es;
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-    es.onmessage = (m) => {
-      try {
-        dispatch({ type: "event", e: JSON.parse(m.data) as RunEvent });
-      } catch {
-        /* ignore malformed */
-      }
+    lastSeqRef.current = 0;
+    let es: EventSource | null = null;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let disposed = false;
+    // batch bursts into one render per frame
+    let pending: RunEvent[] = [];
+    let raf = 0;
+    const flush = () => {
+      raf = 0;
+      if (!pending.length) return;
+      const batch = pending;
+      pending = [];
+      dispatch({ type: "events", es: batch });
     };
+
+    const open = () => {
+      if (disposed) return;
+      const since = lastSeqRef.current;
+      es = new EventSource(`/api/runs/${runId}/stream${since ? `?since=${since}` : ""}`);
+      es.onopen = () => setStatus("live");
+      es.onerror = () => {
+        setStatus("reconnecting");
+        if (es && es.readyState === EventSource.CLOSED) {
+          es.close();
+          retry = setTimeout(open, 2000);
+        }
+      };
+      es.onmessage = (m) => {
+        try {
+          const e = JSON.parse(m.data) as RunEvent;
+          if (e.seq <= lastSeqRef.current) return;
+          lastSeqRef.current = e.seq;
+          pending.push(e);
+          if (!raf) raf = requestAnimationFrame(flush);
+        } catch {
+          /* ignore malformed */
+        }
+      };
+    };
+    open();
+
     return () => {
-      es.close();
-      esRef.current = null;
+      disposed = true;
+      clearTimeout(retry);
+      if (raf) cancelAnimationFrame(raf);
+      es?.close();
     };
   }, [runId]);
 
-  return { store, connected };
+  return { store, connected: status === "live", status };
 }
