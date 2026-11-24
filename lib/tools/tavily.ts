@@ -13,7 +13,51 @@ interface TavilyApiResult {
   published_date?: string;
 }
 
+// Exa (preferred) — same TavilyTool interface so departments don't change.
+interface ExaApiResult {
+  title?: string | null;
+  url: string;
+  text?: string;
+  highlights?: string[];
+  score?: number;
+  publishedDate?: string | null;
+}
+const RANGE_DAYS = { day: 1, week: 7, month: 31, year: 365 } as const;
+
+async function liveExa(opts: TavilySearchOpts): Promise<TavilyResponse> {
+  const range = opts.timeRange ? RANGE_DAYS[opts.timeRange as keyof typeof RANGE_DAYS] : undefined;
+  const body = {
+    query: opts.query,
+    numResults: opts.maxResults,
+    type: "auto",
+    ...(opts.includeDomains?.length ? { includeDomains: opts.includeDomains } : {}),
+    ...(range ? { startPublishedDate: new Date(Date.now() - range * 86_400_000).toISOString() } : {}),
+    contents: { text: { maxCharacters: opts.includeRawContent ? RAW_CAP : 1500 } },
+  };
+  const r = await httpJson<{ results: ExaApiResult[] }>("https://api.exa.ai/search", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": process.env.EXA_API_KEY ?? "" },
+    body: JSON.stringify(body),
+    timeoutMs: 20_000,
+  });
+  return {
+    query: opts.query,
+    results: r.results.map((x): TavilyResult => {
+      const text = x.text ?? x.highlights?.join(" ") ?? "";
+      return {
+        title: x.title ?? x.url,
+        url: x.url,
+        content: text.slice(0, 1500),
+        score: x.score ?? 0,
+        ...(opts.includeRawContent && text ? { rawContent: capBytes(text, RAW_CAP) } : {}),
+        ...(x.publishedDate ? { publishedDate: x.publishedDate } : {}),
+      };
+    }),
+  };
+}
+
 async function live(opts: TavilySearchOpts): Promise<TavilyResponse> {
+  if (process.env.EXA_API_KEY) return liveExa(opts);
   const body = {
     query: opts.query,
     max_results: opts.maxResults,
@@ -57,7 +101,7 @@ function fixture(opts: TavilySearchOpts): TavilyResponse {
 }
 
 export const search = defineTool("tavily.search", {
-  hasKey: () => Boolean(process.env.TAVILY_API_KEY),
+  hasKey: () => Boolean(process.env.EXA_API_KEY || process.env.TAVILY_API_KEY),
   live,
   fixture,
 });
