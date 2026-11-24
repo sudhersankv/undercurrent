@@ -31,8 +31,16 @@ export function allowedUserIds(): Set<string> {
   );
 }
 
-export function isAllowed(userId: number | undefined): boolean {
-  return userId != null && allowedUserIds().has(String(userId));
+/** Entries are numeric user ids or usernames ("@name" or "name", case-insensitive). */
+export function isAllowed(user: { id?: number; username?: string } | number | undefined): boolean {
+  if (user == null) return false;
+  const u = typeof user === "number" ? { id: user } : user;
+  const allowed = allowedUserIds();
+  if (u.id != null && allowed.has(String(u.id))) return true;
+  const name = u.username?.toLowerCase();
+  if (!name) return false;
+  for (const a of allowed) if (a.replace(/^@/, "").toLowerCase() === name) return true;
+  return false;
 }
 
 const HELP = [
@@ -168,12 +176,12 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
   try {
     if (update.callback_query) {
       const q = update.callback_query;
-      if (!isAllowed(q.from.id)) return void (await answerCallback(q.id, "Not allowed"));
+      if (!isAllowed(q.from)) return void (await answerCallback(q.id, "Not allowed"));
       return await onCallback(q);
     }
     const msg = update.message ?? update.edited_message;
     if (!msg?.text || !msg.from) return;
-    if (!isAllowed(msg.from.id)) {
+    if (!isAllowed(msg.from)) {
       await sendMessage(msg.chat.id, `Not allowed. Ask the owner to add your id ${msg.from.id} to TELEGRAM_ALLOWED_USER_IDS.`);
       return;
     }
