@@ -11,6 +11,8 @@ const TABS = [
   { href: "/market", label: "Market" },
   { href: "/leads", label: "Leads" },
   { href: "/review", label: "Review" },
+  { href: "/inbox", label: "Inbox" },
+  { href: "/campaign", label: "Campaign" },
   { href: "/chart", label: "Chart" },
 ] as const;
 
@@ -30,6 +32,7 @@ export function MissionHeader() {
   const pathname = usePathname();
   const base = `/runs/${runId}`;
   const queue = reviewQueueCount(store);
+  const replies = store.replies.length;
   const company = store.profile?.name ?? (store.events[0]?.payload as { companyName?: string } | undefined)?.companyName ?? null;
   const rel = store.reliability;
   const cal = store.calibration;
@@ -71,6 +74,11 @@ export function MissionHeader() {
                 {t.label === "Review" && queue > 0 ? (
                   <span className="rounded-full bg-lichen px-1.5 font-mono text-[10.5px] font-medium leading-4 text-recessed tabular" aria-label={`${queue} waiting`}>
                     {queue}
+                  </span>
+                ) : null}
+                {t.label === "Inbox" && replies > 0 ? (
+                  <span className="font-mono text-[10.5px] text-lichen tabular" aria-label={`${replies} replies`}>
+                    {replies}
                   </span>
                 ) : null}
               </Link>

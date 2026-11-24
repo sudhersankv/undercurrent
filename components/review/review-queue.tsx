@@ -6,6 +6,7 @@ import type { RunStore } from "@/lib/client/run-store";
 import { cn } from "@/lib/utils";
 import { callApi, errorText } from "./api";
 import { DraftCard, StatusPill, type SendInfo } from "./draft-card";
+import { CHANNEL_TABS, ChannelGlyph, channelTab, isEmailChannel } from "./x";
 
 type Msg = { tone: "ok" | "muted" | "error"; text: string };
 type Local = { subject?: string; body?: string; status?: Draft["status"]; sent?: SendInfo; dirty?: boolean };
@@ -25,6 +26,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   const [editing, setEditing] = React.useState(false);
   const [rejectOpen, setRejectOpen] = React.useState(false);
   const [regenOpen, setRegenOpen] = React.useState(false);
+  const [tab, setTab] = React.useState<string | null>(null);
   const bodyRef = React.useRef<HTMLTextAreaElement | null>(null);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -48,11 +50,18 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     return m;
   }, [store.events]);
 
-  const drafts = Object.values(store.drafts).map((d) => {
+  const all = Object.values(store.drafts).map((d) => {
     const l = local[d.id];
     const status = l?.status && RANK[l.status] > RANK[d.status] ? l.status : d.status;
     return { ...d, status, subject: l?.subject ?? d.subject, body: l?.body ?? d.body } as Draft;
   });
+  // X first: X reply → X DM → Email → LinkedIn; default to the first channel that has a draft.
+  const tabs = CHANNEL_TABS.filter((t) => t.id !== "x_post" || all.some((d) => channelTab(d.channel) === "x_post")).map((t) => {
+    const ds = all.filter((d) => channelTab(d.channel) === t.id);
+    return { ...t, total: ds.length, pending: ds.filter((d) => d.status === "pending_review").length };
+  });
+  const activeTab = (tab && tabs.some((t) => t.id === tab) ? tab : null) ?? tabs.find((t) => t.total > 0)?.id ?? tabs[0].id;
+  const drafts = all.filter((d) => channelTab(d.channel) === activeTab);
 
   const i = Math.min(idx, Math.max(0, drafts.length - 1));
   const cur = drafts[i];
@@ -79,8 +88,37 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     return r;
   };
 
+  /** X / LinkedIn: approve only. The human posts it, then flips "Posted manually". */
+  const approveManual = async (d: Draft) => {
+    const id = d.id;
+    setBusy(id);
+    setEditing(false);
+    const e = await saveEdits(d);
+    if (e && !e.ok) {
+      setBusy(null);
+      return say(id, { tone: "error", text: errorText(e) });
+    }
+    const a = await callApi("PATCH", `/api/drafts/${id}`, { action: "approve", actor: "human:reviewer" });
+    setBusy(null);
+    if (!a.ok) return say(id, { tone: "error", text: errorText(a) });
+    patch(id, { status: "approved", dirty: false });
+    say(id, { tone: "ok", text: "Approved. Post it, then mark posted." });
+  };
+
+  const posted = async () => {
+    if (!cur || busy) return;
+    const id = cur.id;
+    setBusy(id);
+    const r = await callApi("POST", "/api/wake/x-reply/posted", { runId, draftId: id, actor: "reviewer" });
+    setBusy(null);
+    if (!r.ok) return say(id, { tone: "error", text: errorText(r) });
+    patch(id, { status: "sent" });
+    say(id, { tone: "ok", text: "Marked posted. Log replies in Inbox." });
+  };
+
   const approve = async () => {
     if (!cur || busy || cur.status !== "pending_review") return;
+    if (!isEmailChannel(cur.channel)) return approveManual(cur);
     const id = cur.id;
     setBusy(id);
     setEditing(false);
@@ -185,7 +223,42 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const tabBar = (
+    <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Channel">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          role="tab"
+          aria-selected={t.id === activeTab}
+          onClick={() => {
+            setTab(t.id);
+            setIdx(0);
+            setEditing(false);
+          }}
+          className={cn(
+            "inline-flex h-8 items-center gap-1.5 rounded-control px-3 text-[13px] transition-colors",
+            t.id === activeTab ? "bg-raised text-strong" : t.total ? "text-body hover:bg-raised hover:text-strong" : "text-muted hover:bg-raised",
+          )}
+        >
+          <ChannelGlyph channel={t.channels[0]} size={12} className={t.id === activeTab ? "text-strong" : "text-muted"} />
+          {t.label}
+          <span className={cn("font-mono text-[11px] tabular-nums", t.pending ? "text-lichen" : "text-muted")}>{t.pending || t.total}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if (!cur) {
+    if (all.length)
+      return (
+        <div className="space-y-4">
+          {tabBar}
+          <div className="rounded-card border border-hairline bg-recessed p-10 text-center">
+            <p className="text-[15px] text-strong">No drafts on this channel.</p>
+          </div>
+        </div>
+      );
     return (
       <div className="rounded-card border border-hairline bg-recessed p-10 text-center">
         <p className="text-[15px] text-strong">No drafts yet.</p>
@@ -201,7 +274,9 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   const pending = drafts.filter((d) => d.status === "pending_review").length;
 
   return (
-    <div ref={rootRef} className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
+    <div ref={rootRef} className="space-y-4">
+    {tabBar}
+    <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
       <nav aria-label="Drafts" className="flex flex-col gap-1">
         <p className="eyebrow mb-1 px-2">
           <span className="font-mono text-body">{pending}</span> to review
@@ -224,7 +299,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
                 <span className="font-mono text-[11px] text-muted">{d.review.specificity}</span>
               </span>
               <span className="flex items-center gap-2">
-                <span className="flex-1 truncate text-[11px] text-muted">{d.subject ?? "(no subject)"}</span>
+                <span className="flex-1 truncate text-[11px] text-muted">{d.subject ?? d.body.split("\n")[0]}</span>
                 <StatusPill status={d.status} />
               </span>
             </button>
@@ -260,6 +335,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
           onRegenerate={regenerate}
           onRejectOpen={setRejectOpen}
           onRegenOpen={setRegenOpen}
+          onPosted={posted}
         />
         <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
           <Kbd k="A">approve</Kbd>
@@ -271,6 +347,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
           </span>
         </p>
       </div>
+    </div>
     </div>
   );
 }

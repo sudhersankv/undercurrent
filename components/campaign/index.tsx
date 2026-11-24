@@ -6,6 +6,18 @@ import type { Campaign } from "@/lib/contracts";
 import type { RunStore } from "@/lib/client/run-store";
 import { Button, Eyebrow, Pill, VerdictChip } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { compact, X_LIMIT, XGlyph, xFollowers, xHandle, xIntentUrl, xProfileUrl, type XDraft } from "@/components/review/x";
+
+type Amplifier = Campaign["amplifiers"][number] & {
+  handle?: string;
+  xHandle?: string;
+  followers?: number;
+  xProfile?: { handle?: string; url?: string; followers?: number };
+};
+
+function isXUrl(u: string) {
+  return /^https?:\/\/(www\.)?(x|twitter)\.com\//.test(u);
+}
 
 function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [done, setDone] = React.useState(false);
@@ -66,11 +78,46 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
       </header>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <Block title="X posts" count={posts.length} className="lg:col-span-2">
+          {posts.length === 0 ? (
+            <p className="text-[13px] text-muted">No posts drafted.</p>
+          ) : (
+            <ul className="space-y-2">
+              {posts.map((d) => (
+                <li key={d.id} className="flex flex-col gap-2 rounded-control bg-recessed p-3 sm:flex-row sm:items-start">
+                  <p className="flex-1 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-strong">{d.body}</p>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className={cn("mr-1 font-mono text-[11px] tabular-nums", d.body.length > X_LIMIT ? "text-danger" : "text-muted")}>
+                      {d.body.length}/{X_LIMIT}
+                    </span>
+                    <Button asChild size="sm" variant="outline">
+                      <a href={xIntentUrl(d as XDraft)} target="_blank" rel="noopener noreferrer">
+                        <XGlyph size={11} />
+                        Open in X
+                      </a>
+                    </Button>
+                    <CopyButton text={d.body} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Block>
+
         <Block title="Listen queries" count={campaign.listenQueries.length}>
           <ul className="space-y-1">
             {campaign.listenQueries.map((q) => (
               <li key={q} className="flex items-center gap-2 rounded-control bg-recessed py-1 pr-1 pl-3">
-                <span className="flex-1 truncate font-mono text-[12px] text-strong">{q}</span>
+                <a
+                  href={`https://x.com/search?q=${encodeURIComponent(q)}&f=live`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex min-w-0 flex-1 items-center gap-2 font-mono text-[12px] text-strong hover:text-lichen"
+                  title="Search on X"
+                >
+                  <XGlyph size={11} className="text-muted group-hover:text-lichen" />
+                  <span className="truncate">{q}</span>
+                </a>
                 <CopyButton text={q} />
               </li>
             ))}
@@ -88,7 +135,8 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
                 <div className="mt-1 flex flex-wrap gap-2">
                   {h.evidenceUrls.map((u) => (
                     <a key={u} href={u} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-[11px] text-muted hover:text-lichen">
-                      {host(u)}
+                      {isXUrl(u) ? <XGlyph size={10} /> : null}
+                      {isXUrl(u) ? (/x\.com\/([^/]+)/.exec(u.replace("twitter.com", "x.com"))?.[1] ?? host(u)) : host(u)}
                       <ExternalLink className="size-3" />
                     </a>
                   ))}
@@ -103,13 +151,26 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
             <p className="text-[13px] text-muted">No amplifiers found.</p>
           ) : (
             <ul className="divide-y divide-hairline">
-              {campaign.amplifiers.map((a) => (
+              {(campaign.amplifiers as Amplifier[]).map((a) => {
+                const lead = Object.values(store.leads).find((l) => l.personId === a.personId);
+                const handle = (a.xProfile?.handle ?? a.xHandle ?? a.handle ?? xHandle(lead))?.replace(/^@/, "");
+                const followers = a.xProfile?.followers ?? a.followers ?? xFollowers(lead);
+                const url = a.xProfile?.url ?? (handle ? `https://x.com/${handle}` : xProfileUrl(lead));
+                return (
                 <li key={a.personId} className="flex items-start gap-3 py-2 first:pt-0 last:pb-0">
                   <Pill tone="solid" mono>
                     T{a.tier}
                   </Pill>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-strong">{personName(a.personId)}</p>
+                    <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-strong">
+                      {personName(a.personId)}
+                      {handle && url ? (
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-[12px] text-body hover:text-lichen">
+                          <XGlyph size={10} />@{handle}
+                        </a>
+                      ) : null}
+                      {followers != null ? <span className="font-mono text-[11px] text-muted">{compact(followers)} followers</span> : null}
+                    </p>
                     <p className="text-xs text-body">{a.reason}</p>
                     <a href={a.evidenceUrl} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-flex items-center gap-1 font-mono text-[11px] text-muted hover:text-lichen">
                       {host(a.evidenceUrl)}
@@ -118,7 +179,8 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
                   </div>
                   <span className="font-mono text-[12px] text-lichen">{a.score.toFixed(2)}</span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </Block>
@@ -135,21 +197,6 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
             <Pill tone="lichen">Disclosure required</Pill>
           </div>
           <p className="mt-2 text-xs text-muted">Recipients must say the credits came from us.</p>
-        </Block>
-
-        <Block title="Posts" count={posts.length} className="lg:col-span-2">
-          {posts.length === 0 ? (
-            <p className="text-[13px] text-muted">No posts drafted.</p>
-          ) : (
-            <ul className="space-y-2">
-              {posts.map((d) => (
-                <li key={d.id} className="flex items-start gap-3 rounded-control bg-recessed p-3">
-                  <p className="flex-1 font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap text-strong">{d.body}</p>
-                  <CopyButton text={d.body} />
-                </li>
-              ))}
-            </ul>
-          )}
         </Block>
 
         <Block title="UTM links" className="lg:col-span-2">

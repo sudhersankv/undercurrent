@@ -5,7 +5,8 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { createColumnHelper, createSortedRowModel, rowSortingFeature, sortFn_alphanumeric, sortFn_basic, tableFeatures, useTable } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { STAGES, STAGE_LABEL, timeAgo, type LeadRow } from "./model";
-import { ActorBadge, EmailStatus, FitBar, Handles, TierPill } from "./parts";
+import { ActorBadge, EmailStatus, FitBar, Handles, TierPill, XHandleCell } from "./parts";
+import { xHandle } from "@/components/review/x";
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -26,6 +27,7 @@ const columns = h.columns([
       </span>
     ),
   }),
+  h.accessor((r) => (xHandle(r.lead) ? 1 : 0), { id: "x", header: "X", sortFn: "basic", cell: ({ row }) => <XHandleCell lead={row.original.lead} /> }),
   h.display({ id: "handles", header: "Handles", cell: ({ row }) => <Handles handles={row.original.lead.handles} /> }),
   h.accessor((r) => r.segmentName, { id: "segment", header: "Segment", sortFn: "alphanumeric", cell: (c) => <span className="block max-w-[200px] truncate">{c.getValue()}</span> }),
   h.accessor((r) => r.lead.tier, { id: "tier", header: "Tier", sortFn: "alphanumeric", cell: ({ row }) => <TierPill tier={row.original.lead.tier} /> }),
@@ -70,7 +72,7 @@ function Ago({ iso }: { iso: string | null }) {
 const NUMERIC = new Set(["fit", "evidence"]);
 
 export function LeadGrid({ rows, selectedId, onSelect }: { rows: LeadRow[]; selectedId: string | null; onSelect: (id: string) => void }) {
-  const table = useTable({ features, columns, data: rows, getRowId: (r) => r.lead.id, initialState: { sorting: [{ id: "fit", desc: true }] } });
+  const table = useTable({ features, columns, data: rows, getRowId: (r) => r.lead.id, initialState: { sorting: [{ id: "x", desc: true }, { id: "fit", desc: true }] } });
 
   return (
     <div className="overflow-x-auto rounded-card border border-hairline bg-recessed">
