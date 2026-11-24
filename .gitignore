@@ -1,5 +1,12 @@
-﻿node_modules/
+node_modules/
 .next/
+out/
 .env
 .env.local
+.env*.local
 *.log
+*.tsbuildinfo
+next-env.d.ts
+/drizzle/meta/
+.vercel
+fixtures/**/_live/

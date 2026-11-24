@@ -1,0 +1,130 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Undercurrent design tokens (AMENDMENTS UI): "abyssal terminal", forest + lichen.
+ * No shadows: depth comes from surface steps (recessed < canvas < raised < raised-hover).
+ * Use as Tailwind utilities: bg-canvas, bg-raised, text-strong, text-body, text-muted, border-hairline,
+ * text-lichen, bg-verdict-verified, rounded-card, rounded-control, font-mono, etc.
+ */
+@theme {
+  /* surfaces */
+  --color-canvas: #0c1f16;
+  --color-recessed: #08170f;
+  --color-raised: #143322;
+  --color-raised-hover: #1c4430;
+
+  /* text */
+  --color-strong: #f4faf5;
+  --color-body: #b3c4b8;
+  --color-muted: #6f7f74;
+
+  /* accents */
+  --color-lichen: #d8f5a2;
+  --color-cta-from: #2e7d4f;
+  --color-cta-via: #cff5d6;
+  --color-cta-to: #f1e6ff;
+  --color-hairline: rgba(244, 250, 245, 0.08);
+  --color-hairline-strong: rgba(244, 250, 245, 0.16);
+  --color-danger: #d9a08f;
+
+  /* verdicts (map + verdict chips only) */
+  --color-verdict-verified: #d8f5a2;
+  --color-verdict-promising: #e9ddb0;
+  --color-verdict-hype: #d9a08f;
+  --color-verdict-killed: #3a4a40;
+  --color-verdict-pending: #6f7f74;
+
+  /* radii */
+  --radius-card: 16px;
+  --radius-control: 6px;
+
+  /* type */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --tracking-eyebrow: 0.12em;
+  --tracking-tightest: -0.035em;
+
+  /* motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* shadcn semantic aliases (so generated components pick up the palette) */
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-strong);
+  --color-card: var(--color-raised);
+  --color-card-foreground: var(--color-strong);
+  --color-popover: var(--color-raised);
+  --color-popover-foreground: var(--color-strong);
+  --color-primary: var(--color-lichen);
+  --color-primary-foreground: var(--color-recessed);
+  --color-secondary: var(--color-raised);
+  --color-secondary-foreground: var(--color-strong);
+  --color-muted-foreground: var(--color-muted);
+  --color-accent: var(--color-raised-hover);
+  --color-accent-foreground: var(--color-strong);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-hairline);
+  --color-input: var(--color-hairline-strong);
+  --color-ring: var(--color-lichen);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-strong);
+    font-weight: 500;
+    letter-spacing: var(--tracking-tightest);
+    line-height: 1.1;
+  }
+  ::selection {
+    background: var(--color-lichen);
+    color: var(--color-recessed);
+  }
+  :focus-visible {
+    outline: 1px solid var(--color-lichen);
+    outline-offset: 2px;
+  }
+}
+
+@utility eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--color-muted);
+}
+
+@utility bg-cta {
+  background-image: linear-gradient(100deg, var(--color-cta-from) 0%, var(--color-cta-via) 55%, var(--color-cta-to) 100%);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
