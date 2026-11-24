@@ -1,0 +1,74 @@
+{
+  "results": [
+    {
+      "title": "Ask HN: How are you doing RAG locally?",
+      "url": "https://news.ycombinator.com/item?id=46616529",
+      "content": "Thread on local retrieval setups. Many run sqlite-vec or LanceDB; several complain that indexing a few thousand notes with a browser embedding model takes minutes and blocks the UI.",
+      "score": 0.84,
+      "publishedDate": "2026-01-12"
+    },
+    {
+      "title": "Smart Connections: local embedding model makes Obsidian unresponsive while indexing",
+      "url": "https://github.com/brianpetro/obsidian-smart-connections/issues/595",
+      "content": "Users with 4k+ note vaults report Obsidian freezing for several minutes when the local embedding model runs. Workarounds: exclude folders, switch to an API model, or index overnight.",
+      "score": 0.81,
+      "publishedDate": "2026-03-14"
+    },
+    {
+      "title": "Why our voice agent's RAG step was eating 40% of the latency budget",
+      "url": "https://www.latent.space/p/voice-agent-latency-budget",
+      "content": "Breaking down a 800 ms turn: STT 180 ms, LLM first token 260 ms, retrieval 140-320 ms because every lookup is a network hop to a hosted vector DB. Moving retrieval in-process cut p95 by 210 ms.",
+      "score": 0.79,
+      "publishedDate": "2026-06-03"
+    },
+    {
+      "title": "Running embeddings in the browser with WebAssembly: a practical guide",
+      "url": "https://dev.to/fdaudens/running-embeddings-in-the-browser-with-wasm-3k2p",
+      "content": "Transformers.js with a quantized MiniLM runs at ~25 ms per sentence on a laptop in WASM SIMD; WebGPU helps on Chrome but Safari support is patchy. Index size and cold load dominate for large corpora.",
+      "score": 0.77,
+      "publishedDate": "2026-04-21"
+    },
+    {
+      "title": "Local-first software: semantic search without a server",
+      "url": "https://www.inkandswitch.com/local-first-search/",
+      "content": "Local-first apps need search that works offline and syncs. Options: SQLite FTS5 for keywords, sqlite-vec or hnswlib-wasm for vectors. Embedding generation on-device is the bottleneck on mobile.",
+      "score": 0.74,
+      "publishedDate": "2026-02-09"
+    },
+    {
+      "title": "pgvector vs in-process vector search for latency-sensitive agents",
+      "url": "https://blog.vapi.ai/pgvector-vs-in-process-retrieval",
+      "content": "Benchmarks a pgvector HNSW index over a private link against an in-process index: 18 ms vs 1.2 ms p50, 85 ms vs 4 ms p99 under load. For voice, tail latency matters more than recall@10.",
+      "score": 0.72,
+      "publishedDate": "2026-07-15"
+    },
+    {
+      "title": "Edge functions and embedding models: cold starts hurt",
+      "url": "https://vercel.com/blog/edge-embeddings-cold-start",
+      "content": "Loading a 23 MB embedding model in an edge function adds 400-900 ms on cold start. Teams cache the model in a global or precompute embeddings at build time.",
+      "score": 0.69,
+      "publishedDate": "2026-05-28"
+    },
+    {
+      "title": "Show HN: semlocal - local semantic search for your notes, no vector DB",
+      "url": "https://news.ycombinator.com/item?id=45910233",
+      "content": "Open-source CLI that indexes markdown notes with a small local model and stores vectors in a single file. Commenters ask about incremental reindexing and Obsidian integration.",
+      "score": 0.66,
+      "publishedDate": "2025-11-30"
+    },
+    {
+      "title": "Hybrid search for docs sites: BM25 + vectors in the client",
+      "url": "https://docs.orama.com/blog/hybrid-search-docs",
+      "content": "Docs search that runs entirely in the browser: BM25 for exact API names, vectors for intent queries. Bundle size and index rebuild time are the trade-offs.",
+      "score": 0.61,
+      "publishedDate": "2026-03-02"
+    },
+    {
+      "title": "Retrieval latency is the new cold start (r/LocalLLaMA)",
+      "url": "https://www.reddit.com/r/LocalLLaMA/comments/1k2x9df/retrieval_latency_is_the_new_cold_start/",
+      "content": "Discussion of agent pipelines doing 10-30 small retrievals per task; each 50 ms hop compounds. People move to in-memory indexes and accept rebuilding on restart.",
+      "score": 0.58,
+      "publishedDate": "2026-08-19"
+    }
+  ]
+}

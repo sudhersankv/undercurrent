@@ -1,0 +1,20 @@
+{
+  "pages": {
+    "moss.dev": {
+      "title": "Moss: semantic search that runs inside your app",
+      "markdown": "# Semantic search that runs inside your app\n\nIn-process retrieval for agents, apps and devices. Compiled to WASM: runs in the browser, on the edge and offline. No vector database, no network hop.\n\n## Why teams switch\n\n- **Sub-10 ms retrieval** in your own runtime. No round trip per query.\n- **Works offline.** Index locally, sync from the cloud when online.\n- **Embeddings included.** Send text; we embed it with a built-in model.\n- **TypeScript and Python SDKs.**\n\n## Built for voice agents\n\nVoice turns have an 800 ms budget. Retrieval should not take 150 ms of it. Load your index into the agent process and query it in single-digit milliseconds.\n\n## Pricing\n\nFree tier with 3 indexes. Usage pricing after that.\n"
+    },
+    "moss.dev/docs": {
+      "title": "Docs | Moss",
+      "markdown": "# Quickstart\n\n```ts\nimport { MossClient } from \"@moss-js/moss\";\nconst client = new MossClient(projectId, projectKey);\nawait client.createIndex(\"faqs\", docs);\nawait client.loadIndex(\"faqs\");\nconst results = await client.query(\"faqs\", \"return policy\", { topK: 3 });\n```\n\n## Concepts\n\n- **Index**: documents plus embeddings, built in the cloud, loaded into your process.\n- **Query**: hybrid keyword + vector search, runs locally after `loadIndex`.\n- **Metadata filters**: `$eq`, `$and` on document metadata.\n"
+    },
+    "moss.dev/pricing": {
+      "title": "Pricing | Moss",
+      "markdown": "# Pricing\n\n## Free\n3 indexes, community support.\n\n## Usage\nPay per active device and per indexed document. Volume discounts for voice platforms.\n"
+    }
+  },
+  "default": {
+    "title": "Fixture page",
+    "markdown": "# Fixture page\n\nNo recorded content for this URL. Tools are running on fixtures.\n"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "hits": [
+    {
+      "id": "46616529",
+      "url": "https://news.ycombinator.com/item?id=46616529",
+      "kind": "story",
+      "title": "Ask HN: How are you doing RAG locally?",
+      "text": "Curious what people use for local retrieval without running a vector DB. I tried Chroma in a sidecar but it doubles memory and I just want search over ~5k markdown files.",
+      "author": "mkoryak",
+      "createdAt": "2026-01-12T16:04:11Z",
+      "points": 214,
+      "numComments": 133,
+      "storyUrl": null
+    },
+    {
+      "id": "46617102",
+      "url": "https://news.ycombinator.com/item?id=46617102",
+      "kind": "comment",
+      "title": "Ask HN: How are you doing RAG locally?",
+      "text": "sqlite-vec + a quantized MiniLM. Works, but the embedding step is what kills you. Reindexing my Obsidian vault after a sync takes ~6 minutes on an M1 and the app is basically frozen during it.",
+      "author": "jtwaleson",
+      "createdAt": "2026-01-12T17:22:40Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "46618844",
+      "url": "https://news.ycombinator.com/item?id=46618844",
+      "kind": "comment",
+      "title": "Ask HN: How are you doing RAG locally?",
+      "text": "We ship a voice agent and every retrieval hop to our hosted vector DB was 60-120 ms. In a voice turn that is the difference between natural and awkward. We ended up keeping a small index in-process and refreshing it every few minutes.",
+      "author": "dsmurrell",
+      "createdAt": "2026-01-12T19:03:05Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "45910233",
+      "url": "https://news.ycombinator.com/item?id=45910233",
+      "kind": "story",
+      "title": "Show HN: semlocal - local semantic search for your notes, no vector DB",
+      "text": "I wanted semantic search over my notes without running a server. semlocal embeds markdown with a small model and keeps vectors in one file next to your vault.",
+      "author": "Minitour",
+      "createdAt": "2025-11-30T14:12:00Z",
+      "points": 168,
+      "numComments": 71,
+      "storyUrl": "https://github.com/Minitour/semlocal"
+    },
+    {
+      "id": "45911560",
+      "url": "https://news.ycombinator.com/item?id=45911560",
+      "kind": "comment",
+      "title": "Show HN: semlocal - local semantic search for your notes, no vector DB",
+      "text": "Does it reindex incrementally? Smart Connections re-embeds half my vault whenever I rename a folder. That is the single most annoying thing about local semantic search right now.",
+      "author": "kepano_fan",
+      "createdAt": "2025-11-30T16:40:12Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "47120318",
+      "url": "https://news.ycombinator.com/item?id=47120318",
+      "kind": "story",
+      "title": "WASM embeddings are fast enough now. Indexing is not.",
+      "text": "Benchmarks of MiniLM in WASM SIMD vs WebGPU across browsers. Per-sentence inference is ~20 ms; the problem is building and persisting the index for 50k chunks in IndexedDB.",
+      "author": "xenova_watch",
+      "createdAt": "2026-04-02T09:15:33Z",
+      "points": 302,
+      "numComments": 118,
+      "storyUrl": "https://blog.example.dev/wasm-embeddings-indexing"
+    },
+    {
+      "id": "47121907",
+      "url": "https://news.ycombinator.com/item?id=47121907",
+      "kind": "comment",
+      "title": "WASM embeddings are fast enough now. Indexing is not.",
+      "text": "Same experience building offline search for a Tauri note app. Inference is fine; persisting the HNSW graph and loading it on startup takes longer than the user is willing to wait.",
+      "author": "hbrndt",
+      "createdAt": "2026-04-02T11:48:20Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "47880412",
+      "url": "https://news.ycombinator.com/item?id=47880412",
+      "kind": "story",
+      "title": "Our voice agent latency budget, line by line",
+      "text": "STT 180 ms, retrieval 140 ms, LLM first token 260 ms, TTS first byte 120 ms. Retrieval was the only piece we fully controlled, so we moved it in-process.",
+      "author": "pipecat_dev",
+      "createdAt": "2026-06-05T13:00:00Z",
+      "points": 189,
+      "numComments": 64,
+      "storyUrl": "https://www.latent.space/p/voice-agent-latency-budget"
+    },
+    {
+      "id": "47881733",
+      "url": "https://news.ycombinator.com/item?id=47881733",
+      "kind": "comment",
+      "title": "Our voice agent latency budget, line by line",
+      "text": "pgvector over a private link gave us 18 ms p50 but 90 ms p99 under load. For voice it's the tail that users notice. Would pay for something embedded that just works.",
+      "author": "lsorber",
+      "createdAt": "2026-06-05T15:31:02Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "48230115",
+      "url": "https://news.ycombinator.com/item?id=48230115",
+      "kind": "story",
+      "title": "Ask HN: Semantic search on the edge without cold starts?",
+      "text": "Our edge function loads a 23 MB model on every cold start, adding ~700 ms. Precomputing embeddings helps for docs but not for user queries.",
+      "author": "edgecase_io",
+      "createdAt": "2026-07-22T18:45:00Z",
+      "points": 97,
+      "numComments": 41,
+      "storyUrl": null
+    },
+    {
+      "id": "48612090",
+      "url": "https://news.ycombinator.com/item?id=48612090",
+      "kind": "comment",
+      "title": "Ask HN: What's your stack for docs search in 2026?",
+      "text": "Algolia for keywords, but users type questions now. We tried client-side vectors; index size in the bundle was the blocker for a 3k-page docs site.",
+      "author": "rauchg_fan",
+      "createdAt": "2026-09-10T10:02:44Z",
+      "points": null,
+      "numComments": null,
+      "storyUrl": null
+    },
+    {
+      "id": "48901277",
+      "url": "https://news.ycombinator.com/item?id=48901277",
+      "kind": "story",
+      "title": "Replacing substring search with embeddings in a React Native app",
+      "text": "Write-up of moving a notes app from substring matching to on-device embeddings: model size, battery, and why we cap the index at 10k chunks.",
+      "author": "rn_notes",
+      "createdAt": "2026-10-14T08:20:00Z",
+      "points": 76,
+      "numComments": 29,
+      "storyUrl": "https://blog.example.dev/rn-on-device-embeddings"
+    }
+  ],
+  "users": {
+    "mkoryak": { "about": "Building small tools for thinking. Obsidian power user.", "karma": 8421, "createdAt": "2012-05-03T00:00:00Z" },
+    "jtwaleson": { "about": "Engineer. Local-first everything. https://jouke.dev", "karma": 15230, "createdAt": "2010-09-14T00:00:00Z" },
+    "dsmurrell": { "about": "CTO at a voice AI startup. Latency nerd.", "karma": 3120, "createdAt": "2016-02-11T00:00:00Z" },
+    "Minitour": { "about": "Author of semlocal. github.com/Minitour", "karma": 1904, "createdAt": "2018-07-21T00:00:00Z" },
+    "hbrndt": { "about": "Tauri apps, Rust, offline search.", "karma": 2277, "createdAt": "2019-03-30T00:00:00Z" },
+    "lsorber": { "about": "ML infra for realtime agents.", "karma": 4410, "createdAt": "2014-11-02T00:00:00Z" }
+  }
+}

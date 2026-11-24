@@ -83,3 +83,60 @@ export function bucket(name: string, perInterval: number, intervalMs: number): T
   }
   return b;
 }
+
+/**
+ * Strict sliding-window limiter: at most `limit` starts in any `windowMs` window
+ * (a token bucket allows up to 2x at the window edge; GitHub search counts per minute).
+ */
+export class SlidingWindowLimiter {
+  private starts: number[] = [];
+  private chain: Promise<void> = Promise.resolve();
+
+  constructor(
+    private limit: number,
+    private windowMs: number,
+    private now: () => number = () => Date.now(),
+  ) {}
+
+  take(): Promise<void> {
+    const next = this.chain.then(async () => {
+      for (;;) {
+        const t = this.now();
+        while (this.starts.length && t - this.starts[0] >= this.windowMs) this.starts.shift();
+        if (this.starts.length < this.limit) {
+          this.starts.push(t);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, this.windowMs - (t - this.starts[0]) + 1));
+      }
+    });
+    this.chain = next;
+    return next;
+  }
+
+  wrap<A extends unknown[], R>(fn: (...a: A) => Promise<R>): (...a: A) => Promise<R> {
+    return async (...a: A) => {
+      await this.take();
+      return fn(...a);
+    };
+  }
+}
+
+const gw = globalThis as unknown as { __ucWindows?: Map<string, SlidingWindowLimiter> };
+const windows: Map<string, SlidingWindowLimiter> = (gw.__ucWindows ??= new Map());
+
+/** Shared named sliding-window limiter, e.g. `windowLimiter("github-search", 30, 60_000)`. */
+export function windowLimiter(name: string, limit: number, windowMs: number): SlidingWindowLimiter {
+  let w = windows.get(name);
+  if (!w) {
+    w = new SlidingWindowLimiter(limit, windowMs);
+    windows.set(name, w);
+  }
+  return w;
+}
+
+/** Test hook: drop a named limiter so the next call builds a fresh one. */
+export function resetLimiter(name: string) {
+  windows.delete(name);
+  buckets.delete(name);
+}
