@@ -4,7 +4,10 @@ import { ArrowUpRight, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button, Eyebrow } from "@/components/ui";
 import { STAGE_LABEL, timeAgo, type LeadRow } from "./model";
-import { ActorBadge, EmailStatus, FitBar, Handles, TierPill } from "./parts";
+import { ActorBadge, FitBar, TierPill } from "./parts";
+import type { RunStore } from "@/lib/client/run-store";
+import { PersonDetails } from "@/components/outreach/person-details";
+import { ReachOut } from "@/components/outreach/reach-out";
 
 const CHANNEL: Record<string, string> = { email: "Email", linkedin: "LinkedIn", x_dm: "X DM", x_reply: "X reply", credit_gift: "Credit gift" };
 
@@ -23,12 +26,14 @@ export function BriefPanel({
   onApprove,
   onSkip,
   onFindSimilar,
+  store,
 }: {
   row: LeadRow;
   onClose: () => void;
   onApprove: () => void;
   onSkip: () => void;
   onFindSimilar: () => void;
+  store: RunStore;
 }) {
   const { lead, brief } = row;
   const canApprove = lead.stage === "discovered";
@@ -68,26 +73,10 @@ export function BriefPanel({
             <ActorBadge actor={row.lastMove?.actor} />
             <span className="font-mono text-[11px] text-muted">{timeAgo(row.lastActivity)}</span>
           </dd>
-          <dt className="text-muted">Handles</dt>
-          <dd>
-            <Handles handles={lead.handles} />
-          </dd>
-          <dt className="text-muted">Email</dt>
-          <dd className="flex items-center gap-2">
-            <EmailStatus email={lead.email} demo={lead.isDemoRecipient} />
-            {lead.email && <span className="truncate font-mono text-[11px] text-body">{lead.email.address}</span>}
-          </dd>
-          {lead.primaryRepo && (
-            <>
-              <dt className="text-muted">Repo</dt>
-              <dd>
-                <a href={`https://github.com/${lead.primaryRepo}`} target="_blank" rel="noreferrer" className="font-mono text-[12px] text-strong underline decoration-hairline-strong underline-offset-2 hover:decoration-lichen">
-                  {lead.primaryRepo}
-                </a>
-              </dd>
-            </>
-          )}
         </dl>
+
+        <PersonDetails lead={lead} store={store} />
+        <ReachOut lead={lead} store={store} />
 
         {brief ? (
           <>

@@ -7,7 +7,7 @@ import { saveDraft } from "../tide/store";
 import { recomputeCalibration, startWakeListener } from "./engine";
 import { getCalibration, listOutcomes, rememberLeads, rememberSegments, stageChanges } from "./store";
 
-export { handleReply, moveStage, pollRun, recordSend, recomputeCalibration, scheduleFollowup, startWakeListener, DEMO_REPLY_TEXT } from "./engine";
+export { handleReply, moveStage, pollRun, recordSend, recomputeCalibration, scheduleFollowup, startWakeListener, DEMO_REPLY_TEXT, demoReplyText } from "./engine";
 export { getCalibration, getLead, listLeads, listOutcomes, saveLead, stageChanges } from "./store";
 
 export const wake: Department<WakeInput, WakeOutput> = {

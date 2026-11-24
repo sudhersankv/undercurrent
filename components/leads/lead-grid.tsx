@@ -5,8 +5,12 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { createColumnHelper, createSortedRowModel, rowSortingFeature, sortFn_alphanumeric, sortFn_basic, tableFeatures, useTable } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { STAGES, STAGE_LABEL, timeAgo, type LeadRow } from "./model";
-import { ActorBadge, EmailStatus, FitBar, Handles, TierPill, XHandleCell } from "./parts";
-import { xHandle } from "@/components/review/x";
+import { ActorBadge, EmailStatus, FitBar, TierPill, XHandleCell } from "./parts";
+import { xHandle, XGlyph } from "@/components/review/x";
+import type { RunStore } from "@/lib/client/run-store";
+import { ext, linkedinUrl, roleLine, websiteUrl } from "@/lib/client/gtm";
+import { GitBranch, Globe, Briefcase, Mail } from "lucide-react";
+import type { Lead } from "@/lib/contracts";
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -23,12 +27,15 @@ const columns = h.columns([
     cell: ({ row }) => (
       <span className="flex min-w-0 flex-col">
         <span className={cn("truncate text-strong", row.original.skipped && "text-muted line-through")}>{row.original.lead.displayName}</span>
-        {row.original.lead.primaryRepo && <span className="truncate font-mono text-[11px] text-muted">{row.original.lead.primaryRepo}</span>}
+        {roleLine(row.original.lead) && <span className="truncate text-[11.5px] text-body">{roleLine(row.original.lead)}</span>}
+        <span className="truncate font-mono text-[11px] text-muted">
+          {[row.original.lead.primaryRepo, ext(row.original.lead).location].filter(Boolean).join(" · ")}
+        </span>
       </span>
     ),
   }),
+  h.display({ id: "links", header: "Links", cell: ({ row }) => <LeadLinks lead={row.original.lead} /> }),
   h.accessor((r) => (xHandle(r.lead) ? 1 : 0), { id: "x", header: "X", sortFn: "basic", cell: ({ row }) => <XHandleCell lead={row.original.lead} /> }),
-  h.display({ id: "handles", header: "Handles", cell: ({ row }) => <Handles handles={row.original.lead.handles} /> }),
   h.accessor((r) => r.segmentName, { id: "segment", header: "Segment", sortFn: "alphanumeric", cell: (c) => <span className="block max-w-[200px] truncate">{c.getValue()}</span> }),
   h.accessor((r) => r.lead.tier, { id: "tier", header: "Tier", sortFn: "alphanumeric", cell: ({ row }) => <TierPill tier={row.original.lead.tier} /> }),
   h.accessor((r) => r.lead.fitScore, { id: "fit", header: "Fit", sortFn: "basic", cell: (c) => <FitBar score={c.getValue()} /> }),
@@ -71,7 +78,7 @@ function Ago({ iso }: { iso: string | null }) {
 
 const NUMERIC = new Set(["fit", "evidence"]);
 
-export function LeadGrid({ rows, selectedId, onSelect }: { rows: LeadRow[]; selectedId: string | null; onSelect: (id: string) => void }) {
+export function LeadGrid({ rows, selectedId, onSelect }: { rows: LeadRow[]; store?: RunStore; selectedId: string | null; onSelect: (id: string) => void }) {
   const table = useTable({ features, columns, data: rows, getRowId: (r) => r.lead.id, initialState: { sorting: [{ id: "x", desc: true }, { id: "fit", desc: true }] } });
 
   return (
@@ -131,5 +138,32 @@ export function LeadGrid({ rows, selectedId, onSelect }: { rows: LeadRow[]; sele
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** Icon links to every public profile we found. Clicks don't select the row. */
+function LeadLinks({ lead }: { lead: Lead }) {
+  const x = xHandle(lead);
+  const li = linkedinUrl(lead);
+  const web = websiteUrl(lead);
+  const links: { href: string; label: string; icon: React.ReactNode }[] = [];
+  if (lead.handles.github) links.push({ href: `https://github.com/${lead.handles.github}`, label: `GitHub @${lead.handles.github}`, icon: <GitBranch className="size-3.5" /> });
+  if (x) links.push({ href: `https://x.com/${x}`, label: `X @${x}`, icon: <XGlyph size={12} /> });
+  if (li) links.push({ href: li, label: "LinkedIn", icon: <Briefcase className="size-3.5" /> });
+  if (web) links.push({ href: web, label: web, icon: <Globe className="size-3.5" /> });
+  return (
+    <span className="flex items-center gap-1.5">
+      {links.map((l) => (
+        <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" title={l.label} aria-label={l.label} onClick={(e) => e.stopPropagation()} className="text-muted hover:text-strong">
+          {l.icon}
+        </a>
+      ))}
+      {lead.email ? (
+        <span title={`${lead.email.address} (draft only)`} className="text-muted">
+          <Mail className="size-3.5" />
+        </span>
+      ) : null}
+      {!links.length && !lead.email ? <span className="text-[11px] text-muted">–</span> : null}
+    </span>
   );
 }

@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MemoryGraph } from "@/lib/graph";
 import { bus } from "@/lib/events/bus";
 import { calibrateSegment, globalError, isSmallSample, stageForReply } from "@/lib/scoring/wake";
-import { demoFooter, resolveRecipient, send } from "@/lib/tools/agentmail";
+import { demoFooter, isOurInbox, ourInboxes, resolveRecipient, send, setAgentMailClient, standIns } from "@/lib/tools/agentmail";
 import { SafeModeBlocked } from "@/lib/tools/types";
 import { lichenSegments } from "@/lib/dev/lichen";
 import { heuristicClassify } from "./classify";
-import { pollRun } from "./engine";
+import { demoReplyText, pollRun } from "./engine";
 import { getCalibration, getLead, listLeads, rememberSegments, stageChanges } from "./store";
 import { listDrafts } from "../tide/store";
 
@@ -56,40 +56,83 @@ describe("§9.9 calibration", () => {
   });
 });
 
-describe("AgentMail safe mode", () => {
+describe("AgentMail send lock", () => {
   const saved = { ...process.env };
   beforeEach(() => {
     process.env.DEMO_SAFE_MODE = "true";
     process.env.SEND_ALLOWLIST = "standin@team.dev, other@team.dev";
     process.env.STANDIN_NAME = "Sam";
-    delete process.env.SAFE_MODE_REDIRECT;
     delete process.env.AGENTMAIL_API_KEY;
     delete process.env.AGENTMAIL_INBOX_ID;
   });
   afterEach(() => {
     process.env = { ...saved };
+    setAgentMailClient(null);
   });
 
-  it("redirects a real developer's address to the stand-in", async () => {
-    const r = await send({ to: "dev@realcompany.com", subject: "hi", body: "body" });
+  it("blocks a real developer's address (no redirect)", async () => {
+    await expect(send({ to: "dev@realcompany.com", subject: "hi", body: "body" })).rejects.toBeInstanceOf(SafeModeBlocked);
+  });
+
+  it("blocks a real address even with DEMO_SAFE_MODE=false", async () => {
+    process.env.DEMO_SAFE_MODE = "false";
+    expect(() => resolveRecipient("dev@realcompany.com")).toThrow(SafeModeBlocked);
+    await expect(send({ to: "dev@realcompany.com", subject: "hi", body: "x" })).rejects.toBeInstanceOf(SafeModeBlocked);
+  });
+
+  it("blocks empty / malformed recipients", () => {
+    expect(() => resolveRecipient("")).toThrow(SafeModeBlocked);
+    expect(() => resolveRecipient("lead-1@lead.invalid")).toThrow(SafeModeBlocked);
+  });
+
+  it("delivers stand-in addresses as-is (case and display name ignored)", async () => {
+    expect(resolveRecipient("Other@Team.dev")).toEqual({ deliveredTo: "other@team.dev", redirected: false });
+    expect(resolveRecipient("Sam <standin@team.dev>").deliveredTo).toBe("standin@team.dev");
+    const r = await send({ to: "standin@team.dev", subject: "hi", body: "body" });
     expect(r.deliveredTo).toBe("standin@team.dev");
-    expect(r.safeModeRedirected).toBe(true);
     expect(r.standIn).toBe("Sam");
+    expect(r.safeModeRedirected).toBe(false);
     expect(r.threadId).toMatch(/^fixture-thread-/);
   });
 
-  it("delivers allowlisted addresses as-is", () => {
-    expect(resolveRecipient("Other@Team.dev")).toEqual({ deliveredTo: "other@team.dev", redirected: false });
+  it("accepts the sender inbox (AGENTMAIL_INBOX_ID) as ours", () => {
+    process.env.AGENTMAIL_INBOX_ID = "gtm@team.dev";
+    expect(isOurInbox("GTM@team.dev")).toBe(true);
+    expect(ourInboxes()).toEqual(["gtm@team.dev", "standin@team.dev", "other@team.dev"]);
   });
 
-  it("blocks non-allowlisted 'to' inside send() when redirect is disabled", async () => {
-    process.env.SAFE_MODE_REDIRECT = "false";
-    await expect(send({ to: "dev@realcompany.com", subject: "hi", body: "x" })).rejects.toBeInstanceOf(SafeModeBlocked);
-  });
-
-  it("blocks everything when the allowlist is empty", async () => {
+  it("blocks everything when no inbox is configured", async () => {
     process.env.SEND_ALLOWLIST = "";
+    await expect(send({ to: "standin@team.dev", subject: "hi", body: "x" })).rejects.toBeInstanceOf(SafeModeBlocked);
+  });
+
+  it("names stand-ins: STANDIN_NAME for the first, local part for the rest", () => {
+    process.env.SEND_ALLOWLIST = "undercurrent-sam@agentmail.to,undercurrent-priya@agentmail.to";
+    expect(standIns()).toEqual([
+      { name: "Sam", address: "undercurrent-sam@agentmail.to" },
+      { name: "Priya", address: "undercurrent-priya@agentmail.to" },
+    ]);
+  });
+
+  it("with a live client: never calls the API for a real address; calls it for a stand-in", async () => {
+    process.env.AGENTMAIL_API_KEY = "k";
+    process.env.AGENTMAIL_INBOX_ID = "gtm@team.dev";
+    const calls: Array<{ inbox: string; to: string[] }> = [];
+    setAgentMailClient({
+      inboxes: {
+        messages: {
+          send: async (inbox: string, req: { to: string[] }) => {
+            calls.push({ inbox, to: req.to });
+            return { messageId: "m1", threadId: "t1" };
+          },
+        },
+      },
+    } as never);
     await expect(send({ to: "dev@realcompany.com", subject: "hi", body: "x" })).rejects.toBeInstanceOf(SafeModeBlocked);
+    expect(calls).toHaveLength(0);
+    const r = await send({ to: "other@team.dev", subject: "hi", body: "x" });
+    expect(r.threadId).toBe("t1");
+    expect(calls).toEqual([{ inbox: "gtm@team.dev", to: ["other@team.dev"] }]);
   });
 
   it("footer carries the demo disclosure, opt-out and address", () => {
@@ -134,7 +177,7 @@ describe("Wake referral loop", () => {
     expect(priya?.segmentId).toBe(original?.segmentId);
 
     const g = await graph.runGraph(runId);
-    expect(g.nodes.find((n) => n.id === priya?.personId)?.props.email).toBe("priya@example.com");
+    expect(g.nodes.find((n) => n.id === priya?.personId)?.props.email).toBe(/\((\S+@\S+)\)/.exec(demoReplyText())?.[1]);
     expect(g.edges.some((e) => e.type === "REFERRED_BY" && e.from === priya?.personId && e.to === original?.personId)).toBe(true);
 
     const drafts = await listDrafts(runId);

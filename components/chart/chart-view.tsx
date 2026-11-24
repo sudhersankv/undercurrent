@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { ArrowUpRight, X } from "lucide-react";
 import type { RunEvent } from "@/lib/contracts";
 import type { GraphEdge, GraphNode, NodeLabel } from "@/lib/graph/types";
-import { useRunStream } from "@/lib/client/run-store";
+import { useRun } from "@/components/mission/run-context";
 import { Button, DeptGlyph, Eyebrow, Pill } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { LABEL_COLOR, deriveGraph, mergeGraphs } from "./derive";
@@ -52,7 +52,8 @@ function nodeIdsOf(e: RunEvent): string[] {
 }
 
 export function ChartView({ runId }: { runId: string }) {
-  const { store, connected } = useRunStream(runId);
+  const { store, status } = useRun();
+  const connected = status === "live";
   const server = useServerGraph(runId);
   const derived = useMemo(() => deriveGraph(store), [store]);
   const graph = useMemo(() => mergeGraphs(server, derived), [server, derived]);

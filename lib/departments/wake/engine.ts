@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import type { Calibration, Draft, InboundReplyLike, Lead, LeadStage, Outcome, ReplyClass, SendEmailResultLike, StageChange } from "./types";
 import { calibrateSegment, globalError, outcomeSign, stageForReply } from "@/lib/scoring/wake";
-import { email as emailTool, trackThread } from "@/lib/tools/agentmail";
+import { allowlist, email as emailTool, trackThread } from "@/lib/tools/agentmail";
 import { createDeptContext } from "../shared/context";
 import type { DeptContext } from "../shared/types";
 import { draftFollowup, draftReferral } from "../tide";
@@ -55,7 +55,7 @@ export async function recordSend(ctx: DeptContext, draft: Draft, lead: Lead | nu
     history: [
       ...draft.history,
       ...(draft.status !== "approved" ? [{ actor: approver as Draft["history"][number]["actor"], action: "approved", at: now }] : []),
-      { actor: "agent:tide", action: "sent", at: now, note: res.safeModeRedirected ? `safe mode: delivered to stand-in ${res.standIn ?? res.deliveredTo}` : `delivered to ${res.deliveredTo}` },
+      { actor: "agent:tide", action: "sent", at: now, note: res.safeModeRedirected ? `sent to stand-in ${res.standIn ?? ""} (${res.deliveredTo})` : `delivered to ${res.deliveredTo}` },
     ],
   };
   await saveDraft(ctx.runId, sent);
@@ -64,7 +64,7 @@ export async function recordSend(ctx: DeptContext, draft: Draft, lead: Lead | nu
     dept: "tide",
     type: "tide.sent",
     level: "action",
-    message: res.safeModeRedirected ? `Safe mode: delivered to stand-in ${res.standIn ?? res.deliveredTo}` : `Sent to ${res.deliveredTo}`,
+    message: res.safeModeRedirected ? `Sent to stand-in ${res.standIn ?? ""} (${res.deliveredTo})` : `Sent to ${res.deliveredTo}`,
     payload: { draftId: draft.id, leadId: draft.leadId, threadId: res.threadId, deliveredTo: res.deliveredTo, standIn: res.standIn, safeMode: res.safeModeRedirected },
   });
   if (lead) {
@@ -251,6 +251,12 @@ export async function startWakeListener(): Promise<boolean> {
 /** The rehearsed reply (SPEC §15): teammate points to Priya. */
 export const DEMO_REPLY_TEXT = "Not me, talk to Priya (priya@example.com), she runs our search infra.";
 
+/** Same line, pointing at the Priya stand-in inbox when configured (so her intro can really be sent). */
+export function demoReplyText(): string {
+  const p = allowlist().find((a) => a.includes("priya"));
+  return p ? DEMO_REPLY_TEXT.replace("priya@example.com", p) : DEMO_REPLY_TEXT;
+}
+
 /** Manual poll fallback: AgentMail threads for this run; with demo=true, inject the seeded referral reply. */
 export async function pollRun(runId: string, demo: boolean): Promise<Outcome[]> {
   void startWakeListener();
@@ -297,7 +303,7 @@ async function seedDemoReply(ctx: DeptContext): Promise<Outcome | null> {
     if ((await listOutcomes(ctx.runId)).some((o) => o.draftId === target.id)) return null; // already replied
   }
   return handleReply(
-    { threadId: target.threadId ?? `fixture-thread-${ulid()}`, messageId: `demo-${ulid()}`, from: process.env.SEND_ALLOWLIST?.split(",")[0]?.trim() || "teammate@example.com", text: DEMO_REPLY_TEXT, receivedAt: new Date().toISOString() },
+    { threadId: target.threadId ?? `fixture-thread-${ulid()}`, messageId: `demo-${ulid()}`, from: process.env.SEND_ALLOWLIST?.split(",")[0]?.trim() || "teammate@example.com", text: demoReplyText(), receivedAt: new Date().toISOString() },
     { ctx, draftId: target.id },
   );
 }
