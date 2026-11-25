@@ -33,6 +33,20 @@ The **market map** plots every segment on two axes: *Swarm says* (simulated inte
 - **Telegram:** `@undercurrentgtmbot`. Start runs, ask departments (`@Sounding why is gaming HYPE?`), and approve or reject drafts from cards. Allowlisted by user ID or username.
 - **MCP:** a meta MCP server at `/api/mcp` (bearer auth) lets other agents drive Undercurrent. See [docs/AGENTS-AND-MCP.md](docs/AGENTS-AND-MCP.md).
 
+## Multi-agent collaboration (Band Desktop: next integration)
+
+Undercurrent already runs as a team of agents that coordinate through handoffs and `@mentions`, with human approval gates on every outbound action. Band Desktop is the planned shared workspace for that agent traffic. The roles map onto Band's directly:
+
+| Band role | Undercurrent today |
+|---|---|
+| Planner / Architect | **Helm** routes requests (`@Sounding …`) and the orchestrator assigns each stage to a department |
+| Builder | **Sonar, Swarm, Sounding, Pilot, Tide** do the research, graph writes and drafting |
+| Reviewer | **Tide's reviewer** checks every draft: specificity, sourced claims, banned phrases, length. Sounding checks quotes against their sources. |
+| Security | The **send lock**: mail can only reach allowlisted stand-in inboxes, it's checked again at the network boundary, and third-party emails are masked in public fixtures |
+| Human-in-the-loop | Approve / edit / reject in the web app, on Telegram cards, or through MCP. Nothing sends without a human. |
+
+Agent messages, handoffs, token use and cost already stream live in the Activity feed. The Band integration will mirror that stream into a Band workspace and accept `@mentions` and human approvals from there.
+
 ## Demo flow
 
 1. On the landing page, start a **live run** for a real company. It takes about 4 minutes.
