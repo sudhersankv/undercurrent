@@ -412,8 +412,10 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
   }
 
   const lead = cur ? store.leads[cur.leadId] : undefined;
-  const failures = cur
-    ? [...cur.review.failures, ...(reviewFails[cur.id] ?? [])].filter((f, k, arr) => arr.findIndex((g) => g.check === f.check && g.reason === f.reason) === k)
+  // The draft's own review is the current verdict; review_failed events are from the first pass, which Tide rewrote.
+  const failures = cur?.review.failures ?? [];
+  const fixed = cur
+    ? (reviewFails[cur.id] ?? []).filter((f, k, arr) => arr.findIndex((g) => g.check === f.check && g.reason === f.reason) === k && !failures.some((g) => g.check === f.check))
     : [];
   const pct = all.length ? reviewed / all.length : 0;
 
@@ -430,7 +432,13 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
               </span>
             ) : (
               <>
-                <span className="tabular text-[18px] font-bold tracking-[-0.01em] text-strong">{reviewed}</span> of <span className="tabular font-semibold text-strong">{all.length}</span> reviewed
+                <span className="tabular text-[18px] font-bold tracking-[-0.01em] text-strong">{pendingCount}</span> to review
+                {reviewed ? (
+                  <>
+                    {" "}
+                    <span className="text-pebble">·</span> <span className="tabular font-semibold text-strong">{reviewed}</span> done
+                  </>
+                ) : null}
               </>
             )}
           </p>
@@ -508,6 +516,7 @@ export function ReviewQueue({ runId, store }: { runId: string; store: RunStore }
                   fromInbox={fromInbox}
                   companyName={store.profile?.name ?? null}
                   failures={failures}
+                  fixed={fixed}
                   sent={sentEvents[cur.id] ?? local[cur.id]?.sent}
                   busy={busy === cur.id || !!queued[cur.id]}
                   message={msgs[cur.id] ?? null}

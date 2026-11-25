@@ -1,5 +1,6 @@
 import type { WakeInput, WakeOutput } from "@/lib/contracts";
 import { isSmallSample } from "@/lib/scoring/wake";
+import { plural } from "@/lib/utils";
 import { trackThread } from "@/lib/tools/agentmail";
 import { stubChatReply } from "../shared/context";
 import type { Department } from "../shared/types";
@@ -42,7 +43,7 @@ export const wake: Department<WakeInput, WakeOutput> = {
       const outs = await listOutcomes(ctx.runId);
       if (!outs.length) return stubChatReply("wake", "No replies yet.");
       const counts = outs.reduce<Record<string, number>>((m, o) => ((m[o.reply.intent] = (m[o.reply.intent] ?? 0) + 1), m), {});
-      const text = `${outs.length} replies: ${Object.entries(counts)
+      const text = `${plural(outs.length, "reply", "replies")}: ${Object.entries(counts)
         .map(([k, v]) => `${v} ${k}`)
         .join(", ")}. Latest: ${outs.at(-1)?.reply.summary ?? ""}`;
       return { dept: "wake", text, citations: [], actions: [{ name: "summarize_outcomes", args: {} }] };

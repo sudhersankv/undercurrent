@@ -46,9 +46,35 @@ const overlap = (a: Rect, b: Rect, pad = 0) => a.x < b.x + b.w + pad && a.x + a.
 const inside = (a: Rect, b: Rect) => a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h;
 const circleRect = (n: { x: number; y: number; r: number }, pad = 0): Rect => ({ x: n.x - n.r - pad, y: n.y - n.r - pad, w: (n.r + pad) * 2, h: (n.r + pad) * 2 });
 
-/** Push overlapping bubbles apart while a weak spring keeps each near its true position. Deterministic. */
-export function relax(nodes: LayoutNode[], bounds: Rect, gap = 4): PlacedNode[] {
+/** Move a bubble out of a reserved rect (e.g. a quadrant caption) by the shortest in-bounds exit. */
+function exitRect(n: PlacedNode, o: Rect, bounds: Rect, gap: number): boolean {
+  const r = n.r + gap;
+  if (n.x + r <= o.x || n.x - r >= o.x + o.w || n.y + r <= o.y || n.y - r >= o.y + o.h) return false;
+  const exits = [
+    { x: n.x, y: o.y - r },
+    { x: n.x, y: o.y + o.h + r },
+    { x: o.x - r, y: n.y },
+    { x: o.x + o.w + r, y: n.y },
+  ].filter((p) => p.x - n.r >= bounds.x && p.x + n.r <= bounds.x + bounds.w && p.y - n.r >= bounds.y && p.y + n.r <= bounds.y + bounds.h);
+  if (!exits.length) return false;
+  const best = exits.sort((a, b) => Math.hypot(a.x - n.x, a.y - n.y) - Math.hypot(b.x - n.x, b.y - n.y))[0];
+  n.x = best.x;
+  n.y = best.y;
+  return true;
+}
+
+/**
+ * Push overlapping bubbles apart while a weak spring keeps each near its true position.
+ * `reserved` rects (quadrant captions) are kept clear. Deterministic.
+ */
+export function relax(nodes: LayoutNode[], bounds: Rect, gap = 4, reserved: Rect[] = []): PlacedNode[] {
   const out: PlacedNode[] = nodes.map((n) => ({ ...n, x: n.ox, y: n.oy }));
+  const clear = () => {
+    let moved = false;
+    for (const n of out) for (const o of reserved) moved = exitRect(n, o, bounds, gap + 8) || moved;
+    return moved;
+  };
+  clear();
   for (let it = 0; it < 160; it++) {
     let moved = false;
     for (let i = 0; i < out.length; i++)
@@ -82,6 +108,7 @@ export function relax(nodes: LayoutNode[], bounds: Rect, gap = 4): PlacedNode[] 
       n.x = Math.min(bounds.x + bounds.w - n.r, Math.max(bounds.x + n.r, n.x));
       n.y = Math.min(bounds.y + bounds.h - n.r, Math.max(bounds.y + n.r, n.y));
     }
+    if (clear()) moved = true;
     if (!moved && it > 4) break;
   }
   return out;
@@ -149,8 +176,9 @@ export function placeLabels(nodes: PlacedNode[], obstacles: Rect[], bounds: Rect
       const slots: { box: Rect; leader: boolean }[] = [
         { box: { x: n.x + n.r + g, y: n.y - h / 2, w, h }, leader: false },
         { box: { x: n.x - n.r - g - w, y: n.y - h / 2, w, h }, leader: false },
-        { box: { x: n.x - w / 2, y: n.y - n.r - 3 - h, w, h }, leader: false },
-        { box: { x: n.x - w / 2, y: n.y + n.r + 3, w, h }, leader: false },
+        // Above / below: a short tick ties the label to its node so it never reads as floating.
+        { box: { x: n.x - w / 2, y: n.y - n.r - 9 - h, w, h }, leader: true },
+        { box: { x: n.x - w / 2, y: n.y + n.r + 9, w, h }, leader: true },
         { box: { x: n.x + n.r + off, y: n.y - n.r - off - h / 2, w, h }, leader: true },
         { box: { x: n.x + n.r + off, y: n.y + n.r + off - h / 2, w, h }, leader: true },
         { box: { x: n.x - n.r - off - w, y: n.y - n.r - off - h / 2, w, h }, leader: true },
@@ -167,7 +195,8 @@ export function placeLabels(nodes: PlacedNode[], obstacles: Rect[], bounds: Rect
         let leader: PlacedLabel["leader"] = null;
         if (s.leader) {
           const px = Math.min(s.box.x + s.box.w, Math.max(s.box.x, n.x));
-          const py = s.box.y + s.box.h / 2;
+          const vertical = px > s.box.x && px < s.box.x + s.box.w;
+          const py = vertical ? (s.box.y > n.y ? s.box.y + 1 : s.box.y + s.box.h - 1) : s.box.y + s.box.h / 2;
           const ang = Math.atan2(py - n.y, px - n.x);
           leader = { x1: n.x + Math.cos(ang) * (n.r + 2), y1: n.y + Math.sin(ang) * (n.r + 2), x2: px + (px === s.box.x ? -2 : px === s.box.x + s.box.w ? 2 : 0), y2: py };
         }

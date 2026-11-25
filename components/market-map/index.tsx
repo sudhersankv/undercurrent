@@ -9,7 +9,7 @@ import { useRunStream, type RunStore, type SegmentView } from "@/lib/client/run-
 import { VERDICT_COLORS, VerdictChip } from "@/components/ui";
 import { SegmentDrawer } from "@/components/segment-drawer";
 import { cn } from "@/lib/utils";
-import { ORIGIN_LABEL, PAD, QUADRANT_X, QUADRANT_Y, SPRING, bestHiddenMarket, bubbleWeight, fitDomain, makeScales, position } from "./geometry";
+import { ORIGIN_LABEL, PAD, QUADRANT_X, QUADRANT_Y, SPRING, bestHiddenMarket, bubbleWeight, calloutText, fitDomain, makeScales, position } from "./geometry";
 import { LABEL_H, LABEL_SIZE, TAG_SIZE, makeMeasure, placeCallout, placeLabels, relax, type Measure, type PlacedLabel, type Rect } from "./layout";
 
 type RoundFilter = "1" | "2" | "all";
@@ -82,7 +82,6 @@ const LINEN = "#E2F6D5";
 const LIME = "#9FE870";
 const PEBBLE = "#868685";
 const MUTED = "#6a6c6a";
-const CALLOUT_TEXT = "Your best hidden market";
 
 export function MarketMapView({ runId, store, onSelect, className }: MarketMapProps & { store: RunStore }) {
   const [round, setRound] = React.useState<RoundFilter>("all");
@@ -114,6 +113,8 @@ export function MarketMapView({ runId, store, onSelect, className }: MarketMapPr
   const frame: Rect = { x: PAD.left, y: PAD.top, w: Math.max(0, w - PAD.left - PAD.right), h: Math.max(0, h - PAD.top - PAD.bottom) };
   const captions = ready ? captionLayout(frame, measure) : [];
   const best = bestHiddenMarket(visible);
+  const bestText = best ? calloutText(best) : "";
+  const capRects = captions.map((c) => c.box);
 
   const posKey = visible.map((s) => `${s.id}:${(s.simInterest ?? 0).toFixed(3)}:${(s.runningStrength ?? 0).toFixed(3)}:${bubbleWeight(s)}:${s.verdict}`).join("|");
   const layout = React.useMemo(() => {
@@ -132,15 +133,16 @@ export function MarketMapView({ runId, store, onSelect, className }: MarketMapPr
         };
       }),
       frame,
+      4,
+      capRects,
     );
-    const capRects = captions.map((c) => c.box);
     const bestNode = best ? nodes.find((n) => n.id === best.id) : undefined;
-    const calloutW = Math.ceil(measure(CALLOUT_TEXT, 12) + 40);
+    const calloutW = Math.ceil(measure(bestText, 12) + 40);
     const callout = bestNode ? placeCallout(bestNode, calloutW, 26, nodes, capRects, frame) : null;
     const labels = placeLabels(nodes, [...capRects, ...(callout ? [callout.box] : [])], frame, measure);
     return { nodes, callout, labels, byId: new Map(nodes.map((n) => [n.id, n])) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, w, h, posKey, best?.id, measure, domain.x[0], domain.x[1], domain.y[1]]);
+  }, [ready, w, h, posKey, best?.id, bestText, measure, domain.x[0], domain.x[1], domain.y[1]]);
 
   const select = (id: string) => {
     setSelected(id);
@@ -191,7 +193,7 @@ export function MarketMapView({ runId, store, onSelect, className }: MarketMapPr
       <div ref={ref} className="relative min-h-[320px] flex-1 overflow-hidden rounded-card border border-hairline bg-paper font-sans" onMouseLeave={() => setHovered(null)}>
         {ready ? (
           <svg ref={svgRef} width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="group" aria-label="Market map: simulated interest against evidence strength" className="block select-none">
-            <Frame x={x} y={y} w={w} h={h} domain={domain} captions={captions} />
+            <Frame x={x} y={y} w={w} h={h} domain={domain} />
             <g aria-hidden>
               {visible.map((s) => {
                 const parent = s.parentId ? layout?.byId.get(s.parentId) : undefined;
@@ -219,6 +221,7 @@ export function MarketMapView({ runId, store, onSelect, className }: MarketMapPr
                 ) : null,
               )}
             </g>
+            <Captions captions={captions} />
             <AnimatePresence>
               {visible.map((s) => {
                 const me = layout?.byId.get(s.id);
@@ -250,7 +253,7 @@ export function MarketMapView({ runId, store, onSelect, className }: MarketMapPr
               </AnimatePresence>
             </g>
             <AnimatePresence>
-              {layout?.callout && best ? <Callout key={`callout-${best.id}`} c={layout.callout} reduce={reduce} onClick={() => select(best.id)} /> : null}
+              {layout?.callout && best ? <Callout key={`callout-${best.id}`} c={layout.callout} text={bestText} reduce={reduce} onClick={() => select(best.id)} /> : null}
             </AnimatePresence>
           </svg>
         ) : null}
@@ -451,7 +454,25 @@ function captionLayout(f: Rect, measure: Measure): Caption[] {
   });
 }
 
-function Frame({ x, y, w, h, domain, captions }: { x: Scale; y: Scale; w: number; h: number; domain: { x: [number, number]; y: [number, number] }; captions: Caption[] }) {
+/** Quadrant captions sit above edges and tethers (white halo) so nothing ever covers them. */
+function Captions({ captions }: { captions: Caption[] }) {
+  return (
+    <g aria-hidden className="pointer-events-none">
+      {captions.map((c) => (
+        <text key={c.key} x={c.tx} y={c.ty} textAnchor={c.anchor} className="font-sans" style={TEXT_HALO}>
+          <tspan x={c.tx} dy={12} fontSize={12} fontWeight={600} fill={c.accent ? FOREST : "#454745"}>
+            {c.title}
+          </tspan>
+          <tspan x={c.tx} dy={15} fontSize={11} fontWeight={500} fill={MUTED}>
+            {c.desc}
+          </tspan>
+        </text>
+      ))}
+    </g>
+  );
+}
+
+function Frame({ x, y, w, h, domain }: { x: Scale; y: Scale; w: number; h: number; domain: { x: [number, number]; y: [number, number] } }) {
   const qx = x(QUADRANT_X);
   const qy = y(QUADRANT_Y);
   const x0 = PAD.left;
@@ -467,16 +488,6 @@ function Frame({ x, y, w, h, domain, captions }: { x: Scale; y: Scale; w: number
       <rect x={x0} y={y0} width={Math.max(0, x1 - x0)} height={Math.max(0, y1 - y0)} fill="none" stroke="rgba(14,15,12,0.08)" />
       <line x1={qx} x2={qx} y1={y0} y2={y1} stroke={EDGE} strokeDasharray="3 4" />
       <line x1={x0} x2={x1} y1={qy} y2={qy} stroke={EDGE} strokeDasharray="3 4" />
-      {captions.map((c) => (
-        <text key={c.key} x={c.tx} y={c.ty} textAnchor={c.anchor} className="font-sans">
-          <tspan x={c.tx} dy={12} fontSize={12} fontWeight={600} fill={c.accent ? FOREST : "#454745"}>
-            {c.title}
-          </tspan>
-          <tspan x={c.tx} dy={15} fontSize={11} fontWeight={500} fill={MUTED}>
-            {c.desc}
-          </tspan>
-        </text>
-      ))}
       {xt.map((t) => (
         <text key={`x${t}`} x={x(t)} y={y1 + 15} textAnchor="middle" className="fill-muted font-mono text-[10px]">
           {t.toFixed(t === QUADRANT_X ? 1 : 2).replace(/0$/, "")}
@@ -571,6 +582,7 @@ function Bubble({ s, fromPx, toPx, radius, reduce, hovered, selected, dim, onHov
             fill="none"
             stroke={FOREST}
             strokeWidth={1.5}
+            pointerEvents="none"
             initial={{ r: radius, opacity: 0.55 }}
             animate={{ r: radius * 2.3, opacity: 0 }}
             transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
@@ -620,7 +632,7 @@ function NodeLabel({ l, dim, active, reduce }: { l: PlacedLabel; dim: boolean; a
   );
 }
 
-function Callout({ c, reduce, onClick }: { c: NonNullable<ReturnType<typeof placeCallout>>; reduce: boolean; onClick: () => void }) {
+function Callout({ c, text, reduce, onClick }: { c: NonNullable<ReturnType<typeof placeCallout>>; text: string; reduce: boolean; onClick: () => void }) {
   const { box, leader } = c;
   return (
     <motion.g
@@ -636,7 +648,7 @@ function Callout({ c, reduce, onClick }: { c: NonNullable<ReturnType<typeof plac
       <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={box.h / 2} fill={FOREST} />
       <circle cx={box.x + 14} cy={box.y + box.h / 2} r={4} fill={LIME} />
       <text x={box.x + 26} y={box.y + box.h / 2 + 4} fontSize={12} fontWeight={600} fill={PAPER}>
-        {CALLOUT_TEXT}
+        {text}
       </text>
     </motion.g>
   );
@@ -672,7 +684,7 @@ function HoverCard({ s, store, node, w, h, best }: { s: SegmentView; store: RunS
       className="pointer-events-none absolute z-10 animate-in rounded-card border border-hairline bg-paper p-4 text-xs shadow-float duration-150 fade-in-0 zoom-in-95"
       style={{ top, left: Math.max(8, left), width: cw }}
     >
-      {best ? <p className="mb-2 inline-flex items-center gap-1.5 rounded-pill bg-forest px-2 py-0.5 text-[11px] font-semibold text-paper"><span className="size-1.5 rounded-full bg-lime" />Best hidden market</p> : null}
+      {best ? <p className="mb-2 inline-flex items-center gap-1.5 rounded-pill bg-forest px-2 py-0.5 text-[11px] font-semibold text-paper"><span className="size-1.5 rounded-full bg-lime" />{calloutText(s)}</p> : null}
       <div className="flex items-start justify-between gap-3">
         <p className="text-[14px] leading-snug font-semibold text-strong">{s.name}</p>
         <VerdictChip verdict={s.verdict} className="shrink-0" />

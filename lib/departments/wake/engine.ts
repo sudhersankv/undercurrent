@@ -1,4 +1,5 @@
 import { ulid } from "ulid";
+import { plural } from "@/lib/utils";
 import type { Calibration, Draft, InboundReplyLike, Lead, LeadStage, Outcome, ReplyClass, SendEmailResultLike, StageChange } from "./types";
 import { calibrateSegment, globalError, outcomeSign, stageForReply } from "@/lib/scoring/wake";
 import { allowlist, email as emailTool, trackThread } from "@/lib/tools/agentmail";
@@ -154,7 +155,7 @@ export async function recomputeCalibration(ctx: DeptContext, emit = true): Promi
       dept: "wake",
       type: "wake.calibration_updated",
       level: "result",
-      message: `Calibration updated: ${Object.keys(perSegment).length} segments, n=${n}${n < 10 ? " (small sample)" : ""}`,
+      message: `Calibration updated: ${plural(Object.keys(perSegment).length, "segment")}, n=${n}${n < 10 ? " (small sample)" : ""}`,
       payload: { calibration },
     });
   }

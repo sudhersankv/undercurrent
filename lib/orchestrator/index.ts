@@ -8,6 +8,7 @@ import { companySlug, loadRecording, replayMode, replayRecording, saveRecording,
 import { failOrphanedRuns, loadRunFromDb, persistData, persistRunRow, persistState } from "./persist";
 import { bootedOnce, emptyRunData, mergeBy, runs, syncRunDraft, syncRunLead, TERMINAL, type RunData, type RunRecord } from "./store";
 import { saveLead } from "@/lib/departments/wake/store";
+import { plural } from "@/lib/utils";
 
 export type { RunData, RunRecord } from "./store";
 export { findRunDraft, findRunLead } from "./store";
@@ -327,7 +328,7 @@ async function pipeline(rec: RunRecord, overrides?: Partial<DeptContext>) {
   d.briefs = mergeBy(d.briefs, pilotOut.briefs, (b) => b.leadId);
   await persist(rec, { leads: pilotOut.leads, briefs: pilotOut.briefs });
   const tierA = pilotOut.leads.filter((l) => l.tier === "A").length;
-  handoff(runId, "pilot", "tide", `${pilotOut.leads.length} leads scored, ${tierA} tier A. Briefs ready for review.`);
+  handoff(runId, "pilot", "tide", `${plural(pilotOut.leads.length, "lead")} scored, ${tierA} tier A. Briefs ready for review.`);
   emitState(rec, "BRIEF_REVIEW");
 }
 
@@ -437,7 +438,7 @@ async function runTide(rec: RunRecord, leads: Lead[], referral?: { fromLeadId: s
     type: "helm.handoff",
     level: "handoff",
     message: `Tide → You: ${out.drafts.length} draft${out.drafts.length === 1 ? "" : "s"} for ${names} ready for review.`,
-    payload: { from: "tide", to: "helm", summary: `${out.drafts.length} drafts for ${names} ready for review.` },
+    payload: { from: "tide", to: "helm", summary: `${plural(out.drafts.length, "draft")} for ${names} ready for review.` },
   });
   if (rec.state === "TIDE") emitState(rec, "OUTREACH_REVIEW");
   return out;

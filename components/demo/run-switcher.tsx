@@ -230,7 +230,7 @@ export function LiveRunChip({ runId }: { runId: string }) {
           <span className="max-w-[140px] truncate font-semibold text-strong" title={snap?.companyName ?? undefined}>
             {snap?.companyName ?? "Your run"}
           </span>
-          <span className="hidden whitespace-nowrap text-forest/80 min-[1360px]:inline">{missing ? "Not found" : snap ? (snap.people && stateIndex(snap.state) >= stateIndex("PILOT") ? `${snap.people} people` : st.short) : "Checking…"}</span>
+          <span className="hidden whitespace-nowrap text-forest/80 min-[1360px]:inline">{missing ? "Not found" : snap ? (snap.people && stateIndex(snap.state) >= stateIndex("PILOT") ? `${snap.people} ${snap.people === 1 ? "person" : "people"}` : st.short) : "Checking…"}</span>
           <ArrowRight className="size-3.5 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden />
         </Link>
         <button

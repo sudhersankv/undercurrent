@@ -64,11 +64,24 @@ export function quadrantOf(s: SegmentView): Quadrant {
   return sx >= QUADRANT_X ? "hype" : "none";
 }
 
-/** The hidden market worth pointing at: a non-ICP segment in the Accidental quadrant, best judged first. */
+/**
+ * The market worth pointing at: the best VERIFIED non-control market wherever it sits (non-ICP first),
+ * else a PROMISING non-ICP one in the Accidental quadrant.
+ */
 export function bestHiddenMarket(segments: SegmentView[]): SegmentView | null {
   const rank = { VERIFIED: 3, PROMISING: 2, PENDING: 0, HYPE: -1, KILLED: -2 } as const;
-  const pool = segments.filter((s) => s.origin !== "stated" && s.origin !== "control_negative" && s.simInterest != null && quadrantOf(s) === "accidental" && rank[s.verdict] > 0);
-  if (!pool.length) return null;
-  const score = (s: SegmentView) => rank[s.verdict] * 10 + (s.evidenceStrength ?? s.runningStrength) + (s.simInterest ?? 0) * 0.5;
-  return pool.sort((a, b) => score(b) - score(a))[0];
+  const scored = segments.filter((s) => s.origin !== "control_negative" && s.simInterest != null);
+  const score = (s: SegmentView) => (s.origin === "stated" ? 0 : 5) + (s.evidenceStrength ?? s.runningStrength) + (s.simInterest ?? 0) * 0.5;
+  const verified = scored.filter((s) => s.verdict === "VERIFIED");
+  if (verified.length) return verified.sort((a, b) => score(b) - score(a))[0];
+  const pool = scored.filter((s) => s.origin !== "stated" && quadrantOf(s) === "accidental" && rank[s.verdict] > 0);
+  return pool.sort((a, b) => score(b) - score(a))[0] ?? null;
+}
+
+/** Callout wording that fits where the market sits. */
+export function calloutText(s: SegmentView): string {
+  const q = quadrantOf(s);
+  if (q === "underhyped") return "Under-hyped: real demand the swarm missed";
+  if (q === "accidental") return s.origin === "stated" ? "Verified: your ICP" : "Your best hidden market";
+  return s.verdict === "VERIFIED" ? "Verified market" : "Your best hidden market";
 }

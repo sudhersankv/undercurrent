@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { STAGES, type LeadRow } from "./model";
 
 const FUNNEL: { stage: LeadStage; label: string }[] = [
-  { stage: "discovered", label: "Discovered" },
+  // Cumulative ("reached this stage or beyond"), so the first step is everyone found, not the Discovered lane.
+  { stage: "discovered", label: "Found" },
   { stage: "approved", label: "Approved" },
   { stage: "contacted", label: "Contacted" },
   { stage: "replied", label: "Replied" },
@@ -94,7 +95,7 @@ export function FunnelStrip({ rows }: { rows: LeadRow[] }) {
                   </span>
                 </li>
               ) : null}
-              <li className="min-w-0 flex-1" aria-label={`${c.label}: ${c.total}`}>
+              <li className="min-w-0 flex-1" aria-label={`${c.label}: ${c.total}`} title={i === 0 ? `${c.total} found` : `${c.total} reached ${c.label.toLowerCase()} or beyond`}>
                 <span className={cn("block truncate text-[12px] font-semibold", c.total ? "text-muted" : "text-pebble")}>{c.label}</span>
                 <span className={cn("tabular mt-1 block text-[34px] font-bold leading-none tracking-[-0.03em]", c.total ? "text-strong" : "text-pebble")}>{c.total}</span>
                 <span className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-recessed">

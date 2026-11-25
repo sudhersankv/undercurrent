@@ -27,6 +27,7 @@ import { enrichCandidate, foldLinked, type Enriched } from "./enrich";
 import { sharedTechLookalikes } from "./lookalike";
 import { getPilotState, setPilotState, type LeadDetail } from "./store";
 import { X_RESOLVE_TOP, hasXPainPost, resolveX } from "./x";
+import { plural } from "@/lib/utils";
 
 export { getPilotState, leadEmailStatus } from "./store";
 export { generateSegmentReport, buildSegmentReport } from "./report";
@@ -570,8 +571,8 @@ async function run(ctx: DeptContext, input: PilotInput): Promise<PilotOutput> {
       type: "helm.handoff",
       level: "handoff",
       toDept: "tide",
-      message: `${leads.length} leads (${accounts} accounts, ${a} tier A), ${briefs.length} briefs ready. Handing off.`,
-      payload: { from: "pilot", to: "tide", summary: `${leads.length} leads, ${accounts} accounts, ${briefs.length} briefs` },
+      message: `${plural(leads.length, "lead")} (${plural(accounts, "account")}, ${a} tier A), ${plural(briefs.length, "brief")} ready. Handing off.`,
+      payload: { from: "pilot", to: "tide", summary: `${plural(leads.length, "lead")}, ${plural(accounts, "account")}, ${plural(briefs.length, "brief")}` },
     });
   }
   return { leads, briefs };

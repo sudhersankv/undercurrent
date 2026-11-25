@@ -28,6 +28,8 @@ export interface DraftCardProps {
   segment: SegmentHypothesis | undefined;
   style: StyleProfile | undefined;
   failures: { check: string; reason: string }[];
+  /** Checks the first pass failed and Tide's rewrite fixed. */
+  fixed?: { check: string; reason: string }[];
   sent: SendInfo | undefined;
   busy: boolean;
   message: { tone: "ok" | "muted" | "error"; text: string } | null;
@@ -320,6 +322,15 @@ export function DraftCard(p: DraftCardProps) {
               extra={draft.creditOffer?.simulated ? <Pill tone="muted" className="ml-auto px-2 py-0 text-[11px]">Simulated</Pill> : null}
             />
           </ul>
+
+          {p.fixed?.length ? (
+            <p className="-mt-2 flex items-start gap-2 text-[12px] leading-snug text-muted">
+              <RefreshCw className="mt-0.5 size-3 shrink-0" aria-hidden />
+              <span>
+                Rewritten after the first pass failed {p.fixed.map(fixedLabel).join(", ")}.
+              </span>
+            </p>
+          ) : null}
 
           {segment ? (
             <div className="border-t border-hairline pt-4">
@@ -698,6 +709,20 @@ function EvidenceQuote({ url, quote, quoted, title, why }: { url: string; quote:
       </figcaption>
     </figure>
   );
+}
+
+const FIXED_LABEL: Record<string, string> = {
+  swap_token: "the lead-specific check",
+  swap_llm: "the swap test",
+  banned_phrases: "the banned-phrase check",
+  grounding: "the grounding check",
+  disclosure: "the disclosure check",
+  voice: "the voice check",
+};
+
+function fixedLabel(f: { check: string; reason: string }) {
+  if (f.check === "length") return `the length check (${f.reason.replace(/\.$/, "").replace(" (", ", ").replace(/\)$/, "")})`;
+  return FIXED_LABEL[f.check] ?? `the ${f.check.replace(/_/g, " ")} check`;
 }
 
 function CheckRow({ ok, label, title, extra }: { ok: boolean; label: string; title?: string; extra?: React.ReactNode }) {

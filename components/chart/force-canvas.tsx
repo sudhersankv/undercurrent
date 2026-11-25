@@ -181,6 +181,19 @@ export default function ForceCanvas({
               return overlaps(s, [(m.x ?? 0) - r, (m.y ?? 0) - r, r * 2, r * 2]);
             });
           const focusSet = highlight && highlight.size <= 40 ? highlight : null;
+          // Keep labels inside the visible canvas (shift them in rather than clip at the edge).
+          const tl = fg.current?.screen2GraphCoords(0, 0);
+          const br = fg.current?.screen2GraphCoords(size.w, size.h);
+          const inView = (s: Box): Box => {
+            if (!tl || !br) return s;
+            const pad = 4 / scale;
+            const nx = Math.min(br.x - s[2] - pad, Math.max(tl.x + pad, s[0]));
+            const ny = Math.min(br.y - s[3] - pad, Math.max(tl.y + pad, s[1]));
+            return [nx, ny, s[2], s[3]];
+          };
+          // Same name on two nodes (the company and its product): say which is which.
+          const names = new Map<string, number>();
+          for (const n of visibleNodes) names.set(n.name, (names.get(n.name) ?? 0) + 1);
           const ranked = visibleNodes
             .map((n) => {
               const forced = n.id === selectedId || n.id === hoverId || (focusSet?.has(n.id) ?? false);
@@ -190,18 +203,21 @@ export default function ForceCanvas({
             .sort((a, b) => b.rank - a.rank);
           for (const { n, forced } of ranked) {
             const max = forced ? 48 : 28;
-            const text = n.name.length > max ? `${n.name.slice(0, max - 1).trimEnd()}…` : n.name;
+            const full = (names.get(n.name) ?? 0) > 1 && n.label !== "Company" ? `${n.name} (${n.label.toLowerCase()})` : n.name;
+            const text = full.length > max ? `${full.slice(0, max - 1).trimEnd()}…` : full;
             const w = ctx.measureText(text).width + 4 / scale;
             const h = fs * 1.25;
             const x = n.x ?? 0;
             const y = n.y ?? 0;
             const g = radius(n) + 3 / scale + 1;
-            const slots: Box[] = [
-              [x - w / 2, y + g, w, h],
-              [x - w / 2, y - g - h, w, h],
-              [x + g, y - h / 2, w, h],
-              [x - g - w, y - h / 2, w, h],
-            ];
+            const slots: Box[] = (
+              [
+                [x - w / 2, y + g, w, h],
+                [x - w / 2, y - g - h, w, h],
+                [x + g, y - h / 2, w, h],
+                [x - g - w, y - h / 2, w, h],
+              ] as Box[]
+            ).map(inView);
             const free = slots.filter((s) => !placed.some((b) => overlaps(s, b)));
             let slot = free.find((s) => !onNode(s, n)) ?? free[0];
             if (!slot && n.id === hoverId) slot = slots[0];

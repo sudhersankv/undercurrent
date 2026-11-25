@@ -95,7 +95,7 @@ export function MissionHeader() {
                     ) : null}
                     <span className="relative">{t.label}</span>
                     {t.label === "Outreach" && queue > 0 ? <Count n={queue} on={on} strong label={`${queue} waiting`} /> : null}
-                    {t.label === "Inbox" && replies > 0 ? <Count n={replies} on={on} label={`${replies} replies`} /> : null}
+                    {t.label === "Inbox" && replies > 0 ? <Count n={replies} on={on} label={`${replies} ${replies === 1 ? "reply" : "replies"}`} /> : null}
                   </Link>
                 );
               })}

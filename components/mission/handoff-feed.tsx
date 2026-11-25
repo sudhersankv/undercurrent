@@ -299,6 +299,15 @@ function Thinking({ events, rel }: { events: RunEvent[]; rel: Rel }) {
 
 type Filter = "all" | "key";
 
+function groupByStage(items: FeedItem[]): FeedItem[][] {
+  const out: FeedItem[][] = [];
+  for (const it of items) {
+    if (it.kind === "stage" || !out.length) out.push([it]);
+    else out[out.length - 1].push(it);
+  }
+  return out;
+}
+
 export function HandoffFeed() {
   const { store, local } = useRun();
   const shownPersonas = usePersonaThrottle(store.events);
@@ -382,9 +391,14 @@ export function HandoffFeed() {
         {items.length === 0 ? (
           <FeedEmpty />
         ) : (
-          items.map((it) => (
-            <div key={it.key} className={cn(it.kind === "stage" && "contents", isNew(it.key) && "animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out-soft")}>
-              <Item it={it} rel={rel} />
+          // One block per stage so each sticky header scrolls away with its own items instead of stacking.
+          groupByStage(items).map((g) => (
+            <div key={g[0].key}>
+              {g.map((it) => (
+                <div key={it.key} className={cn(it.kind === "stage" && "contents", isNew(it.key) && "animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out-soft")}>
+                  <Item it={it} rel={rel} />
+                </div>
+              ))}
             </div>
           ))
         )}

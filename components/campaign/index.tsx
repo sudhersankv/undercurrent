@@ -65,7 +65,13 @@ function Block({ title, count, icon, children, className, aside }: { title: stri
 }
 
 /** Forest summary card: lime headline number, one-line summary, supporting stats. */
-function CampaignSummary({ campaign, xCount, segName, posts }: { campaign: Campaign; xCount: number; segName: string; posts: number }) {
+/** "1 reply and 2 DMs", "2 DMs", "3 replies". */
+function convoLabel(replies: number, dms: number) {
+  const parts = [replies ? `${replies} ${replies === 1 ? "reply" : "replies"}` : "", dms ? `${dms} ${dms === 1 ? "DM" : "DMs"}` : ""].filter(Boolean);
+  return parts.join(" and ") || "0 replies";
+}
+
+function CampaignSummary({ campaign, xCount, segName, posts, convo }: { campaign: Campaign; xCount: number; segName: string; posts: number; convo: string }) {
   const recipients = campaign.creditGiftPlan.recipients.length;
   const credits = campaign.creditGiftPlan.amountUsdEach * recipients;
   const hooks = campaign.hooks.length;
@@ -86,8 +92,8 @@ function CampaignSummary({ campaign, xCount, segName, posts }: { campaign: Campa
           </span>
         </p>
         <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-paper/80">
-          {posts ? `${posts} ${posts === 1 ? "post" : "posts"} and ` : ""}
-          {xCount - posts} {xCount - posts === 1 ? "reply" : "replies"} for {segName}, built on {hooks} {hooks === 1 ? "hook" : "hooks"} and {amps} {amps === 1 ? "amplifier" : "amplifiers"}. Nothing posts automatically.
+          {posts ? `${posts} ${posts === 1 ? "post" : "posts"}${xCount - posts ? ", " : " "}` : ""}
+          {xCount - posts ? `${convo} ` : ""}for {segName}, built on {hooks} {hooks === 1 ? "hook" : "hooks"} and {amps} {amps === 1 ? "amplifier" : "amplifiers"}. Nothing posts automatically.
         </p>
       </div>
       <dl className="grid grid-cols-2 gap-px self-end overflow-hidden rounded-card bg-white/15">
@@ -199,6 +205,7 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
   const segLeads = new Set(Object.values(store.leads).filter((l) => l.segmentId === campaign.segmentId).map((l) => l.id));
   const replies = Object.values(store.drafts).filter((d) => (d.channel === "x_reply" || d.channel === "x_dm") && segLeads.has(d.leadId) && d.status !== "rejected");
   const xDrafts = [...posts, ...replies.filter((r) => !posts.some((p) => p.id === r.id))];
+  const convo = convoLabel(replies.filter((d) => d.channel === "x_reply").length, replies.filter((d) => d.channel === "x_dm").length);
   const personName = (id: string) => Object.values(store.leads).find((l) => l.personId === id)?.displayName ?? id.split("-person-").pop() ?? id;
   const me = store.profile?.name ?? "You";
   const amps = campaign.amplifiers as Amplifier[];
@@ -211,12 +218,12 @@ export function CampaignBrief({ campaign, store }: { campaign: Campaign; store: 
         {seg ? <VerdictChip verdict={seg.verdict} /> : null}
       </header>
 
-      <CampaignSummary campaign={campaign} xCount={xDrafts.length} posts={posts.length} segName={seg?.name ?? "this segment"} />
+      <CampaignSummary campaign={campaign} xCount={xDrafts.length} posts={posts.length} convo={convo} segName={seg?.name ?? "this segment"} />
 
       <Playbook
         steps={[
           { icon: <Search />, label: "Listen", detail: `${campaign.listenQueries.length} live searches`, n: campaign.listenQueries.length },
-          { icon: <XGlyph size={14} />, label: "Join in", detail: `${replies.length} ${replies.length === 1 ? "reply" : "replies"} drafted`, n: replies.length },
+          { icon: <XGlyph size={14} />, label: "Join in", detail: `${convo} drafted`, n: replies.length },
           { icon: <Megaphone />, label: "Post", detail: posts.length ? `${posts.length} ${posts.length === 1 ? "post" : "posts"} drafted` : "No posts yet", n: posts.length },
           { icon: <Sparkles />, label: "Amplify", detail: `${amps.length} ${amps.length === 1 ? "person" : "people"}`, n: amps.length },
           { icon: <Gift />, label: "Gift credits", detail: `$${credits.amountUsdEach} each`, n: credits.recipients.length, simulated: true },

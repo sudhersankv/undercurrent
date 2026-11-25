@@ -11,7 +11,7 @@ import { saveDraft, saveStyle } from "@/lib/departments/tide/store";
 import { profileFromSamples } from "@/lib/departments/tide/work";
 import { leadXHandle, pickReplyTarget } from "@/lib/departments/tide/x";
 import { demoReplyText, handleReply, moveStage, recordSend } from "@/lib/departments/wake/engine";
-import { addOutcome, addStageChange, getCalibration, listOutcomes, rememberLeads, rememberSegments, saveCalibration, stageChanges } from "@/lib/departments/wake/store";
+import { addOutcome, addStageChange, getCalibration, listOutcomes, rememberLeads, rememberSegments, saveCalibration, stageChanges, wakeState } from "@/lib/departments/wake/store";
 import { bus } from "@/lib/events";
 import { SendLocked, sendToStandIn } from "@/lib/helm-agent/send";
 import { approveLeads, getRun, handoff, notifyDraftSent, startRun } from "@/lib/orchestrator";
@@ -19,6 +19,7 @@ import { persistData, persistRunRow, persistState } from "@/lib/orchestrator/per
 import { mergeBy, runs, type RunData, type RunRecord } from "@/lib/orchestrator/store";
 import { stripEvent, type Recording } from "@/lib/replay";
 import { standIn } from "@/lib/tools/agentmail";
+import { plural } from "@/lib/utils";
 
 /**
  * The premade showcase run (demo): a real, captured live Lichen run replayed under the fixed id
@@ -166,10 +167,15 @@ async function applyExtras(rec: RunRecord, x: ShowcaseExtras) {
   rememberSegments(rec.data.segments);
   for (const d of rec.data.drafts) await saveDraft(ID, d);
   for (const s of rec.data.styleProfiles) await saveStyle(s);
-  const known = new Set((await listOutcomes(ID)).map((o) => o.id));
-  for (const o of x.outcomes) if (!known.has(o.id)) await addOutcome(o);
+  // The cached timestamps are from when the extras were generated; the events above were just re-emitted
+  // with fresh times, so move these to "now" too (never earlier than the send they answer).
+  const shift = Date.now() - (Date.parse(x.generatedAt) || Date.now());
+  const rebase = (at: string) => new Date(Math.max(Date.now(), (Date.parse(at) || Date.now()) + shift)).toISOString();
+  // In-memory only: a DB copy from an earlier hydration still has the old timestamp.
+  const known = new Set((wakeState.outcomes.get(ID) ?? []).map((o) => o.id));
+  for (const o of x.outcomes) if (!known.has(o.id)) await addOutcome({ ...o, at: rebase(o.at) });
   const knownChanges = new Set(stageChanges(ID).map((c) => c.id));
-  for (const c of x.stageChanges) if (!knownChanges.has(c.id)) await addStageChange(ID, c);
+  for (const c of x.stageChanges) if (!knownChanges.has(c.id)) await addStageChange(ID, { ...c, at: rebase(c.at) });
   if (rec.data.calibration) await saveCalibration(rec.data.calibration);
   await persistAll(rec);
 }
@@ -249,7 +255,7 @@ async function templateTide(rec: RunRecord, leads: Lead[]) {
   const batch = leads;
   for (const l of batch) rec.tideLeads.add(l.id);
   rememberLeads(batch);
-  handoff(ID, "pilot", "tide", `${batch.length} leads approved. Drafting outreach.`);
+  handoff(ID, "pilot", "tide", `${plural(batch.length, "lead")} approved. Drafting outreach.`);
   setState(rec, "TIDE");
   bus.emit(ID, { dept: "helm", type: "helm.note", level: "thinking", message: "No LLM configured: Tide drafts from templates built on Pilot's evidence.", payload: { showcase: true, fallback: "template" } });
 
@@ -310,8 +316,8 @@ async function templateTide(rec: RunRecord, leads: Lead[]) {
     toDept: "helm",
     type: "helm.handoff",
     level: "handoff",
-    message: `Tide → You: ${drafts.length} drafts for ${names} ready for review.`,
-    payload: { from: "tide", to: "helm", summary: `${drafts.length} drafts for ${names} ready for review.` },
+    message: `Tide → You: ${plural(drafts.length, "draft")} for ${names} ready for review.`,
+    payload: { from: "tide", to: "helm", summary: `${plural(drafts.length, "draft")} for ${names} ready for review.` },
   });
   setState(rec, "OUTREACH_REVIEW");
 }

@@ -160,6 +160,6 @@ export async function composeDraft(ctx: DeptContext, a: ComposeArgs, opts: Revie
   };
   await saveDraft(ctx.runId, draft);
   ctx.emit({ dept: "tide", type: "tide.draft_created", level: "result", message: `Draft for ${a.lead.displayName} (${a.channel}), specificity ${rev.specificity}`, payload: { draft } });
-  ctx.emit({ dept: "tide", type: "tide.queued", level: "action", message: `Queued for review: ${a.lead.displayName}${rev.passed ? "" : ` (${rev.failures.length} flags)`}`, payload: { draftId: draft.id, leadId: draft.leadId } });
+  ctx.emit({ dept: "tide", type: "tide.queued", level: "action", message: `Queued for review: ${a.lead.displayName}${rev.passed ? "" : ` (${rev.failures.length} ${rev.failures.length === 1 ? "flag" : "flags"})`}`, payload: { draftId: draft.id, leadId: draft.leadId } });
   return draft;
 }

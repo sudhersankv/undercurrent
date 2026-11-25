@@ -74,7 +74,7 @@ export function Workspace() {
   const totalLeads = Object.values(counts).reduce((a, b) => a + b, 0);
   const series = useMemo(() => stageSeries(store), [store]);
   const ppl = useMemo(() => people(store).sort((a, b) => b.fitScore - a.fitScore), [store]);
-  const accounts = useMemo(() => accountRows(store).slice(0, 6), [store]);
+  const accounts = useMemo(() => accountRows(store), [store]);
   const drafts = Object.values(store.drafts);
   const waiting = drafts.filter((d) => d.status === "pending_review" || d.status === "approved");
   const segs = Object.values(store.segments).filter((s) => s.origin !== "control_negative");
@@ -83,7 +83,8 @@ export function Workspace() {
   const judged = segs.filter((s) => s.verdict && s.verdict !== "PENDING");
   const pursued = new Set(Object.values(store.leads).filter((l) => l.stage !== "discovered").map((l) => l.segmentId));
   const untapped = [...verified, ...promising].filter((s) => !pursued.has(s.id));
-  const ready = ppl.filter((l) => l.stage === "discovered" || l.stage === "approved").length;
+  // Same counts as the Accounts & People header: people (no accounts), and those past "discovered".
+  const inMotion = ppl.filter((l) => l.stage !== "discovered").length;
   const loading = store.events.length === 0;
 
   const pilotDone = over || idx > stateIndex("PILOT");
@@ -98,7 +99,7 @@ export function Workspace() {
         over={over}
         state={store.state}
         people={ppl.length}
-        ready={ready}
+        inMotion={inMotion}
         verified={verified.length}
         promising={promising.length}
         tested={segs.length}
@@ -149,7 +150,7 @@ function Hero(p: {
   over: boolean;
   state: RunStore["state"];
   people: number;
-  ready: number;
+  inMotion: number;
   verified: number;
   promising: number;
   tested: number;
@@ -164,14 +165,13 @@ function Hero(p: {
   let line: React.ReactNode;
   if (p.loading) line = null;
   else if (p.people) {
-    big = p.ready || p.people;
+    big = p.people;
     line = (
       <>
-        {p.ready ? (p.ready === 1 ? "person ready to contact" : "people ready to contact") : p.people === 1 ? "person found" : "people found"}
+        {p.people === 1 ? "person found" : "people found"}
         {markets ? (
           <>
-            {" "}
-            in <span className="text-forest">{markets}</span>
+            , <span className="text-forest">{markets}</span>
           </>
         ) : null}
       </>
@@ -205,7 +205,7 @@ function Hero(p: {
 
   const stats = [
     { icon: Radar, label: "Markets tested", value: p.judged, of: p.tested, href: `${p.base}/market` },
-    { icon: Users, label: "People found", value: p.people, href: `${p.base}/leads` },
+    p.people ? { icon: Users, label: "In motion", value: p.inMotion, href: `${p.base}/pipeline` } : { icon: Users, label: "People found", value: p.people, href: `${p.base}/leads` },
     { icon: Send, label: "Drafts waiting", value: p.waiting, href: `${p.base}/review` },
     { icon: Inbox, label: "Replies", value: p.replies, href: `${p.base}/inbox` },
   ];
@@ -422,7 +422,7 @@ function PeoplePanel({
         )
       ) : accounts.length ? (
         <ul className="-mx-2 flex flex-col">
-          {accounts.map((a) => (
+          {accounts.slice(0, 6).map((a) => (
             <li key={a.id}>
               <Link href={`${base}/leads?view=accounts`} className="flex items-center gap-3 rounded-[8px] px-2 py-2 transition-colors duration-150 hover:bg-linen/50">
                 <Avatar name={a.name} />
